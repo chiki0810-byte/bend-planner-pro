@@ -3,11 +3,17 @@ import { Calculator } from "lucide-react";
 import BendCalculator from "@/components/BendCalculator";
 import ResultsPanel from "@/components/ResultsPanel";
 
-export interface BendResult {
+export interface SingleBendResult {
+  angle: number;
   bendAllowance: number;
-  developedLength: number;
   recommendedRadius: number;
   kFactor: number;
+}
+
+export interface BendResult {
+  bends: SingleBendResult[];
+  totalDevelopedLength: number;
+  pieceLength: number;
 }
 
 const Index = () => {

@@ -4,9 +4,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Calculator } from "lucide-react";
-import { BendResult } from "@/pages/Index";
+import { Calculator, Plus } from "lucide-react";
+import { BendResult, SingleBendResult } from "@/pages/Index";
+import BendItem from "./BendItem";
 
 interface BendCalculatorProps {
   onCalculate: (result: BendResult) => void;
@@ -39,11 +39,32 @@ const materialTypes = [
   "Galvanizado",
 ];
 
+interface Bend {
+  id: string;
+  angle: number;
+}
+
 const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
   const [thickness, setThickness] = useState<string>("");
   const [material, setMaterial] = useState<string>("");
   const [pieceLength, setPieceLength] = useState<string>("");
-  const [bendAngle, setBendAngle] = useState<number>(90);
+  const [bends, setBends] = useState<Bend[]>([
+    { id: crypto.randomUUID(), angle: 90 }
+  ]);
+
+  const addBend = () => {
+    setBends([...bends, { id: crypto.randomUUID(), angle: 90 }]);
+  };
+
+  const removeBend = (id: string) => {
+    setBends(bends.filter(bend => bend.id !== id));
+  };
+
+  const updateBendAngle = (id: string, angle: number) => {
+    setBends(bends.map(bend => 
+      bend.id === id ? { ...bend, angle } : bend
+    ));
+  };
 
   const calculateBend = () => {
     if (!thickness || !material || !pieceLength) {
@@ -52,28 +73,37 @@ const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
 
     const t = parseFloat(thickness);
     const L = parseFloat(pieceLength);
-    const angle = bendAngle;
 
-    // Ganancia de plegado base
-    const baseBendAllowance = bendAllowanceData[t] || 1.5;
-    
-    // Ajustar ganancia según ángulo (90° es base, otros ángulos se ajustan proporcionalmente)
-    const bendAllowance = baseBendAllowance * (angle / 90);
+    // Calcular cada plegado
+    const bendResults: SingleBendResult[] = bends.map(bend => {
+      // Ganancia de plegado base
+      const baseBendAllowance = bendAllowanceData[t] || 1.5;
+      
+      // Ajustar ganancia según ángulo (90° es base, otros ángulos se ajustan proporcionalmente)
+      const bendAllowance = baseBendAllowance * (bend.angle / 90);
 
-    // Radio recomendado (típicamente 1.5 veces el espesor para acero)
-    const recommendedRadius = t * 1.5;
+      // Radio recomendado (típicamente 1.5 veces el espesor para acero)
+      const recommendedRadius = t * 1.5;
 
-    // Factor K
-    const kFactor = kFactorData[t] || 0.35;
+      // Factor K
+      const kFactor = kFactorData[t] || 0.35;
 
-    // Longitud desarrollada: L + ganancia de plegado
-    const developedLength = L + bendAllowance;
+      return {
+        angle: bend.angle,
+        bendAllowance: Number(bendAllowance.toFixed(2)),
+        recommendedRadius: Number(recommendedRadius.toFixed(2)),
+        kFactor: Number(kFactor.toFixed(3)),
+      };
+    });
+
+    // Calcular longitud total desarrollada
+    const totalBendAllowance = bendResults.reduce((sum, b) => sum + b.bendAllowance, 0);
+    const totalDevelopedLength = L + totalBendAllowance;
 
     const result: BendResult = {
-      bendAllowance: Number(bendAllowance.toFixed(2)),
-      developedLength: Number(developedLength.toFixed(2)),
-      recommendedRadius: Number(recommendedRadius.toFixed(2)),
-      kFactor: Number(kFactor.toFixed(3)),
+      bends: bendResults,
+      totalDevelopedLength: Number(totalDevelopedLength.toFixed(2)),
+      pieceLength: L,
     };
 
     onCalculate(result);
@@ -137,24 +167,31 @@ const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label htmlFor="angle">Ángulo de Plegado</Label>
-            <span className="text-lg font-semibold text-primary">{bendAngle}°</span>
+            <Label>Plegados ({bends.length})</Label>
+            <Button
+              onClick={addBend}
+              variant="outline"
+              size="sm"
+              className="h-8"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Agregar
+            </Button>
           </div>
-          <Slider
-            id="angle"
-            value={[bendAngle]}
-            onValueChange={(values) => setBendAngle(values[0])}
-            min={30}
-            max={180}
-            step={5}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>30°</span>
-            <span>90°</span>
-            <span>180°</span>
+
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+            {bends.map((bend, index) => (
+              <BendItem
+                key={bend.id}
+                index={index}
+                angle={bend.angle}
+                onAngleChange={(angle) => updateBendAngle(bend.id, angle)}
+                onRemove={() => removeBend(bend.id)}
+                canRemove={bends.length > 1}
+              />
+            ))}
           </div>
         </div>
 
