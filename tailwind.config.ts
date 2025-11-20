@@ -57,6 +57,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        steel: {
+          DEFAULT: "hsl(var(--steel))",
+          dark: "hsl(var(--steel-dark))",
+        },
+        industrial: "hsl(var(--industrial))",
+        technical: "hsl(var(--technical))",
       },
       borderRadius: {
         lg: "var(--radius)",
