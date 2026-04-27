@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calculator, Plus } from "lucide-react";
-import { BendResult, SingleBendResult } from "@/pages/Index";
+import { BendResult, CalculatorState, SingleBendResult } from "@/pages/Index";
 import BendItem from "./BendItem";
 
 interface BendCalculatorProps {
-  onCalculate: (result: BendResult) => void;
+  onCalculate: (result: BendResult, meta: { material: string; thickness: number }) => void;
+  initialState?: CalculatorState | null;
 }
 
 // Datos de ganancia de plegado por espesor (en mm)
@@ -45,13 +46,27 @@ interface Bend {
   distance: number;
 }
 
-const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
+const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const [thickness, setThickness] = useState<string>("");
   const [material, setMaterial] = useState<string>("");
   const [pieceLength, setPieceLength] = useState<string>("");
   const [bends, setBends] = useState<Bend[]>([
     { id: crypto.randomUUID(), angle: 90, distance: 50 }
   ]);
+
+  useEffect(() => {
+    if (!initialState) return;
+    setThickness(String(initialState.thickness));
+    setMaterial(initialState.material);
+    setPieceLength(String(initialState.pieceLength));
+    setBends(
+      initialState.bends.map((b) => ({
+        id: crypto.randomUUID(),
+        angle: b.angle,
+        distance: b.distance,
+      })),
+    );
+  }, [initialState]);
 
   const addBend = () => {
     setBends([...bends, { id: crypto.randomUUID(), angle: 90, distance: 50 }]);
