@@ -42,6 +42,7 @@ const materialTypes = [
 interface Bend {
   id: string;
   angle: number;
+  distance: number;
 }
 
 const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
@@ -49,11 +50,11 @@ const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
   const [material, setMaterial] = useState<string>("");
   const [pieceLength, setPieceLength] = useState<string>("");
   const [bends, setBends] = useState<Bend[]>([
-    { id: crypto.randomUUID(), angle: 90 }
+    { id: crypto.randomUUID(), angle: 90, distance: 50 }
   ]);
 
   const addBend = () => {
-    setBends([...bends, { id: crypto.randomUUID(), angle: 90 }]);
+    setBends([...bends, { id: crypto.randomUUID(), angle: 90, distance: 50 }]);
   };
 
   const removeBend = (id: string) => {
@@ -66,6 +67,12 @@ const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
     ));
   };
 
+  const updateBendDistance = (id: string, distance: number) => {
+    setBends(bends.map(bend =>
+      bend.id === id ? { ...bend, distance } : bend
+    ));
+  };
+
   const calculateBend = () => {
     if (!thickness || !material || !pieceLength) {
       return;
@@ -74,36 +81,31 @@ const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
     const t = parseFloat(thickness);
     const L = parseFloat(pieceLength);
 
-    // Calcular cada plegado
-    const bendResults: SingleBendResult[] = bends.map(bend => {
-      // Ganancia de plegado base
+    const bendResults: SingleBendResult[] = bends.map((bend, idx) => {
       const baseBendAllowance = bendAllowanceData[t] || 1.5;
-      
-      // Ajustar ganancia según ángulo (90° es base, otros ángulos se ajustan proporcionalmente)
       const bendAllowance = baseBendAllowance * (bend.angle / 90);
-
-      // Radio recomendado (típicamente 1.5 veces el espesor para acero)
       const recommendedRadius = t * 1.5;
-
-      // Factor K
       const kFactor = kFactorData[t] || 0.35;
 
       return {
+        order: idx + 1,
         angle: bend.angle,
+        distanceFromPrevious: bend.distance,
         bendAllowance: Number(bendAllowance.toFixed(2)),
         recommendedRadius: Number(recommendedRadius.toFixed(2)),
         kFactor: Number(kFactor.toFixed(3)),
       };
     });
 
-    // Calcular longitud total desarrollada
     const totalBendAllowance = bendResults.reduce((sum, b) => sum + b.bendAllowance, 0);
+    const totalDistance = bendResults.reduce((sum, b) => sum + b.distanceFromPrevious, 0);
     const totalDevelopedLength = L + totalBendAllowance;
 
     const result: BendResult = {
       bends: bendResults,
       totalDevelopedLength: Number(totalDevelopedLength.toFixed(2)),
       pieceLength: L,
+      totalDistance: Number(totalDistance.toFixed(2)),
     };
 
     onCalculate(result);
@@ -187,7 +189,9 @@ const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
                 key={bend.id}
                 index={index}
                 angle={bend.angle}
+                distance={bend.distance}
                 onAngleChange={(angle) => updateBendAngle(bend.id, angle)}
+                onDistanceChange={(distance) => updateBendDistance(bend.id, distance)}
                 onRemove={() => removeBend(bend.id)}
                 canRemove={bends.length > 1}
               />
