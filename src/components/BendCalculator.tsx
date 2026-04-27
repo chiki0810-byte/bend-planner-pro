@@ -189,7 +189,9 @@ const BendCalculator = ({ onCalculate }: BendCalculatorProps) => {
                 key={bend.id}
                 index={index}
                 angle={bend.angle}
+                distance={bend.distance}
                 onAngleChange={(angle) => updateBendAngle(bend.id, angle)}
+                onDistanceChange={(distance) => updateBendDistance(bend.id, distance)}
                 onRemove={() => removeBend(bend.id)}
                 canRemove={bends.length > 1}
               />
