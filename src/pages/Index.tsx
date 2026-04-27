@@ -4,7 +4,9 @@ import BendCalculator from "@/components/BendCalculator";
 import ResultsPanel from "@/components/ResultsPanel";
 
 export interface SingleBendResult {
+  order: number;
   angle: number;
+  distanceFromPrevious: number;
   bendAllowance: number;
   recommendedRadius: number;
   kFactor: number;
@@ -14,6 +16,7 @@ export interface BendResult {
   bends: SingleBendResult[];
   totalDevelopedLength: number;
   pieceLength: number;
+  totalDistance: number;
 }
 
 const Index = () => {
