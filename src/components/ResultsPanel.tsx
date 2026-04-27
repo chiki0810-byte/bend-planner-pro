@@ -57,26 +57,40 @@ const ResultsPanel = ({ result }: ResultsPanelProps) => {
               <p className="text-3xl font-bold text-primary">{result.totalDevelopedLength} mm</p>
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3 flex gap-2 flex-wrap">
             <Badge variant="secondary" className="bg-primary/20 text-primary">
               {result.bends.length} {result.bends.length === 1 ? 'Plegado' : 'Plegados'}
+            </Badge>
+            <Badge variant="secondary" className="bg-technical/20 text-technical-foreground">
+              Distancia total: {result.totalDistance} mm
             </Badge>
           </div>
         </div>
 
         <Separator />
 
-        {/* Detalles de cada plegado */}
+        {/* Secuencia de plegados */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-foreground">Detalle por Plegado</h3>
+          <h3 className="font-semibold text-foreground">Secuencia de Plegados</h3>
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
             {result.bends.map((bend, index) => (
-              <div key={index} className="bg-card p-4 rounded-lg border space-y-3">
+              <div key={index} className="bg-card p-4 rounded-lg border space-y-3 relative">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-semibold text-sm">Plegado {index + 1}</h4>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-primary text-primary-foreground h-7 w-7 rounded-full p-0 flex items-center justify-center font-bold">
+                      {bend.order}
+                    </Badge>
+                    <h4 className="font-semibold text-sm">Plegado {bend.order}</h4>
+                  </div>
                   <Badge variant="outline" className="text-primary border-primary">
                     {bend.angle}°
                   </Badge>
+                </div>
+
+                <div className="bg-muted/40 px-3 py-2 rounded text-xs text-muted-foreground">
+                  {index === 0
+                    ? `↦ A ${bend.distanceFromPrevious} mm desde el borde`
+                    : `↦ A ${bend.distanceFromPrevious} mm desde el plegado ${bend.order - 1}`}
                 </div>
                 
                 <div className="grid grid-cols-3 gap-3">
