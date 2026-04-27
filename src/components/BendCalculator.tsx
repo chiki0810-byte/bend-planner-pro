@@ -123,7 +123,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
       totalDistance: Number(totalDistance.toFixed(2)),
     };
 
-    onCalculate(result);
+    onCalculate(result, { material, thickness: t });
   };
 
   return (
