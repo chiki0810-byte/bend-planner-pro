@@ -1,15 +1,32 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, FileSpreadsheet } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Download, Save } from "lucide-react";
 import { BendResult } from "@/pages/Index";
 import { Separator } from "@/components/ui/separator";
+import { exportBendPdf } from "@/lib/pdfExport";
+import { savePiece } from "@/lib/storage";
+import { toast } from "sonner";
 
 interface ResultsPanelProps {
   result: BendResult | null;
+  material: string;
+  thickness: number;
+  pieceName: string;
+  onPieceNameChange: (n: string) => void;
+  onSaved: () => void;
 }
 
-const ResultsPanel = ({ result }: ResultsPanelProps) => {
+const ResultsPanel = ({
+  result,
+  material,
+  thickness,
+  pieceName,
+  onPieceNameChange,
+  onSaved,
+}: ResultsPanelProps) => {
   if (!result) {
     return (
       <Card className="shadow-lg bg-muted/30">
@@ -29,13 +46,40 @@ const ResultsPanel = ({ result }: ResultsPanelProps) => {
   }
 
   const handleExportPDF = () => {
-    // Placeholder para futura funcionalidad de exportación
-    alert("Funcionalidad de exportación a PDF próximamente");
+    try {
+      exportBendPdf({ result, material, thickness, pieceName });
+      toast.success("PDF generado");
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al generar PDF");
+    }
   };
 
-  const handleExportExcel = () => {
-    // Placeholder para futura funcionalidad de exportación
-    alert("Funcionalidad de exportación a Excel próximamente");
+  const handleSave = async () => {
+    if (!pieceName.trim()) {
+      toast.error("Indica un nombre para la pieza");
+      return;
+    }
+    try {
+      await savePiece({
+        name: pieceName.trim(),
+        thickness,
+        material,
+        pieceLength: result.pieceLength,
+        payload: JSON.stringify({
+          bends: result.bends.map((b) => ({
+            angle: b.angle,
+            distance: b.distanceFromPrevious,
+          })),
+          result,
+        }),
+      });
+      toast.success(`Pieza "${pieceName}" guardada localmente`);
+      onSaved();
+    } catch (e) {
+      console.error(e);
+      toast.error("Error al guardar");
+    }
   };
 
   return (
@@ -45,7 +89,6 @@ const ResultsPanel = ({ result }: ResultsPanelProps) => {
         <CardDescription>Parámetros calculados para todos los plegados</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Resumen total */}
         <div className="bg-gradient-to-br from-primary/10 to-technical/10 p-5 rounded-lg border-2 border-primary/20">
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -59,17 +102,19 @@ const ResultsPanel = ({ result }: ResultsPanelProps) => {
           </div>
           <div className="mt-3 flex gap-2 flex-wrap">
             <Badge variant="secondary" className="bg-primary/20 text-primary">
-              {result.bends.length} {result.bends.length === 1 ? 'Plegado' : 'Plegados'}
+              {result.bends.length} {result.bends.length === 1 ? "Plegado" : "Plegados"}
             </Badge>
             <Badge variant="secondary" className="bg-technical/20 text-technical-foreground">
               Distancia total: {result.totalDistance} mm
             </Badge>
+            {material && (
+              <Badge variant="outline">{material} · {thickness} mm</Badge>
+            )}
           </div>
         </div>
 
         <Separator />
 
-        {/* Secuencia de plegados */}
         <div className="space-y-4">
           <h3 className="font-semibold text-foreground">Secuencia de Plegados</h3>
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
@@ -92,7 +137,7 @@ const ResultsPanel = ({ result }: ResultsPanelProps) => {
                     ? `↦ A ${bend.distanceFromPrevious} mm desde el borde`
                     : `↦ A ${bend.distanceFromPrevious} mm desde el plegado ${bend.order - 1}`}
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">Ganancia</p>
@@ -114,33 +159,27 @@ const ResultsPanel = ({ result }: ResultsPanelProps) => {
 
         <Separator />
 
-        <div className="bg-muted/50 p-4 rounded-lg">
-          <h3 className="font-semibold text-sm mb-2 text-foreground">Información Técnica</h3>
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>• La ganancia de plegado incluye el material absorbido en el doblez</li>
-            <li>• El radio recomendado previene agrietamiento del material</li>
-            <li>• El factor K representa la posición del eje neutro</li>
-            <li>• La longitud desarrollada total suma todas las ganancias</li>
-          </ul>
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            onClick={handleExportPDF}
-            variant="outline"
-            className="flex-1"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Exportar PDF
-          </Button>
-          <Button
-            onClick={handleExportExcel}
-            variant="outline"
-            className="flex-1"
-          >
-            <FileSpreadsheet className="w-4 h-4 mr-2" />
-            Exportar Excel
-          </Button>
+        <div className="space-y-3">
+          <Label htmlFor="pieceName">Nombre de la pieza</Label>
+          <Input
+            id="pieceName"
+            placeholder="Ej: Soporte lateral A"
+            value={pieceName}
+            onChange={(e) => onPieceNameChange(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <Button onClick={handleSave} className="flex-1">
+              <Save className="w-4 h-4 mr-2" />
+              Guardar pieza
+            </Button>
+            <Button onClick={handleExportPDF} variant="outline" className="flex-1">
+              <Download className="w-4 h-4 mr-2" />
+              Exportar PDF
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground text-center">
+            Datos guardados localmente en este dispositivo · 100% offline
+          </p>
         </div>
       </CardContent>
     </Card>
