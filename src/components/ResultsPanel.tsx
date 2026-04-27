@@ -3,154 +3,123 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Download, Save } from "lucide-react";
+import { Download, Save, FileSpreadsheet, FileCode } from "lucide-react";
 import { BendResult } from "@/pages/Index";
 import { Separator } from "@/components/ui/separator";
 import { exportBendPdf } from "@/lib/pdfExport";
+import { exportBendDxf } from "@/lib/dxfExport";
+import { exportBendXlsx } from "@/lib/xlsxExport";
 import { savePiece } from "@/lib/storage";
 import { toast } from "sonner";
+import { BendItemValue } from "./BendItem";
 
 interface ResultsPanelProps {
   result: BendResult | null;
   material: string;
   thickness: number;
+  bends: BendItemValue[];
+  pieceLength: number;
   pieceName: string;
   onPieceNameChange: (n: string) => void;
   onSaved: () => void;
 }
 
 const ResultsPanel = ({
-  result,
-  material,
-  thickness,
-  pieceName,
-  onPieceNameChange,
-  onSaved,
+  result, material, thickness, bends, pieceLength,
+  pieceName, onPieceNameChange, onSaved,
 }: ResultsPanelProps) => {
   if (!result) {
     return (
       <Card className="shadow-lg bg-muted/30">
         <CardHeader>
           <CardTitle>Resultados del Cálculo</CardTitle>
-          <CardDescription>
-            Los resultados aparecerán aquí después de calcular
-          </CardDescription>
+          <CardDescription>Aparecerán aquí tras calcular</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center min-h-[400px]">
           <p className="text-muted-foreground text-center">
-            Completa los parámetros y presiona "Calcular Plegado" para ver los resultados
+            Completa los parámetros y presiona "Calcular Plegado"
           </p>
         </CardContent>
       </Card>
     );
   }
 
-  const handleExportPDF = () => {
-    try {
-      exportBendPdf({ result, material, thickness, pieceName });
-      toast.success("PDF generado");
-    } catch (e) {
-      console.error(e);
-      toast.error("Error al generar PDF");
-    }
+  const handlePDF = () => {
+    try { exportBendPdf({ result, material, thickness, pieceName }); toast.success("PDF generado"); }
+    catch (e) { console.error(e); toast.error("Error al generar PDF"); }
+  };
+  const handleDXF = () => {
+    try { exportBendDxf({ result, pieceName }); toast.success("DXF generado"); }
+    catch (e) { console.error(e); toast.error("Error al generar DXF"); }
+  };
+  const handleXLSX = () => {
+    try { exportBendXlsx({ result, material, thickness, pieceName }); toast.success("Excel generado"); }
+    catch (e) { console.error(e); toast.error("Error al generar Excel"); }
   };
 
   const handleSave = async () => {
-    if (!pieceName.trim()) {
-      toast.error("Indica un nombre para la pieza");
-      return;
-    }
+    if (!pieceName.trim()) return toast.error("Indica un nombre para la pieza");
     try {
       await savePiece({
-        name: pieceName.trim(),
-        thickness,
-        material,
-        pieceLength: result.pieceLength,
-        payload: JSON.stringify({
-          bends: result.bends.map((b) => ({
-            angle: b.angle,
-            distance: b.distanceFromPrevious,
-          })),
-          result,
-        }),
+        name: pieceName.trim(), thickness, material, pieceLength,
+        payload: JSON.stringify({ bends, result }),
       });
-      toast.success(`Pieza "${pieceName}" guardada localmente`);
+      toast.success(`Pieza "${pieceName}" guardada`);
       onSaved();
-    } catch (e) {
-      console.error(e);
-      toast.error("Error al guardar");
-    }
+    } catch (e) { console.error(e); toast.error("Error al guardar"); }
   };
 
   return (
     <Card className="shadow-lg border-accent/20">
       <CardHeader>
         <CardTitle className="text-primary">Resultados del Cálculo</CardTitle>
-        <CardDescription>Parámetros calculados para todos los plegados</CardDescription>
+        <CardDescription>Parámetros calculados con fórmula BA = (π/180)·θ·(R + K·t)</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="bg-gradient-to-br from-primary/10 to-technical/10 p-5 rounded-lg border-2 border-primary/20">
+      <CardContent className="space-y-5">
+        <div className="bg-gradient-to-br from-primary/10 to-technical/10 p-4 rounded-lg border-2 border-primary/20">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Longitud de Pieza</p>
-              <p className="text-2xl font-bold text-foreground">{result.pieceLength} mm</p>
+              <p className="text-xs text-muted-foreground mb-1">Longitud de Pieza</p>
+              <p className="text-xl font-bold">{result.pieceLength} mm</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground mb-1">Longitud Desarrollada Total</p>
-              <p className="text-3xl font-bold text-primary">{result.totalDevelopedLength} mm</p>
+              <p className="text-xs text-muted-foreground mb-1">Desarrollado Total</p>
+              <p className="text-2xl font-bold text-primary">{result.totalDevelopedLength} mm</p>
             </div>
           </div>
-          <div className="mt-3 flex gap-2 flex-wrap">
-            <Badge variant="secondary" className="bg-primary/20 text-primary">
-              {result.bends.length} {result.bends.length === 1 ? "Plegado" : "Plegados"}
-            </Badge>
-            <Badge variant="secondary" className="bg-technical/20 text-technical-foreground">
-              Distancia total: {result.totalDistance} mm
-            </Badge>
-            {material && (
-              <Badge variant="outline">{material} · {thickness} mm</Badge>
-            )}
+          <div className="mt-2 flex gap-2 flex-wrap">
+            <Badge variant="secondary">{result.bends.length} plegado(s)</Badge>
+            <Badge variant="secondary">Σ dist: {result.totalDistance} mm</Badge>
+            {material && <Badge variant="outline">{material} · {thickness} mm</Badge>}
           </div>
         </div>
 
         <Separator />
 
-        <div className="space-y-4">
-          <h3 className="font-semibold text-foreground">Secuencia de Plegados</h3>
-          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-            {result.bends.map((bend, index) => (
-              <div key={index} className="bg-card p-4 rounded-lg border space-y-3 relative">
+        <div className="space-y-3">
+          <h3 className="font-semibold text-sm">Secuencia de Plegados</h3>
+          <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2">
+            {result.bends.map((b) => (
+              <div key={b.order} className="bg-card p-3 rounded-lg border space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-primary text-primary-foreground h-7 w-7 rounded-full p-0 flex items-center justify-center font-bold">
-                      {bend.order}
+                    <Badge className="bg-primary text-primary-foreground h-6 w-6 rounded-full p-0 flex items-center justify-center text-xs font-bold">
+                      {b.order}
                     </Badge>
-                    <h4 className="font-semibold text-sm">Plegado {bend.order}</h4>
+                    <span className="text-sm font-semibold">
+                      Pliegue {b.order} · {b.angle}° {b.direction === 1 ? '↑' : '↓'}
+                    </span>
                   </div>
-                  <Badge variant="outline" className="text-primary border-primary">
-                    {bend.angle}°
+                  <Badge variant="outline" className="text-xs">
+                    a {b.distanceFromPrevious} mm
                   </Badge>
                 </div>
-
-                <div className="bg-muted/40 px-3 py-2 rounded text-xs text-muted-foreground">
-                  {index === 0
-                    ? `↦ A ${bend.distanceFromPrevious} mm desde el borde`
-                    : `↦ A ${bend.distanceFromPrevious} mm desde el plegado ${bend.order - 1}`}
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Ganancia</p>
-                    <p className="text-lg font-bold text-technical">{bend.bendAllowance} mm</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Radio</p>
-                    <p className="text-lg font-bold text-primary">{bend.recommendedRadius} mm</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Factor K</p>
-                    <p className="text-lg font-bold text-steel-dark">{bend.kFactor}</p>
-                  </div>
+                <div className="grid grid-cols-5 gap-2 text-xs">
+                  <Stat label="R int" v={`${b.innerRadius}`} />
+                  <Stat label="K" v={`${b.kFactor}`} />
+                  <Stat label="Ganancia" v={`${b.bendAllowance}`} primary />
+                  <Stat label="OSSB" v={`${b.outsideSetback}`} />
+                  <Stat label="Tol ±" v={`${b.tolerance}`} />
                 </div>
               </div>
             ))}
@@ -159,31 +128,38 @@ const ResultsPanel = ({
 
         <Separator />
 
-        <div className="space-y-3">
-          <Label htmlFor="pieceName">Nombre de la pieza</Label>
-          <Input
-            id="pieceName"
-            placeholder="Ej: Soporte lateral A"
-            value={pieceName}
-            onChange={(e) => onPieceNameChange(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <Button onClick={handleSave} className="flex-1">
-              <Save className="w-4 h-4 mr-2" />
-              Guardar pieza
+        <div className="space-y-2">
+          <Label>Nombre de la pieza</Label>
+          <Input placeholder="Ej: Soporte lateral A" value={pieceName}
+            onChange={(e) => onPieceNameChange(e.target.value)} />
+          <div className="grid grid-cols-2 gap-2">
+            <Button onClick={handleSave}>
+              <Save className="w-4 h-4 mr-1" /> Guardar pieza
             </Button>
-            <Button onClick={handleExportPDF} variant="outline" className="flex-1">
-              <Download className="w-4 h-4 mr-2" />
-              Exportar PDF
+            <Button onClick={handlePDF} variant="outline">
+              <Download className="w-4 h-4 mr-1" /> PDF
+            </Button>
+            <Button onClick={handleDXF} variant="outline">
+              <FileCode className="w-4 h-4 mr-1" /> DXF
+            </Button>
+            <Button onClick={handleXLSX} variant="outline">
+              <FileSpreadsheet className="w-4 h-4 mr-1" /> Excel
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground text-center">
-            Datos guardados localmente en este dispositivo · 100% offline
+          <p className="text-[10px] text-muted-foreground text-center">
+            Todo se guarda y exporta localmente · 100% offline
           </p>
         </div>
       </CardContent>
     </Card>
   );
 };
+
+const Stat = ({ label, v, primary }: { label: string; v: string; primary?: boolean }) => (
+  <div>
+    <p className="text-[10px] text-muted-foreground">{label}</p>
+    <p className={`font-bold ${primary ? 'text-primary' : ''}`}>{v}</p>
+  </div>
+);
 
 export default ResultsPanel;

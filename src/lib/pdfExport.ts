@@ -14,7 +14,7 @@ export function exportBendPdf(opts: {
   doc.setFontSize(18);
   doc.text('Cálculo de Plegado', 14, 18);
 
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.text(`Pieza: ${pieceName || 'Sin nombre'}`, 14, 28);
   doc.text(`Material: ${material}`, 14, 34);
   doc.text(`Espesor: ${thickness} mm`, 14, 40);
@@ -25,18 +25,44 @@ export function exportBendPdf(opts: {
 
   autoTable(doc, {
     startY: 72,
-    head: [['#', 'Distancia (mm)', 'Ángulo (°)', 'Ganancia (mm)', 'Radio (mm)', 'Factor K']],
+    head: [['#', 'Dist (mm)', 'Áng (°)', 'Sent.', 'R int', 'K', 'Ganancia', 'OSSB', 'Deducc.', 'Tol ±']],
     body: result.bends.map((b) => [
       b.order,
       b.distanceFromPrevious,
       b.angle,
-      b.bendAllowance,
-      b.recommendedRadius,
+      b.direction === 1 ? '+' : '−',
+      b.innerRadius,
       b.kFactor,
+      b.bendAllowance,
+      b.outsideSetback,
+      b.bendDeduction,
+      b.tolerance,
     ]),
-    styles: { fontSize: 10 },
+    styles: { fontSize: 9 },
     headStyles: { fillColor: [30, 64, 175] },
   });
+
+  // Vista 2D simplificada
+  // @ts-ignore
+  const yAfter = (doc as any).lastAutoTable.finalY + 10;
+  if (yAfter < 240) {
+    doc.setFontSize(11);
+    doc.text('Vista 2D del desarrollo', 14, yAfter);
+    const x0 = 20, y0 = yAfter + 10, w = 170, h = 14;
+    doc.setDrawColor(30, 64, 175);
+    doc.rect(x0, y0, w, h);
+    let acc = 0;
+    const total = result.totalDevelopedLength || result.pieceLength;
+    result.bends.forEach((b) => {
+      acc += b.distanceFromPrevious;
+      const px = x0 + (acc / total) * w;
+      doc.setDrawColor(b.direction === 1 ? 30 : 200, b.direction === 1 ? 64 : 30, b.direction === 1 ? 175 : 30);
+      doc.line(px, y0 - 3, px, y0 + h + 3);
+      doc.setFontSize(7);
+      doc.text(String(b.order), px - 1, y0 - 4);
+      doc.text(`${b.angle}°`, px - 3, y0 + h + 7);
+    });
+  }
 
   const fname = `plegado_${(pieceName || 'pieza').replace(/\s+/g, '_')}_${Date.now()}.pdf`;
   doc.save(fname);
