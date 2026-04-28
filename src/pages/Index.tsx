@@ -6,6 +6,7 @@ import HistoryPanel from "@/components/HistoryPanel";
 import DevelopedView2D from "@/components/DevelopedView2D";
 import MaterialsPanel from "@/components/MaterialsPanel";
 import TemplatesPanel from "@/components/TemplatesPanel";
+import MachineValidationPanel from "@/components/MachineValidationPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BendOutput } from "@/lib/bendCalc";
 import { BendItemValue } from "@/components/BendItem";
@@ -109,6 +110,12 @@ const Index = () => {
               />
             </div>
             <DevelopedView2D result={result} pieceLength={currentLength} />
+            <MachineValidationPanel
+              result={result}
+              bends={currentBends}
+              material={currentMaterial}
+              thickness={currentThickness}
+            />
           </TabsContent>
 
           <TabsContent value="library" className="space-y-4">
