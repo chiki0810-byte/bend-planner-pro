@@ -3,8 +3,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import Home from "./pages/Home";
+import AppLayout from "./components/AppLayout";
+import CalculadoraPage from "./pages/CalculadoraPage";
+import ValidacionPage from "./pages/ValidacionPage";
+import HistorialPage from "./pages/HistorialPage";
+import MaterialesPage from "./pages/MaterialesPage";
+import ConfiguracionPage from "./pages/ConfiguracionPage";
 import NotFound from "./pages/NotFound";
+import { AppStateProvider } from "./state/AppStateContext";
 
 const queryClient = new QueryClient();
 
@@ -14,11 +21,19 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AppStateProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route element={<AppLayout />}>
+              <Route path="/calculadora" element={<CalculadoraPage />} />
+              <Route path="/validacion" element={<ValidacionPage />} />
+              <Route path="/historial" element={<HistorialPage />} />
+              <Route path="/materiales" element={<MaterialesPage />} />
+              <Route path="/configuracion" element={<ConfiguracionPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AppStateProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
