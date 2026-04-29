@@ -13,7 +13,30 @@ import { savePiece } from "@/lib/storage";
 
 // ─── Tipos / estados ──────────────────────────────────────────────────────
 type Sentido = "interior" | "exterior";
-type MaterialKey = "acero" | "inox" | "aluminio";
+type MaterialKey =
+  | "acero"
+  | "inox"
+  | "aluminio"
+  | "galvanizado"
+  | "corten"
+  | "duro500"
+  | "duro600"
+  | "laton"
+  | "cobre";
+
+const MATERIALS: { key: MaterialKey; label: string; k: number }[] = [
+  { key: "acero", label: "Acero", k: 0.33 },
+  { key: "inox", label: "Inox", k: 0.40 },
+  { key: "aluminio", label: "Aluminio", k: 0.50 },
+  { key: "galvanizado", label: "Galvanizado", k: 0.33 },
+  { key: "corten", label: "Corten", k: 0.33 },
+  { key: "duro500", label: "Duro 500", k: 0.33 },
+  { key: "duro600", label: "Duro 600", k: 0.33 },
+  { key: "laton", label: "Latón", k: 0.45 },
+  { key: "cobre", label: "Cobre", k: 0.45 },
+];
+
+const getK = (m: MaterialKey) => MATERIALS.find(x => x.key === m)?.k ?? 0.33;
 
 interface Pliegue {
   id: string;
@@ -87,7 +110,7 @@ const FichaPiezaRapidaPage = () => {
 
   // 🟦 Calcular desarrollo
   const calcularDesarrollo = () => {
-    const K = material === "acero" ? 0.33 : material === "inox" ? 0.40 : 0.50;
+    const K = getK(material);
     const total = pliegues.reduce((acc, p) => {
       const comp = p.angulo
         ? (Math.PI / 180) * p.angulo * (p.radio + K * espesor)
@@ -95,7 +118,7 @@ const FichaPiezaRapidaPage = () => {
       return acc + (p.longitud || 0) + comp;
     }, 0);
     setDesarrolloMm(Number(total.toFixed(2)));
-    toast({ title: "Desarrollo calculado", description: `${total.toFixed(2)} mm` });
+    toast({ title: "Desarrollo calculado", description: `${total.toFixed(2)} mm (K=${K})` });
   };
 
   // 🟩 Validar por máquina
@@ -252,7 +275,6 @@ const FichaPiezaRapidaPage = () => {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 className="hidden"
                 onChange={(e) => onPickImage(e.target.files?.[0] ?? null)}
               />
@@ -299,9 +321,11 @@ const FichaPiezaRapidaPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="acero">Acero (K=0.33)</SelectItem>
-                    <SelectItem value="inox">Inox (K=0.40)</SelectItem>
-                    <SelectItem value="aluminio">Aluminio (K=0.50)</SelectItem>
+                    {MATERIALS.map(m => (
+                      <SelectItem key={m.key} value={m.key}>
+                        {m.label} (K={m.k.toFixed(2)})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
