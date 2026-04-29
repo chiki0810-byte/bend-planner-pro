@@ -13,7 +13,30 @@ import { savePiece } from "@/lib/storage";
 
 // ─── Tipos / estados ──────────────────────────────────────────────────────
 type Sentido = "interior" | "exterior";
-type MaterialKey = "acero" | "inox" | "aluminio";
+type MaterialKey =
+  | "acero"
+  | "inox"
+  | "aluminio"
+  | "galvanizado"
+  | "corten"
+  | "duro500"
+  | "duro600"
+  | "laton"
+  | "cobre";
+
+const MATERIALS: { key: MaterialKey; label: string; k: number }[] = [
+  { key: "acero", label: "Acero", k: 0.33 },
+  { key: "inox", label: "Inox", k: 0.40 },
+  { key: "aluminio", label: "Aluminio", k: 0.50 },
+  { key: "galvanizado", label: "Galvanizado", k: 0.33 },
+  { key: "corten", label: "Corten", k: 0.33 },
+  { key: "duro500", label: "Duro 500", k: 0.33 },
+  { key: "duro600", label: "Duro 600", k: 0.33 },
+  { key: "laton", label: "Latón", k: 0.45 },
+  { key: "cobre", label: "Cobre", k: 0.45 },
+];
+
+const getK = (m: MaterialKey) => MATERIALS.find(x => x.key === m)?.k ?? 0.33;
 
 interface Pliegue {
   id: string;
