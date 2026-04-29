@@ -49,6 +49,7 @@ interface Pliegue {
 interface ValidacionState {
   estado: "verde" | "rojo";
   maquina: string;
+  motivo: string;
 }
 
 interface PasoSecuencia {
@@ -134,12 +135,20 @@ const FichaPiezaRapidaPage = () => {
     ];
     const viable = maquinas.find(m => desarrolloMm <= m.max);
     const v: ValidacionState = viable
-      ? { estado: "verde", maquina: viable.nombre }
-      : { estado: "rojo", maquina: "Ninguna" };
+      ? {
+          estado: "verde",
+          maquina: viable.nombre,
+          motivo: "La pieza entra en la longitud útil de la máquina.",
+        }
+      : {
+          estado: "rojo",
+          maquina: "Ninguna",
+          motivo: "El desarrollo supera la longitud máxima de todas las máquinas.",
+        };
     setValidacion(v);
     toast({
       title: v.estado === "verde" ? "✅ Plegable" : "⛔ No plegable",
-      description: v.estado === "verde" ? `Máquina viable: ${v.maquina}` : "Ninguna máquina admite el desarrollo.",
+      description: v.motivo,
       variant: v.estado === "verde" ? "default" : "destructive",
     });
   };
@@ -222,6 +231,7 @@ const FichaPiezaRapidaPage = () => {
             {ok ? "Plegable" : "No plegable"}
           </div>
           <div className="text-xs text-sky-200/80">Máquina: {validacion.maquina}</div>
+          <div className="text-[11px] text-sky-200/60 mt-0.5">{validacion.motivo}</div>
         </div>
       </div>
     );
