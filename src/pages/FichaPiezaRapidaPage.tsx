@@ -49,6 +49,7 @@ interface Pliegue {
 interface ValidacionState {
   estado: "verde" | "rojo";
   maquina: string;
+  motivo: string;
 }
 
 interface PasoSecuencia {
