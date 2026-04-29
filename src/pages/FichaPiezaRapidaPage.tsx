@@ -321,9 +321,11 @@ const FichaPiezaRapidaPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="acero">Acero (K=0.33)</SelectItem>
-                    <SelectItem value="inox">Inox (K=0.40)</SelectItem>
-                    <SelectItem value="aluminio">Aluminio (K=0.50)</SelectItem>
+                    {MATERIALS.map(m => (
+                      <SelectItem key={m.key} value={m.key}>
+                        {m.label} (K={m.k.toFixed(2)})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
