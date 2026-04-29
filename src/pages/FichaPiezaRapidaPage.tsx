@@ -135,12 +135,20 @@ const FichaPiezaRapidaPage = () => {
     ];
     const viable = maquinas.find(m => desarrolloMm <= m.max);
     const v: ValidacionState = viable
-      ? { estado: "verde", maquina: viable.nombre }
-      : { estado: "rojo", maquina: "Ninguna" };
+      ? {
+          estado: "verde",
+          maquina: viable.nombre,
+          motivo: "La pieza entra en la longitud útil de la máquina.",
+        }
+      : {
+          estado: "rojo",
+          maquina: "Ninguna",
+          motivo: "El desarrollo supera la longitud máxima de todas las máquinas.",
+        };
     setValidacion(v);
     toast({
       title: v.estado === "verde" ? "✅ Plegable" : "⛔ No plegable",
-      description: v.estado === "verde" ? `Máquina viable: ${v.maquina}` : "Ninguna máquina admite el desarrollo.",
+      description: v.motivo,
       variant: v.estado === "verde" ? "default" : "destructive",
     });
   };
