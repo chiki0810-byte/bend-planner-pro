@@ -231,6 +231,7 @@ const FichaPiezaRapidaPage = () => {
             {ok ? "Plegable" : "No plegable"}
           </div>
           <div className="text-xs text-sky-200/80">Máquina: {validacion.maquina}</div>
+          <div className="text-[11px] text-sky-200/60 mt-0.5">{validacion.motivo}</div>
         </div>
       </div>
     );
