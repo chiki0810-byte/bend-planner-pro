@@ -110,7 +110,7 @@ const FichaPiezaRapidaPage = () => {
 
   // 🟦 Calcular desarrollo
   const calcularDesarrollo = () => {
-    const K = material === "acero" ? 0.33 : material === "inox" ? 0.40 : 0.50;
+    const K = getK(material);
     const total = pliegues.reduce((acc, p) => {
       const comp = p.angulo
         ? (Math.PI / 180) * p.angulo * (p.radio + K * espesor)
@@ -118,7 +118,7 @@ const FichaPiezaRapidaPage = () => {
       return acc + (p.longitud || 0) + comp;
     }, 0);
     setDesarrolloMm(Number(total.toFixed(2)));
-    toast({ title: "Desarrollo calculado", description: `${total.toFixed(2)} mm` });
+    toast({ title: "Desarrollo calculado", description: `${total.toFixed(2)} mm (K=${K})` });
   };
 
   // 🟩 Validar por máquina
