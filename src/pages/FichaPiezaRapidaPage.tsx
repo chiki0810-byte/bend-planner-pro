@@ -275,7 +275,7 @@ const FichaPiezaRapidaPage = () => {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
+                /* sin "capture": permite elegir cámara o galería/archivos */
                 className="hidden"
                 onChange={(e) => onPickImage(e.target.files?.[0] ?? null)}
               />
