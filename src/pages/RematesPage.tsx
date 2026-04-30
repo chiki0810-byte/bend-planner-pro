@@ -155,6 +155,42 @@ const RematesPage = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
+                <Label>Foto del plano</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPickFoto}
+                  className="hidden"
+                />
+                {fotoPlano ? (
+                  <div className="relative rounded-lg overflow-hidden border border-sky-500/30">
+                    <img src={fotoPlano} alt="Plano" className="w-full h-48 object-contain bg-black/40" />
+                    <button
+                      type="button"
+                      onClick={() => { setFotoPlano(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-black"
+                      aria-label="Quitar imagen"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-sky-500/40 bg-sky-500/5 text-sky-300 hover:bg-sky-500/10 transition"
+                  >
+                    <ImagePlus className="w-7 h-7" />
+                    <span className="text-sm font-medium">Tocar para añadir plano</span>
+                    <span className="text-[10px] uppercase tracking-wider text-sky-400/70">
+                      Cámara · Galería · Archivos
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <Label>Tipo de remate</Label>
                 <Select value={tipoRemate} onValueChange={(v) => setTipoRemate(v as TipoRemate)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -266,6 +302,15 @@ const RematesPage = () => {
               <Button onClick={calcular} size="lg" className="w-full">
                 <Calculator className="w-4 h-4 mr-2" />
                 Calcular remate
+              </Button>
+              <Button
+                onClick={exportarExcel}
+                size="lg"
+                variant="outline"
+                className="w-full border-sky-500/40 text-sky-200 hover:bg-sky-500/10"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Exportar a Excel
               </Button>
             </CardContent>
           </Card>
