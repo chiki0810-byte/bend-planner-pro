@@ -56,6 +56,42 @@ const RematesPage = () => {
   const [espesor, setEspesor] = useState<string>("");
   const [solape, setSolape] = useState<string>("");
   const [res, setRes] = useState<Resultados | null>(null);
+  const [fotoPlano, setFotoPlano] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onPickFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setFotoPlano(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const exportarExcel = () => {
+    const fila = {
+      "Tipo de remate": tipoRemate,
+      "Medida derecha (mm)": Number(medidaDerecha) || 0,
+      "Medida izquierda (mm)": Number(medidaIzquierda) || 0,
+      "Punta grande (mm)": Number(puntaGrande) || 0,
+      "Punta pequeña (mm)": Number(puntaPequena) || 0,
+      "Altura (mm)": Number(altura) || 0,
+      "Espesor (mm)": Number(espesor) || 0,
+      "Material": material,
+      "Solape (mm)": Number(solape) || 0,
+      "Desarrollo derecha (mm)": Number((res?.derecha ?? 0).toFixed(2)),
+      "Desarrollo izquierda (mm)": Number((res?.izquierda ?? 0).toFixed(2)),
+      "Desarrollo punta grande (mm)": Number((res?.puntaA ?? 0).toFixed(2)),
+      "Desarrollo punta pequeña (mm)": Number((res?.puntaB ?? 0).toFixed(2)),
+      "Desarrollo total (mm)": Number((res?.total ?? 0).toFixed(2)),
+    };
+    const ws = XLSX.utils.json_to_sheet([fila]);
+    ws["!cols"] = Object.keys(fila).map(() => ({ wch: 22 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Remate");
+    const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    XLSX.writeFile(wb, `remate_${tipoRemate}_${ts}.xlsx`);
+    toast.success("Excel exportado");
+  };
 
   const calcular = () => {
     const K = getK(material);
