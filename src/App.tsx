@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import AppLayout from "./components/AppLayout";
 import CalculadoraPage from "./pages/CalculadoraPage";
 import FichaPiezaRapidaPage from "./pages/FichaPiezaRapidaPage";
+import RematesPage from "./pages/RematesPage";
 import ValidacionPage from "./pages/ValidacionPage";
 import HistorialPage from "./pages/HistorialPage";
 import MaterialesPage from "./pages/MaterialesPage";
@@ -28,6 +29,7 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/calculadora" element={<CalculadoraPage />} />
               <Route path="/fichapiezarapida" element={<FichaPiezaRapidaPage />} />
+              <Route path="/remates" element={<RematesPage />} />
               <Route path="/validacion" element={<ValidacionPage />} />
               <Route path="/historial" element={<HistorialPage />} />
               <Route path="/materiales" element={<MaterialesPage />} />
