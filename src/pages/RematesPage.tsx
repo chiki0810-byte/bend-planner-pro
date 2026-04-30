@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import * as XLSX from "xlsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Scissors, Calculator } from "lucide-react";
+import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 
 type TipoRemate = "recto" | "conico";
@@ -55,6 +56,42 @@ const RematesPage = () => {
   const [espesor, setEspesor] = useState<string>("");
   const [solape, setSolape] = useState<string>("");
   const [res, setRes] = useState<Resultados | null>(null);
+  const [fotoPlano, setFotoPlano] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onPickFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setFotoPlano(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const exportarExcel = () => {
+    const fila = {
+      "Tipo de remate": tipoRemate,
+      "Medida derecha (mm)": Number(medidaDerecha) || 0,
+      "Medida izquierda (mm)": Number(medidaIzquierda) || 0,
+      "Punta grande (mm)": Number(puntaGrande) || 0,
+      "Punta pequeña (mm)": Number(puntaPequena) || 0,
+      "Altura (mm)": Number(altura) || 0,
+      "Espesor (mm)": Number(espesor) || 0,
+      "Material": material,
+      "Solape (mm)": Number(solape) || 0,
+      "Desarrollo derecha (mm)": Number((res?.derecha ?? 0).toFixed(2)),
+      "Desarrollo izquierda (mm)": Number((res?.izquierda ?? 0).toFixed(2)),
+      "Desarrollo punta grande (mm)": Number((res?.puntaA ?? 0).toFixed(2)),
+      "Desarrollo punta pequeña (mm)": Number((res?.puntaB ?? 0).toFixed(2)),
+      "Desarrollo total (mm)": Number((res?.total ?? 0).toFixed(2)),
+    };
+    const ws = XLSX.utils.json_to_sheet([fila]);
+    ws["!cols"] = Object.keys(fila).map(() => ({ wch: 22 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Remate");
+    const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+    XLSX.writeFile(wb, `remate_${tipoRemate}_${ts}.xlsx`);
+    toast.success("Excel exportado");
+  };
 
   const calcular = () => {
     const K = getK(material);
@@ -117,6 +154,42 @@ const RematesPage = () => {
               <CardTitle className="text-lg">Parámetros</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Foto del plano</Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPickFoto}
+                  className="hidden"
+                />
+                {fotoPlano ? (
+                  <div className="relative rounded-lg overflow-hidden border border-sky-500/30">
+                    <img src={fotoPlano} alt="Plano" className="w-full h-48 object-contain bg-black/40" />
+                    <button
+                      type="button"
+                      onClick={() => { setFotoPlano(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-black"
+                      aria-label="Quitar imagen"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-sky-500/40 bg-sky-500/5 text-sky-300 hover:bg-sky-500/10 transition"
+                  >
+                    <ImagePlus className="w-7 h-7" />
+                    <span className="text-sm font-medium">Tocar para añadir plano</span>
+                    <span className="text-[10px] uppercase tracking-wider text-sky-400/70">
+                      Cámara · Galería · Archivos
+                    </span>
+                  </button>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label>Tipo de remate</Label>
                 <Select value={tipoRemate} onValueChange={(v) => setTipoRemate(v as TipoRemate)}>
@@ -229,6 +302,15 @@ const RematesPage = () => {
               <Button onClick={calcular} size="lg" className="w-full">
                 <Calculator className="w-4 h-4 mr-2" />
                 Calcular remate
+              </Button>
+              <Button
+                onClick={exportarExcel}
+                size="lg"
+                variant="outline"
+                className="w-full border-sky-500/40 text-sky-200 hover:bg-sky-500/10"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Exportar a Excel
               </Button>
             </CardContent>
           </Card>
