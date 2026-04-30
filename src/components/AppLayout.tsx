@@ -67,7 +67,7 @@ const AppLayout = () => {
       </main>
 
       {/* Bottom nav (mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 grid grid-cols-6 bg-[hsl(218_40%_8%)] border-t border-sky-500/20 text-sky-100">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 grid grid-cols-7 bg-[hsl(218_40%_8%)] border-t border-sky-500/20 text-sky-100">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
