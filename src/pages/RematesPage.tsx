@@ -1,12 +1,15 @@
 import { useRef, useState } from "react";
-import * as XLSX from "xlsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X } from "lucide-react";
+import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X, FileDown, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { useRemates } from "@/state/RematesContext";
+import { exportRemateExcel, exportRematePdf, RemateExportData } from "@/lib/rematesExport";
+import logoEmpresa from "@/assets/logo_empresa.png";
 
 type TipoRemate = "recto" | "conico";
 
@@ -46,6 +49,7 @@ interface Resultados {
 const fmt = (n: number) => (n ? n.toFixed(2) : "—");
 
 const RematesPage = () => {
+  const [modoRapido, setModoRapido] = useState(false);
   const [tipoRemate, setTipoRemate] = useState<TipoRemate>("recto");
   const [material, setMaterial] = useState<string>("Acero");
   const [medidaDerecha, setMedidaDerecha] = useState<string>("");
@@ -58,6 +62,10 @@ const RematesPage = () => {
   const [res, setRes] = useState<Resultados | null>(null);
   const [fotoPlano, setFotoPlano] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { add } = useRemates();
+
+  // En modo rápido siempre forzamos cónico
+  const tipoEfectivo: TipoRemate = modoRapido ? "conico" : tipoRemate;
 
   const onPickFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,42 +75,45 @@ const RematesPage = () => {
     reader.readAsDataURL(file);
   };
 
+  const buildExportData = (r: Resultados): RemateExportData => ({
+    tipo: tipoEfectivo,
+    material,
+    espesor: Number(espesor) || 0,
+    solape: modoRapido ? 0 : (Number(solape) || 0),
+    medidaDerecha: modoRapido ? 0 : (Number(medidaDerecha) || 0),
+    medidaIzquierda: modoRapido ? 0 : (Number(medidaIzquierda) || 0),
+    puntaGrande: Number(puntaGrande) || 0,
+    puntaPequena: Number(puntaPequena) || 0,
+    altura: modoRapido ? 0 : (Number(altura) || 0),
+    desarrollo_derecha: r.derecha,
+    desarrollo_izquierda: r.izquierda,
+    desarrollo_puntaA: r.puntaA,
+    desarrollo_puntaB: r.puntaB,
+    desarrollo_total: r.total,
+    foto: modoRapido ? null : fotoPlano,
+  });
+
   const exportarExcel = () => {
-    const fila = {
-      "Tipo de remate": tipoRemate,
-      "Medida derecha (mm)": Number(medidaDerecha) || 0,
-      "Medida izquierda (mm)": Number(medidaIzquierda) || 0,
-      "Punta grande (mm)": Number(puntaGrande) || 0,
-      "Punta pequeña (mm)": Number(puntaPequena) || 0,
-      "Altura (mm)": Number(altura) || 0,
-      "Espesor (mm)": Number(espesor) || 0,
-      "Material": material,
-      "Solape (mm)": Number(solape) || 0,
-      "Desarrollo derecha (mm)": Number((res?.derecha ?? 0).toFixed(2)),
-      "Desarrollo izquierda (mm)": Number((res?.izquierda ?? 0).toFixed(2)),
-      "Desarrollo punta grande (mm)": Number((res?.puntaA ?? 0).toFixed(2)),
-      "Desarrollo punta pequeña (mm)": Number((res?.puntaB ?? 0).toFixed(2)),
-      "Desarrollo total (mm)": Number((res?.total ?? 0).toFixed(2)),
-    };
-    const ws = XLSX.utils.json_to_sheet([fila]);
-    ws["!cols"] = Object.keys(fila).map(() => ({ wch: 22 }));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Remate");
-    const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-    XLSX.writeFile(wb, `remate_${tipoRemate}_${ts}.xlsx`);
+    if (!res) { toast.error("Calcula primero"); return; }
+    exportRemateExcel(buildExportData(res));
     toast.success("Excel exportado");
+  };
+
+  const exportarPdf = async () => {
+    if (!res) { toast.error("Calcula primero"); return; }
+    await exportRematePdf(buildExportData(res), logoEmpresa);
+    toast.success("PDF exportado");
   };
 
   const calcular = () => {
     const K = getK(material);
 
-    const DR = Number(medidaDerecha) || 0;
-    const IZ = Number(medidaIzquierda) || 0;
+    const DR = modoRapido ? 0 : (Number(medidaDerecha) || 0);
+    const IZ = modoRapido ? 0 : (Number(medidaIzquierda) || 0);
     const A = Number(puntaGrande) || 0;
     const B = Number(puntaPequena) || 0;
-    // const H = Number(altura) || 0; // reservado
     const t = Number(espesor) || 0;
-    const S = Number(solape) || 0;
+    const S = modoRapido ? 0 : (Number(solape) || 0);
 
     const corr = 2 * Math.PI * K * t;
 
@@ -112,7 +123,7 @@ const RematesPage = () => {
     let desarrolloPuntaB = 0;
     let desarrolloTotal = 0;
 
-    if (tipoRemate === "recto") {
+    if (tipoEfectivo === "recto") {
       desarrolloDerecha = DR + corr;
       desarrolloIzquierda = IZ + corr;
       desarrolloTotal = desarrolloDerecha + desarrolloIzquierda + S;
@@ -122,12 +133,32 @@ const RematesPage = () => {
       desarrolloTotal = desarrolloPuntaA + desarrolloPuntaB + S;
     }
 
-    setRes({
+    const r: Resultados = {
       derecha: desarrolloDerecha,
       izquierda: desarrolloIzquierda,
       puntaA: desarrolloPuntaA,
       puntaB: desarrolloPuntaB,
       total: desarrolloTotal,
+    };
+    setRes(r);
+
+    // Guardar al historial
+    add({
+      tipo: tipoEfectivo,
+      derecha: DR,
+      izquierda: IZ,
+      puntaA: A,
+      puntaB: B,
+      altura: modoRapido ? 0 : (Number(altura) || 0),
+      espesor: t,
+      material,
+      solape: S,
+      desarrollo_derecha: desarrolloDerecha,
+      desarrollo_izquierda: desarrolloIzquierda,
+      desarrollo_puntaA: desarrolloPuntaA,
+      desarrollo_puntaB: desarrolloPuntaB,
+      desarrollo_total: desarrolloTotal,
+      foto: modoRapido ? null : fotoPlano,
     });
 
     toast.success(`Desarrollo total: ${desarrolloTotal.toFixed(2)} mm`);
@@ -136,15 +167,22 @@ const RematesPage = () => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        <header className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30">
-            <Scissors className="w-6 h-6 text-sky-400" />
+        <header className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30">
+              <Scissors className="w-6 h-6 text-sky-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Remates</h1>
+              <p className="text-sm text-muted-foreground">
+                Cálculo de desarrollo para remates rectos y cónicos
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Remates</h1>
-            <p className="text-sm text-muted-foreground">
-              Cálculo de desarrollo para remates rectos y cónicos
-            </p>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${modoRapido ? "border-amber-500/40 bg-amber-500/10" : "border-sky-500/20 bg-sky-500/5"}`}>
+            <Zap className={`w-4 h-4 ${modoRapido ? "text-amber-300" : "text-sky-400"}`} />
+            <Label htmlFor="modo-rapido" className="text-sm cursor-pointer">Modo rápido</Label>
+            <Switch id="modo-rapido" checked={modoRapido} onCheckedChange={setModoRapido} />
           </div>
         </header>
 
@@ -154,52 +192,56 @@ const RematesPage = () => {
               <CardTitle className="text-lg">Parámetros</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Foto del plano</Label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={onPickFoto}
-                  className="hidden"
-                />
-                {fotoPlano ? (
-                  <div className="relative rounded-lg overflow-hidden border border-sky-500/30">
-                    <img src={fotoPlano} alt="Plano" className="w-full h-48 object-contain bg-black/40" />
+              {!modoRapido && (
+                <div className="space-y-2">
+                  <Label>Foto del plano</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={onPickFoto}
+                    className="hidden"
+                  />
+                  {fotoPlano ? (
+                    <div className="relative rounded-lg overflow-hidden border border-sky-500/30">
+                      <img src={fotoPlano} alt="Plano" className="w-full h-48 object-contain bg-black/40" />
+                      <button
+                        type="button"
+                        onClick={() => { setFotoPlano(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                        className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-black"
+                        aria-label="Quitar imagen"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => { setFotoPlano(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-black"
-                      aria-label="Quitar imagen"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-sky-500/40 bg-sky-500/5 text-sky-300 hover:bg-sky-500/10 transition"
                     >
-                      <X className="w-4 h-4" />
+                      <ImagePlus className="w-7 h-7" />
+                      <span className="text-sm font-medium">Tocar para añadir plano</span>
+                      <span className="text-[10px] uppercase tracking-wider text-sky-400/70">
+                        Cámara · Galería · Archivos
+                      </span>
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-sky-500/40 bg-sky-500/5 text-sky-300 hover:bg-sky-500/10 transition"
-                  >
-                    <ImagePlus className="w-7 h-7" />
-                    <span className="text-sm font-medium">Tocar para añadir plano</span>
-                    <span className="text-[10px] uppercase tracking-wider text-sky-400/70">
-                      Cámara · Galería · Archivos
-                    </span>
-                  </button>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
-              <div className="space-y-2">
-                <Label>Tipo de remate</Label>
-                <Select value={tipoRemate} onValueChange={(v) => setTipoRemate(v as TipoRemate)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recto">Recto</SelectItem>
-                    <SelectItem value="conico">Cónico</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {!modoRapido && (
+                <div className="space-y-2">
+                  <Label>Tipo de remate</Label>
+                  <Select value={tipoRemate} onValueChange={(v) => setTipoRemate(v as TipoRemate)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="recto">Recto</SelectItem>
+                      <SelectItem value="conico">Cónico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Material</Label>
@@ -215,103 +257,65 @@ const RematesPage = () => {
                 </Select>
               </div>
 
-              {tipoRemate === "recto" && (
+              {!modoRapido && tipoRemate === "recto" && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Medida derecha (mm)</Label>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      value={medidaDerecha}
-                      onChange={(e) => setMedidaDerecha(e.target.value)}
-                      placeholder="0"
-                    />
+                    <Input type="number" inputMode="decimal" value={medidaDerecha} onChange={(e) => setMedidaDerecha(e.target.value)} placeholder="0" />
                   </div>
                   <div className="space-y-2">
                     <Label>Medida izquierda (mm)</Label>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      value={medidaIzquierda}
-                      onChange={(e) => setMedidaIzquierda(e.target.value)}
-                      placeholder="0"
-                    />
+                    <Input type="number" inputMode="decimal" value={medidaIzquierda} onChange={(e) => setMedidaIzquierda(e.target.value)} placeholder="0" />
                   </div>
                 </div>
               )}
 
-              {tipoRemate === "conico" && (
+              {(modoRapido || tipoRemate === "conico") && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Punta grande (mm)</Label>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      value={puntaGrande}
-                      onChange={(e) => setPuntaGrande(e.target.value)}
-                      placeholder="0"
-                    />
+                    <Input type="number" inputMode="decimal" value={puntaGrande} onChange={(e) => setPuntaGrande(e.target.value)} placeholder="0" />
                   </div>
                   <div className="space-y-2">
                     <Label>Punta pequeña (mm)</Label>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      value={puntaPequena}
-                      onChange={(e) => setPuntaPequena(e.target.value)}
-                      placeholder="0"
-                    />
+                    <Input type="number" inputMode="decimal" value={puntaPequena} onChange={(e) => setPuntaPequena(e.target.value)} placeholder="0" />
                   </div>
-                  <div className="space-y-2 col-span-2">
-                    <Label>Altura (mm)</Label>
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      value={altura}
-                      onChange={(e) => setAltura(e.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
+                  {!modoRapido && (
+                    <div className="space-y-2 col-span-2">
+                      <Label>Altura (mm)</Label>
+                      <Input type="number" inputMode="decimal" value={altura} onChange={(e) => setAltura(e.target.value)} placeholder="0" />
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className={`grid ${modoRapido ? "grid-cols-1" : "grid-cols-2"} gap-3`}>
                 <div className="space-y-2">
                   <Label>Espesor (mm)</Label>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.1"
-                    value={espesor}
-                    onChange={(e) => setEspesor(e.target.value)}
-                    placeholder="0"
-                  />
+                  <Input type="number" inputMode="decimal" step="0.1" value={espesor} onChange={(e) => setEspesor(e.target.value)} placeholder="0" />
                 </div>
-                <div className="space-y-2">
-                  <Label>Solape (mm)</Label>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    value={solape}
-                    onChange={(e) => setSolape(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
+                {!modoRapido && (
+                  <div className="space-y-2">
+                    <Label>Solape (mm)</Label>
+                    <Input type="number" inputMode="decimal" value={solape} onChange={(e) => setSolape(e.target.value)} placeholder="0" />
+                  </div>
+                )}
               </div>
 
               <Button onClick={calcular} size="lg" className="w-full">
                 <Calculator className="w-4 h-4 mr-2" />
                 Calcular remate
               </Button>
-              <Button
-                onClick={exportarExcel}
-                size="lg"
-                variant="outline"
-                className="w-full border-sky-500/40 text-sky-200 hover:bg-sky-500/10"
-              >
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Exportar a Excel
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button onClick={exportarExcel} size="lg" variant="outline" className="border-sky-500/40 text-sky-200 hover:bg-sky-500/10">
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Excel
+                </Button>
+                <Button onClick={exportarPdf} size="lg" variant="outline" className="border-sky-500/40 text-sky-200 hover:bg-sky-500/10">
+                  <FileDown className="w-4 h-4 mr-2" />
+                  PDF
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -320,7 +324,12 @@ const RematesPage = () => {
               <CardTitle className="text-lg">Resultados</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {tipoRemate === "recto" ? (
+              {modoRapido ? (
+                <>
+                  <ResultRow label="Desarrollo punta A" value={fmt(res?.puntaA ?? 0)} />
+                  <ResultRow label="Desarrollo punta B" value={fmt(res?.puntaB ?? 0)} />
+                </>
+              ) : tipoRemate === "recto" ? (
                 <>
                   <ResultRow label="Desarrollo derecha" value={fmt(res?.derecha ?? 0)} />
                   <ResultRow label="Desarrollo izquierda" value={fmt(res?.izquierda ?? 0)} />

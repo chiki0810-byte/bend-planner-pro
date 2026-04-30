@@ -8,12 +8,15 @@ import AppLayout from "./components/AppLayout";
 import CalculadoraPage from "./pages/CalculadoraPage";
 import FichaPiezaRapidaPage from "./pages/FichaPiezaRapidaPage";
 import RematesPage from "./pages/RematesPage";
+import HistorialRematesPage from "./pages/HistorialRematesPage";
+import DetalleRematePage from "./pages/DetalleRematePage";
 import ValidacionPage from "./pages/ValidacionPage";
 import HistorialPage from "./pages/HistorialPage";
 import MaterialesPage from "./pages/MaterialesPage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
+import { RematesProvider } from "./state/RematesContext";
 
 const queryClient = new QueryClient();
 
@@ -24,19 +27,23 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AppStateProvider>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route element={<AppLayout />}>
-              <Route path="/calculadora" element={<CalculadoraPage />} />
-              <Route path="/fichapiezarapida" element={<FichaPiezaRapidaPage />} />
-              <Route path="/remates" element={<RematesPage />} />
-              <Route path="/validacion" element={<ValidacionPage />} />
-              <Route path="/historial" element={<HistorialPage />} />
-              <Route path="/materiales" element={<MaterialesPage />} />
-              <Route path="/configuracion" element={<ConfiguracionPage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <RematesProvider>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route element={<AppLayout />}>
+                <Route path="/calculadora" element={<CalculadoraPage />} />
+                <Route path="/fichapiezarapida" element={<FichaPiezaRapidaPage />} />
+                <Route path="/remates" element={<RematesPage />} />
+                <Route path="/historial-remates" element={<HistorialRematesPage />} />
+                <Route path="/historial-remates/:id" element={<DetalleRematePage />} />
+                <Route path="/validacion" element={<ValidacionPage />} />
+                <Route path="/historial" element={<HistorialPage />} />
+                <Route path="/materiales" element={<MaterialesPage />} />
+                <Route path="/configuracion" element={<ConfiguracionPage />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </RematesProvider>
         </AppStateProvider>
       </BrowserRouter>
     </TooltipProvider>
