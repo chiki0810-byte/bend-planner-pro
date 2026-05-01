@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X, FileDown, Zap } from "lucide-react";
+import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X, FileDown, Zap, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { useRemates } from "@/state/RematesContext";
 import { exportRemateExcel, exportRematePdf, RemateExportData } from "@/lib/rematesExport";
 import logoEmpresa from "@/assets/logo_empresa.png";
+import RematesProfesional from "@/components/RematesProfesional";
 
 type TipoRemate = "recto" | "conico";
 
@@ -50,6 +51,7 @@ const fmt = (n: number) => (n ? n.toFixed(2) : "—");
 
 const RematesPage = () => {
   const [modoRapido, setModoRapido] = useState(false);
+  const [modoPro, setModoPro] = useState(false);
   const [tipoRemate, setTipoRemate] = useState<TipoRemate>("recto");
   const [material, setMaterial] = useState<string>("Acero");
   const [medidaDerecha, setMedidaDerecha] = useState<string>("");
@@ -179,12 +181,28 @@ const RematesPage = () => {
               </p>
             </div>
           </div>
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${modoRapido ? "border-amber-500/40 bg-amber-500/10" : "border-sky-500/20 bg-sky-500/5"}`}>
-            <Zap className={`w-4 h-4 ${modoRapido ? "text-amber-300" : "text-sky-400"}`} />
-            <Label htmlFor="modo-rapido" className="text-sm cursor-pointer">Modo rápido</Label>
-            <Switch id="modo-rapido" checked={modoRapido} onCheckedChange={setModoRapido} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${modoPro ? "border-amber-500/40 bg-amber-500/10" : "border-amber-500/20 bg-amber-500/5"}`}>
+              <Layers className={`w-4 h-4 ${modoPro ? "text-amber-300" : "text-amber-400/70"}`} />
+              <Label htmlFor="modo-pro" className="text-sm cursor-pointer">Modo profesional</Label>
+              <Switch id="modo-pro" checked={modoPro} onCheckedChange={(v) => { setModoPro(v); if (v) setModoRapido(false); }} />
+            </div>
+            {!modoPro && (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${modoRapido ? "border-amber-500/40 bg-amber-500/10" : "border-sky-500/20 bg-sky-500/5"}`}>
+                <Zap className={`w-4 h-4 ${modoRapido ? "text-amber-300" : "text-sky-400"}`} />
+                <Label htmlFor="modo-rapido" className="text-sm cursor-pointer">Modo rápido</Label>
+                <Switch id="modo-rapido" checked={modoRapido} onCheckedChange={setModoRapido} />
+              </div>
+            )}
           </div>
         </header>
+
+        {modoPro ? (
+          <RematesProfesional
+            puntaGrandeRef={Number(puntaGrande) || undefined}
+            puntaPequenaRef={Number(puntaPequena) || undefined}
+          />
+        ) : (
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="border-sky-500/20">
@@ -356,6 +374,7 @@ const RematesPage = () => {
             </CardContent>
           </Card>
         </div>
+        )}
       </div>
     </div>
   );
