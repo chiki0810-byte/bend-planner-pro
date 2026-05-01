@@ -248,6 +248,8 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
             </button>
           )}
         </div>
+
+        {tipoEfectivo === "recto_simetrico" ? (
           <PliegueList
             titulo="Pliegues base (se aplica a ambas puntas)"
             color="amber"
