@@ -380,4 +380,26 @@ const ResultBox = ({
   </div>
 );
 
+const PreviewBar = ({ a, b }: { a: number; b: number }) => {
+  const total = (a || 0) + (b || 0);
+  const pa = total > 0 ? (a / total) * 100 : 50;
+  const pb = total > 0 ? (b / total) * 100 : 50;
+  return (
+    <div className="w-full h-8 rounded-md overflow-hidden flex border border-border bg-muted/20">
+      <div
+        className="h-full bg-sky-500/80 flex items-center justify-center text-[10px] font-semibold text-white"
+        style={{ width: `${pa}%` }}
+      >
+        {pa > 12 ? "A" : ""}
+      </div>
+      <div
+        className="h-full bg-emerald-500/80 flex items-center justify-center text-[10px] font-semibold text-white"
+        style={{ width: `${pb}%` }}
+      >
+        {pb > 12 ? "B" : ""}
+      </div>
+    </div>
+  );
+};
+
 export default RematesProfesional;
