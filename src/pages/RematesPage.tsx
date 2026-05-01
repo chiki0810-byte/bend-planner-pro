@@ -374,6 +374,7 @@ const RematesPage = () => {
             </CardContent>
           </Card>
         </div>
+        )}
       </div>
     </div>
   );
