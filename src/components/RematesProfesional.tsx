@@ -221,7 +221,33 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
           </div>
         </div>
 
-        {tipoEfectivo === "recto_simetrico" ? (
+        {/* Foto del plano */}
+        <div className="space-y-2">
+          <Label>Foto del plano</Label>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={onPickFoto} className="hidden" />
+          {fotoPlano ? (
+            <div className="relative rounded-lg overflow-hidden border border-amber-500/30">
+              <img src={fotoPlano} alt="Plano" className="w-full h-40 object-contain bg-black/40" />
+              <button
+                type="button"
+                onClick={() => { setFotoPlano(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-black"
+                aria-label="Quitar imagen"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full flex flex-col items-center justify-center gap-2 h-24 rounded-lg border-2 border-dashed border-amber-500/40 bg-amber-500/5 text-amber-200 hover:bg-amber-500/10 transition"
+            >
+              <ImagePlus className="w-6 h-6" />
+              <span className="text-sm font-medium">Tocar para añadir plano</span>
+            </button>
+          )}
+        </div>
           <PliegueList
             titulo="Pliegues base (se aplica a ambas puntas)"
             color="amber"
