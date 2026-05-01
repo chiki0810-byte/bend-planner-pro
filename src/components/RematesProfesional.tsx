@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Calculator, Layers } from "lucide-react";
+import { Plus, Trash2, Calculator, Layers, ImagePlus, X, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import { exportRemateProPdf, PliegueExp } from "@/lib/rematesProExport";
+import logoEmpresa from "@/assets/logo_empresa.png";
 
 type TipoPro = "recto_simetrico" | "recto_asimetrico" | "conico_enchufable";
 
