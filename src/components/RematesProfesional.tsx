@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, Calculator, Layers } from "lucide-react";
+import { Plus, Trash2, Calculator, Layers, ImagePlus, X, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import { exportRemateProPdf, PliegueExp } from "@/lib/rematesProExport";
+import logoEmpresa from "@/assets/logo_empresa.png";
 
 type TipoPro = "recto_simetrico" | "recto_asimetrico" | "conico_enchufable";
 
@@ -76,8 +78,44 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
   const [pliegues_puntaB, setB] = useState<Pliegue[]>([newPliegue()]);
 
   const [res, setRes] = useState<{ a: number; b: number; total: number; solapeUsado: number } | null>(null);
+  const [fotoPlano, setFotoPlano] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Detección automática (solo si el usuario no ha tocado el selector)
+  const onPickFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setFotoPlano(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const toExp = (lista: Pliegue[]): PliegueExp[] =>
+    lista.map((p) => ({
+      longitud_mm: Number(p.longitud_mm) || 0,
+      angulo_deg: Number(p.angulo_deg) || 0,
+      radio_mm: Number(p.radio_mm) || 0,
+    }));
+
+  const exportarPdf = async () => {
+    if (!res) { toast.error("Calcula primero"); return; }
+    await exportRemateProPdf(
+      {
+        tipo: tipoEfectivo,
+        material,
+        espesor: Number(espesor) || 0,
+        solape: res.solapeUsado,
+        pliegues_base: tipoEfectivo === "recto_simetrico" ? toExp(pliegues_base) : undefined,
+        pliegues_puntaA: tipoEfectivo !== "recto_simetrico" ? toExp(pliegues_puntaA) : undefined,
+        pliegues_puntaB: tipoEfectivo !== "recto_simetrico" ? toExp(pliegues_puntaB) : undefined,
+        desarrollo_puntaA: res.a,
+        desarrollo_puntaB: res.b,
+        desarrollo_total: res.total,
+        foto: fotoPlano,
+      },
+      logoEmpresa,
+    );
+    toast.success("PDF profesional exportado");
+  };
   const tipoEfectivo: TipoPro = useMemo(() => {
     if (tipoTouched) return tipo;
     if (puntaGrandeRef && puntaPequenaRef) {
@@ -183,6 +221,34 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
           </div>
         </div>
 
+        {/* Foto del plano */}
+        <div className="space-y-2">
+          <Label>Foto del plano</Label>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={onPickFoto} className="hidden" />
+          {fotoPlano ? (
+            <div className="relative rounded-lg overflow-hidden border border-amber-500/30">
+              <img src={fotoPlano} alt="Plano" className="w-full h-40 object-contain bg-black/40" />
+              <button
+                type="button"
+                onClick={() => { setFotoPlano(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-black"
+                aria-label="Quitar imagen"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full flex flex-col items-center justify-center gap-2 h-24 rounded-lg border-2 border-dashed border-amber-500/40 bg-amber-500/5 text-amber-200 hover:bg-amber-500/10 transition"
+            >
+              <ImagePlus className="w-6 h-6" />
+              <span className="text-sm font-medium">Tocar para añadir plano</span>
+            </button>
+          )}
+        </div>
+
         {tipoEfectivo === "recto_simetrico" ? (
           <PliegueList
             titulo="Pliegues base (se aplica a ambas puntas)"
@@ -219,10 +285,28 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
         </Button>
 
         {res && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
-            <ResultBox label="Desarrollo punta A" value={res.a} />
-            <ResultBox label="Desarrollo punta B" value={res.b} />
-            <ResultBox label="Total (con solape)" value={res.total} highlight subLabel={`solape ${res.solapeUsado} mm`} />
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <ResultBox label="Desarrollo punta A" value={res.a} />
+              <ResultBox label="Desarrollo punta B" value={res.b} />
+              <ResultBox label="Total (con solape)" value={res.total} highlight subLabel={`solape ${res.solapeUsado} mm`} />
+            </div>
+
+            {/* Vista previa proporcional */}
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Vista previa del desarrollo</Label>
+              <PreviewBar a={res.a} b={res.b} />
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Punta A: <strong className="text-sky-300">{res.a.toFixed(2)} mm</strong></span>
+                <span>Punta B: <strong className="text-emerald-300">{res.b.toFixed(2)} mm</strong></span>
+                <span>Total: <strong className="text-amber-300">{res.total.toFixed(2)} mm</strong></span>
+              </div>
+            </div>
+
+            <Button onClick={exportarPdf} size="lg" variant="outline" className="w-full border-amber-500/40 text-amber-200 hover:bg-amber-500/10">
+              <FileDown className="w-4 h-4 mr-2" />
+              Exportar PDF profesional
+            </Button>
           </div>
         )}
       </CardContent>
@@ -295,5 +379,27 @@ const ResultBox = ({
     {subLabel && <div className="text-[10px] text-muted-foreground mt-1">{subLabel}</div>}
   </div>
 );
+
+const PreviewBar = ({ a, b }: { a: number; b: number }) => {
+  const total = (a || 0) + (b || 0);
+  const pa = total > 0 ? (a / total) * 100 : 50;
+  const pb = total > 0 ? (b / total) * 100 : 50;
+  return (
+    <div className="w-full h-8 rounded-md overflow-hidden flex border border-border bg-muted/20">
+      <div
+        className="h-full bg-sky-500/80 flex items-center justify-center text-[10px] font-semibold text-white"
+        style={{ width: `${pa}%` }}
+      >
+        {pa > 12 ? "A" : ""}
+      </div>
+      <div
+        className="h-full bg-emerald-500/80 flex items-center justify-center text-[10px] font-semibold text-white"
+        style={{ width: `${pb}%` }}
+      >
+        {pb > 12 ? "B" : ""}
+      </div>
+    </div>
+  );
+};
 
 export default RematesProfesional;
