@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X, FileDown, Zap } from "lucide-react";
+import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X, FileDown, Zap, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { useRemates } from "@/state/RematesContext";
 import { exportRemateExcel, exportRematePdf, RemateExportData } from "@/lib/rematesExport";
 import logoEmpresa from "@/assets/logo_empresa.png";
+import RematesProfesional from "@/components/RematesProfesional";
 
 type TipoRemate = "recto" | "conico";
 
@@ -50,6 +51,7 @@ const fmt = (n: number) => (n ? n.toFixed(2) : "—");
 
 const RematesPage = () => {
   const [modoRapido, setModoRapido] = useState(false);
+  const [modoPro, setModoPro] = useState(false);
   const [tipoRemate, setTipoRemate] = useState<TipoRemate>("recto");
   const [material, setMaterial] = useState<string>("Acero");
   const [medidaDerecha, setMedidaDerecha] = useState<string>("");
