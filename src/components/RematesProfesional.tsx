@@ -285,10 +285,28 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
         </Button>
 
         {res && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
-            <ResultBox label="Desarrollo punta A" value={res.a} />
-            <ResultBox label="Desarrollo punta B" value={res.b} />
-            <ResultBox label="Total (con solape)" value={res.total} highlight subLabel={`solape ${res.solapeUsado} mm`} />
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <ResultBox label="Desarrollo punta A" value={res.a} />
+              <ResultBox label="Desarrollo punta B" value={res.b} />
+              <ResultBox label="Total (con solape)" value={res.total} highlight subLabel={`solape ${res.solapeUsado} mm`} />
+            </div>
+
+            {/* Vista previa proporcional */}
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">Vista previa del desarrollo</Label>
+              <PreviewBar a={res.a} b={res.b} />
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>Punta A: <strong className="text-sky-300">{res.a.toFixed(2)} mm</strong></span>
+                <span>Punta B: <strong className="text-emerald-300">{res.b.toFixed(2)} mm</strong></span>
+                <span>Total: <strong className="text-amber-300">{res.total.toFixed(2)} mm</strong></span>
+              </div>
+            </div>
+
+            <Button onClick={exportarPdf} size="lg" variant="outline" className="w-full border-amber-500/40 text-amber-200 hover:bg-amber-500/10">
+              <FileDown className="w-4 h-4 mr-2" />
+              Exportar PDF profesional
+            </Button>
           </div>
         )}
       </CardContent>
