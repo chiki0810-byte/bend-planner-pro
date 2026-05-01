@@ -78,8 +78,44 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
   const [pliegues_puntaB, setB] = useState<Pliegue[]>([newPliegue()]);
 
   const [res, setRes] = useState<{ a: number; b: number; total: number; solapeUsado: number } | null>(null);
+  const [fotoPlano, setFotoPlano] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Detección automática (solo si el usuario no ha tocado el selector)
+  const onPickFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setFotoPlano(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const toExp = (lista: Pliegue[]): PliegueExp[] =>
+    lista.map((p) => ({
+      longitud_mm: Number(p.longitud_mm) || 0,
+      angulo_deg: Number(p.angulo_deg) || 0,
+      radio_mm: Number(p.radio_mm) || 0,
+    }));
+
+  const exportarPdf = async () => {
+    if (!res) { toast.error("Calcula primero"); return; }
+    await exportRemateProPdf(
+      {
+        tipo: tipoEfectivo,
+        material,
+        espesor: Number(espesor) || 0,
+        solape: res.solapeUsado,
+        pliegues_base: tipoEfectivo === "recto_simetrico" ? toExp(pliegues_base) : undefined,
+        pliegues_puntaA: tipoEfectivo !== "recto_simetrico" ? toExp(pliegues_puntaA) : undefined,
+        pliegues_puntaB: tipoEfectivo !== "recto_simetrico" ? toExp(pliegues_puntaB) : undefined,
+        desarrollo_puntaA: res.a,
+        desarrollo_puntaB: res.b,
+        desarrollo_total: res.total,
+        foto: fotoPlano,
+      },
+      logoEmpresa,
+    );
+    toast.success("PDF profesional exportado");
+  };
   const tipoEfectivo: TipoPro = useMemo(() => {
     if (tipoTouched) return tipo;
     if (puntaGrandeRef && puntaPequenaRef) {
