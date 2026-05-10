@@ -14,6 +14,7 @@ import ValidacionPage from "./pages/ValidacionPage";
 import HistorialPage from "./pages/HistorialPage";
 import MaterialesPage from "./pages/MaterialesPage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
+import AsistenteIAPage from "./pages/AsistenteIAPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/historial" element={<HistorialPage />} />
                 <Route path="/materiales" element={<MaterialesPage />} />
                 <Route path="/configuracion" element={<ConfiguracionPage />} />
+                <Route path="/asistente-ia" element={<AsistenteIAPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
