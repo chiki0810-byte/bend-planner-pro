@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Calculator, Factory, FolderOpen, Layers, Settings, Home, ArrowLeft, FileText, Scissors, History, Sparkles, ListOrdered } from "lucide-react";
+import { Calculator, Factory, FolderOpen, Layers, Settings, Home, ArrowLeft, FileText, Scissors, History, Sparkles, ListOrdered, Cone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { to: "/validacion", label: "Validación", icon: Factory },
   { to: "/asistente-ia", label: "Asistente IA", icon: Sparkles },
   { to: "/secuencia", label: "Secuencia", icon: ListOrdered },
+  { to: "/plegado-pro", label: "Plegado Pro", icon: Cone },
   { to: "/historial", label: "Historial", icon: FolderOpen },
   { to: "/materiales", label: "Materiales", icon: Layers },
   { to: "/configuracion", label: "Ajustes", icon: Settings },
@@ -70,7 +71,7 @@ const AppLayout = () => {
       </main>
 
       {/* Bottom nav (mobile) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 grid grid-cols-10 bg-[hsl(218_40%_8%)] border-t border-sky-500/20 text-sky-100">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 grid grid-cols-11 bg-[hsl(218_40%_8%)] border-t border-sky-500/20 text-sky-100">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
