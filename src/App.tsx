@@ -16,6 +16,7 @@ import MaterialesPage from "./pages/MaterialesPage";
 import ConfiguracionPage from "./pages/ConfiguracionPage";
 import AsistenteIAPage from "./pages/AsistenteIAPage";
 import SecuenciaPlegadoPage from "./pages/SecuenciaPlegadoPage";
+import PlegadoProPage from "./pages/PlegadoProPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="/configuracion" element={<ConfiguracionPage />} />
                 <Route path="/asistente-ia" element={<AsistenteIAPage />} />
                 <Route path="/secuencia" element={<SecuenciaPlegadoPage />} />
+                <Route path="/plegado-pro" element={<PlegadoProPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
