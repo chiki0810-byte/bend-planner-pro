@@ -12,6 +12,7 @@ import {
   Layers3,
   SlidersHorizontal,
   Menu,
+  GitBranch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,7 @@ const navItems = [
   { to: "/calculadora", label: "Calculadora", icon: Calculator },
   { to: "/validacion", label: "Validación por Máquina", icon: Cpu },
   { to: "/secuencia", label: "Secuencia", icon: Workflow },
+  { to: "/pliegues-punta", label: "Pliegues por Punta", icon: GitBranch },
   { to: "/historial", label: "Historial", icon: FolderClock },
   { to: "/plantillas", label: "Plantillas", icon: LayoutTemplate },
   { to: "/materiales", label: "Materiales", icon: Layers3 },
