@@ -25,16 +25,12 @@ import {
 
 const navItems = [
   { to: "/calculadora", label: "Calculadora", icon: Calculator },
-  { to: "/fichapiezarapida", label: "Ficha", icon: FileText },
-  { to: "/remates", label: "Remates", icon: Scissors },
-  { to: "/historial-remates", label: "H. Remates", icon: History },
-  { to: "/validacion", label: "Validación", icon: Factory },
-  { to: "/asistente-ia", label: "Asistente IA", icon: Sparkles },
-  { to: "/secuencia", label: "Secuencia", icon: ListOrdered },
-  { to: "/plegado-pro", label: "Plegado Pro", icon: Cone },
-  { to: "/historial", label: "Historial", icon: FolderOpen },
-  { to: "/materiales", label: "Materiales", icon: Layers },
-  { to: "/configuracion", label: "Ajustes", icon: Settings },
+  { to: "/validacion", label: "Validación por Máquina", icon: Cpu },
+  { to: "/secuencia", label: "Secuencia", icon: Workflow },
+  { to: "/historial", label: "Historial", icon: FolderClock },
+  { to: "/plantillas", label: "Plantillas", icon: LayoutTemplate },
+  { to: "/materiales", label: "Materiales", icon: Layers3 },
+  { to: "/configuracion", label: "Ajustes", icon: SlidersHorizontal },
 ];
 
 // Bottom bar reducido para móvil (máx 3) — el resto vive en el drawer
