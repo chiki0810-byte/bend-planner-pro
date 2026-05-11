@@ -49,6 +49,7 @@ const App = () => (
                 <Route path="/secuencia" element={<SecuenciaPlegadoPage />} />
                 <Route path="/plegado-pro" element={<PlegadoProPage />} />
                 <Route path="/plantillas" element={<PlantillasPage />} />
+                <Route path="/pliegues-punta" element={<PlieguesPorPuntaPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
