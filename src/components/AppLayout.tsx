@@ -2,18 +2,15 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   Calculator,
-  Factory,
-  FolderOpen,
-  Layers,
-  Settings,
+  Cpu,
   Home,
   ArrowLeft,
-  FileText,
-  Scissors,
-  History,
   Sparkles,
-  ListOrdered,
-  Cone,
+  Workflow,
+  FolderClock,
+  LayoutTemplate,
+  Layers3,
+  SlidersHorizontal,
   Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
