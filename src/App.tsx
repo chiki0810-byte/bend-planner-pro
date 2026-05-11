@@ -47,6 +47,7 @@ const App = () => (
                 <Route path="/asistente-ia" element={<AsistenteIAPage />} />
                 <Route path="/secuencia" element={<SecuenciaPlegadoPage />} />
                 <Route path="/plegado-pro" element={<PlegadoProPage />} />
+                <Route path="/plantillas" element={<PlantillasPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
