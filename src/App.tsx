@@ -17,6 +17,7 @@ import ConfiguracionPage from "./pages/ConfiguracionPage";
 import AsistenteIAPage from "./pages/AsistenteIAPage";
 import SecuenciaPlegadoPage from "./pages/SecuenciaPlegadoPage";
 import PlegadoProPage from "./pages/PlegadoProPage";
+import PlantillasPage from "./pages/PlantillasPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
