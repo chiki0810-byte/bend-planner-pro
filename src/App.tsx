@@ -51,6 +51,7 @@ const App = () => (
                 <Route path="/plegado-pro" element={<PlegadoProPage />} />
                 <Route path="/plantillas" element={<PlantillasPage />} />
                 <Route path="/pliegues-punta" element={<PlieguesPorPuntaPage />} />
+                <Route path="/resultado-pieza" element={<ResultadoPiezaPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
