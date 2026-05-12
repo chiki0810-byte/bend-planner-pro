@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { GitBranch, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { GitBranch, Plus, Trash2, ArrowUp, ArrowDown, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +52,7 @@ const calcPliegue = (p: Pliegue, radio: number, k: number, espesor: number): Pli
 };
 
 const PlieguesPorPuntaPage = () => {
+  const navigate = useNavigate();
   const [material, setMaterial] = useState("Acero Dulce");
   const [espesor, setEspesor] = useState(1.0);
   const [kFactor, setKFactor] = useState(0.5);
@@ -290,6 +292,25 @@ const PlieguesPorPuntaPage = () => {
           <ResultBox label={`D:${desarrolloTotal.toFixed(0)}`} value={desarrolloTotal} highlight />
         </CardContent>
       </Card>
+
+      <Button
+        className="w-full"
+        onClick={() =>
+          navigate("/resultado-pieza", {
+            state: {
+              pliegues: [
+                ...plieguesA.map((pliegue, i) => ({ punta: "A" as const, pliegue, calc: calcsA[i] })),
+                ...plieguesB.map((pliegue, i) => ({ punta: "B" as const, pliegue, calc: calcsB[i] })),
+              ],
+              desarrolloPuntaA,
+              desarrolloPuntaB,
+              desarrolloTotal,
+            },
+          })
+        }
+      >
+        <FileText className="w-4 h-4 mr-2" /> Ver Resultado de Pieza
+      </Button>
     </div>
   );
 };

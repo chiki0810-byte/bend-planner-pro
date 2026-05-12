@@ -19,6 +19,7 @@ import SecuenciaPlegadoPage from "./pages/SecuenciaPlegadoPage";
 import PlegadoProPage from "./pages/PlegadoProPage";
 import PlantillasPage from "./pages/PlantillasPage";
 import PlieguesPorPuntaPage from "./pages/PlieguesPorPuntaPage";
+import ResultadoPiezaPage from "./pages/ResultadoPiezaPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/plegado-pro" element={<PlegadoProPage />} />
                 <Route path="/plantillas" element={<PlantillasPage />} />
                 <Route path="/pliegues-punta" element={<PlieguesPorPuntaPage />} />
+                <Route path="/resultado-pieza" element={<ResultadoPiezaPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
