@@ -30,6 +30,7 @@ const navItems = [
   { to: "/validacion", label: "Validación por Máquina", icon: Cpu },
   { to: "/secuencia", label: "Secuencia", icon: Workflow },
   { to: "/pliegues-punta", label: "Pliegues por Punta", icon: GitBranch },
+  { to: "/resultado-pieza", label: "Resultado de Pieza", icon: FileText },
   { to: "/historial", label: "Historial", icon: FolderClock },
   { to: "/plantillas", label: "Plantillas", icon: LayoutTemplate },
   { to: "/materiales", label: "Materiales", icon: Layers3 },
