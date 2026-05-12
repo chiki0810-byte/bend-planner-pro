@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { GitBranch, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { GitBranch, Plus, Trash2, ArrowUp, ArrowDown, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
