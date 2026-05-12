@@ -52,6 +52,7 @@ const calcPliegue = (p: Pliegue, radio: number, k: number, espesor: number): Pli
 };
 
 const PlieguesPorPuntaPage = () => {
+  const navigate = useNavigate();
   const [material, setMaterial] = useState("Acero Dulce");
   const [espesor, setEspesor] = useState(1.0);
   const [kFactor, setKFactor] = useState(0.5);
