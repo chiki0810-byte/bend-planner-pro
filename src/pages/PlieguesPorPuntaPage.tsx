@@ -292,6 +292,25 @@ const PlieguesPorPuntaPage = () => {
           <ResultBox label={`D:${desarrolloTotal.toFixed(0)}`} value={desarrolloTotal} highlight />
         </CardContent>
       </Card>
+
+      <Button
+        className="w-full"
+        onClick={() =>
+          navigate("/resultado-pieza", {
+            state: {
+              pliegues: [
+                ...plieguesA.map((pliegue, i) => ({ punta: "A" as const, pliegue, calc: calcsA[i] })),
+                ...plieguesB.map((pliegue, i) => ({ punta: "B" as const, pliegue, calc: calcsB[i] })),
+              ],
+              desarrolloPuntaA,
+              desarrolloPuntaB,
+              desarrolloTotal,
+            },
+          })
+        }
+      >
+        <FileText className="w-4 h-4 mr-2" /> Ver Resultado de Pieza
+      </Button>
     </div>
   );
 };
