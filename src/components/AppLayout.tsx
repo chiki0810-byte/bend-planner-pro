@@ -34,6 +34,7 @@ const navItems = [
   { to: "/pliegues-punta", label: "Pliegues por Punta", icon: GitBranch },
   { to: "/resultado-pieza", label: "Resultado de Pieza", icon: FileText },
   { to: "/validacion-maquina", label: "Validación de Máquina", icon: ShieldCheck },
+  { to: "/sugeridor-vueltas", label: "Sugeridor de Vueltas", icon: ListOrdered },
   { to: "/historial", label: "Historial", icon: FolderClock },
   { to: "/plantillas", label: "Plantillas", icon: LayoutTemplate },
   { to: "/materiales", label: "Materiales", icon: Layers3 },
