@@ -21,6 +21,7 @@ import PlantillasPage from "./pages/PlantillasPage";
 import PlieguesPorPuntaPage from "./pages/PlieguesPorPuntaPage";
 import ResultadoPiezaPage from "./pages/ResultadoPiezaPage";
 import ValidacionMaquinaPage from "./pages/ValidacionMaquinaPage";
+import SugeridorVueltasPage from "./pages/SugeridorVueltasPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
