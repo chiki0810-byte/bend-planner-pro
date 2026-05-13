@@ -236,7 +236,23 @@ const SugeridorVueltasPage = () => {
         <Button variant="outline" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4 mr-1" /> Volver
         </Button>
-        <Button disabled>
+        <Button
+          onClick={() =>
+            navigate("/remates-desiguales", {
+              state: {
+                ...state,
+                pliegues: input.pliegues,
+                material: input.material,
+                desarrolloTotal: input.desarrolloTotal,
+                desarrolloPuntaA: input.desarrolloPuntaA,
+                desarrolloPuntaB: input.desarrolloPuntaB,
+                validacion: input.validacion,
+                sugerencia: resultado,
+                sugerenciaIA: aiResult,
+              },
+            })
+          }
+        >
           Continuar <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       </div>

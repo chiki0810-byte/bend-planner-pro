@@ -22,6 +22,7 @@ import PlieguesPorPuntaPage from "./pages/PlieguesPorPuntaPage";
 import ResultadoPiezaPage from "./pages/ResultadoPiezaPage";
 import ValidacionMaquinaPage from "./pages/ValidacionMaquinaPage";
 import SugeridorVueltasPage from "./pages/SugeridorVueltasPage";
+import RematesDesigualesPage from "./pages/RematesDesigualesPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="/resultado-pieza" element={<ResultadoPiezaPage />} />
                 <Route path="/validacion-maquina" element={<ValidacionMaquinaPage />} />
                 <Route path="/sugeridor-vueltas" element={<SugeridorVueltasPage />} />
+                <Route path="/remates-desiguales" element={<RematesDesigualesPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
