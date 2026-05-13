@@ -15,6 +15,7 @@ import {
   GitBranch,
   FileText,
   ShieldCheck,
+  ListOrdered,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
