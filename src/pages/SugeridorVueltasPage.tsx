@@ -126,13 +126,20 @@ const SugeridorVueltasPage = () => {
       {/* Secuencia */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Secuencia recomendada</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            Secuencia recomendada
+            {ordenIAAplicado && (
+              <Badge className="bg-primary/15 text-primary border border-primary/30">
+                <Sparkles className="w-3 h-3 mr-1" /> Orden IA aplicado
+              </Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {resultado.pasos.length === 0 ? (
+          {pasosVisibles.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">Sin pliegues.</p>
           ) : (
-            resultado.pasos.map((p) => (
+            pasosVisibles.map((p) => (
               <div
                 key={p.paso}
                 className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-muted/30 text-sm"
