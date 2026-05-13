@@ -224,7 +224,23 @@ const ValidacionMaquinaPage = () => {
         <Button variant="outline" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4 mr-1" /> Volver
         </Button>
-        <Button disabled>
+        <Button
+          onClick={() =>
+            navigate("/sugeridor-vueltas", {
+              state: {
+                pliegues: input.pliegues,
+                desarrolloTotal: input.desarrolloTotal,
+                desarrolloPuntaA: input.desarrolloPuntaA,
+                desarrolloPuntaB: input.desarrolloPuntaB,
+                material: input.material,
+                remateDesigual: input.remateDesigual,
+                espesor: state.espesor,
+                validacion: resultado,
+              },
+            })
+          }
+          disabled={input.pliegues.length === 0}
+        >
           Continuar <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       </div>
