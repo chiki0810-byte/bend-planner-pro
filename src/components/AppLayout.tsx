@@ -16,7 +16,7 @@ import {
   FileText,
   ShieldCheck,
   ListOrdered,
-} from "lucide-react";
+  Scissors,
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
