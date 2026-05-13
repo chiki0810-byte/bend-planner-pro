@@ -57,6 +57,7 @@ const App = () => (
                 <Route path="/resultado-pieza" element={<ResultadoPiezaPage />} />
                 <Route path="/validacion-maquina" element={<ValidacionMaquinaPage />} />
                 <Route path="/sugeridor-vueltas" element={<SugeridorVueltasPage />} />
+                <Route path="/remates-desiguales" element={<RematesDesigualesPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
