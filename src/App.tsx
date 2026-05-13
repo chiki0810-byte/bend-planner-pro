@@ -22,6 +22,7 @@ import PlieguesPorPuntaPage from "./pages/PlieguesPorPuntaPage";
 import ResultadoPiezaPage from "./pages/ResultadoPiezaPage";
 import ValidacionMaquinaPage from "./pages/ValidacionMaquinaPage";
 import SugeridorVueltasPage from "./pages/SugeridorVueltasPage";
+import RematesDesigualesPage from "./pages/RematesDesigualesPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
