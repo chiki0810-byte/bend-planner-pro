@@ -14,6 +14,7 @@ import {
   Menu,
   GitBranch,
   FileText,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +32,7 @@ const navItems = [
   { to: "/secuencia", label: "Secuencia", icon: Workflow },
   { to: "/pliegues-punta", label: "Pliegues por Punta", icon: GitBranch },
   { to: "/resultado-pieza", label: "Resultado de Pieza", icon: FileText },
+  { to: "/validacion-maquina", label: "Validación de Máquina", icon: ShieldCheck },
   { to: "/historial", label: "Historial", icon: FolderClock },
   { to: "/plantillas", label: "Plantillas", icon: LayoutTemplate },
   { to: "/materiales", label: "Materiales", icon: Layers3 },

@@ -242,7 +242,30 @@ const ResultadoPiezaPage = () => {
         <Button variant="outline" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4 mr-1" /> Volver
         </Button>
-        <Button disabled>
+        <Button
+          onClick={() =>
+            navigate("/validacion-maquina", {
+              state: {
+                pliegues: pliegues.map((p) => ({
+                  punta: p.punta,
+                  longitud: p.pliegue.longitud,
+                  angulo: p.pliegue.angulo,
+                  anguloMaquina: p.calc.anguloMaquina,
+                  orientacion: p.pliegue.orientacion,
+                  radio: 0,
+                  espesor: 0,
+                  cierra: p.pliegue.cierra,
+                })),
+                desarrolloTotal: desTotal,
+                desarrolloPuntaA: desA,
+                desarrolloPuntaB: desB,
+                material: "",
+                remateDesigual: Math.abs(desA - desB) > 0.5,
+              },
+            })
+          }
+          disabled={pliegues.length === 0}
+        >
           Continuar <ArrowRight className="w-4 h-4 ml-1" />
         </Button>
       </div>
