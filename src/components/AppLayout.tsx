@@ -36,6 +36,7 @@ const navItems = [
   { to: "/resultado-pieza", label: "Resultado de Pieza", icon: FileText },
   { to: "/validacion-maquina", label: "Validación de Máquina", icon: ShieldCheck },
   { to: "/sugeridor-vueltas", label: "Sugeridor de Vueltas", icon: ListOrdered },
+  { to: "/remates-desiguales", label: "Remates Desiguales", icon: Scissors },
   { to: "/historial", label: "Historial", icon: FolderClock },
   { to: "/plantillas", label: "Plantillas", icon: LayoutTemplate },
   { to: "/materiales", label: "Materiales", icon: Layers3 },
