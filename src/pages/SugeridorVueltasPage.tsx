@@ -44,6 +44,34 @@ const SugeridorVueltasPage = () => {
   const [aiResult, setAiResult] = useState<any>(null);
   const online = typeof navigator !== "undefined" ? navigator.onLine : false;
 
+  // Si la IA devuelve ordenRecomendado, reordenamos los pasos por ordenOriginal
+  const pasosVisibles = useMemo(() => {
+    const ai = aiResult?.ordenRecomendado;
+    if (!Array.isArray(ai) || ai.length === 0) return resultado.pasos;
+    const byOrig = new Map(resultado.pasos.map((p) => [p.ordenOriginal, p]));
+    const reordenados: typeof resultado.pasos = [];
+    ai.forEach((it: any) => {
+      const orig = Number(it?.ordenOriginal ?? it?.orig ?? it?.paso);
+      const found = byOrig.get(orig);
+      if (found) {
+        reordenados.push(found);
+        byOrig.delete(orig);
+      }
+    });
+    // añade los que la IA no haya mencionado al final, manteniendo su orden
+    resultado.pasos.forEach((p) => {
+      if (byOrig.has(p.ordenOriginal)) reordenados.push(p);
+    });
+    // recalcular giros y número de paso
+    return reordenados.map((p, i) => ({
+      ...p,
+      paso: i + 1,
+      requiereGiro: i > 0 && reordenados[i - 1].punta !== p.punta,
+    }));
+  }, [aiResult, resultado.pasos]);
+
+  const ordenIAAplicado = pasosVisibles !== resultado.pasos;
+
   const callAI = async () => {
     setAiLoading(true);
     setAiError(null);
@@ -98,13 +126,20 @@ const SugeridorVueltasPage = () => {
       {/* Secuencia */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Secuencia recomendada</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            Secuencia recomendada
+            {ordenIAAplicado && (
+              <Badge className="bg-primary/15 text-primary border border-primary/30">
+                <Sparkles className="w-3 h-3 mr-1" /> Orden IA aplicado
+              </Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {resultado.pasos.length === 0 ? (
+          {pasosVisibles.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">Sin pliegues.</p>
           ) : (
-            resultado.pasos.map((p) => (
+            pasosVisibles.map((p) => (
               <div
                 key={p.paso}
                 className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-muted/30 text-sm"
