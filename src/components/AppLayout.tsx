@@ -14,6 +14,7 @@ import {
   Menu,
   GitBranch,
   FileText,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
