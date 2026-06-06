@@ -48,3 +48,23 @@ export function useSheetState(): SheetState {
   }, []);
   return s;
 }
+
+// ============================================================
+// MÓDULO 6 — Integración Lovable + Motor 2D
+// updateSheetState es el ÚNICO punto de entrada para mutar
+// el state (inputs, sliders, IA, eventos). Hace merge superficial
+// del parcial y dispara renderAll() para repintar <SheetSVG />.
+// ============================================================
+export function updateSheetState(partial: Partial<SheetState>) {
+  const next: SheetState = {
+    ...currentState,
+    ...partial,
+    base: { ...currentState.base, ...(partial.base ?? {}) },
+    bendZones: partial.bendZones ?? currentState.bendZones,
+    cuts: partial.cuts ?? currentState.cuts,
+    folds: partial.folds ?? currentState.folds,
+    dims: partial.dims ?? currentState.dims,
+  };
+  renderAll(next);
+}
+
