@@ -23,6 +23,7 @@ import ResultadoPiezaPage from "./pages/ResultadoPiezaPage";
 import ValidacionMaquinaPage from "./pages/ValidacionMaquinaPage";
 import SugeridorVueltasPage from "./pages/SugeridorVueltasPage";
 import RematesDesigualesPage from "./pages/RematesDesigualesPage";
+import ChapaSVGPage from "./pages/ChapaSVGPage";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
@@ -58,6 +59,7 @@ const App = () => (
                 <Route path="/validacion-maquina" element={<ValidacionMaquinaPage />} />
                 <Route path="/sugeridor-vueltas" element={<SugeridorVueltasPage />} />
                 <Route path="/remates-desiguales" element={<RematesDesigualesPage />} />
+                <Route path="/chapa-svg" element={<ChapaSVGPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
