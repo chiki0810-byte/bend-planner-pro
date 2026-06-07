@@ -133,7 +133,7 @@ const SheetSVG = ({ state = defaultSheetState }: SheetSVGProps) => {
               <path
                 key={c.id}
                 d={buildCutPathD(c.points)}
-                fill="hsl(var(--destructive) / 0.15)"
+                fill="url(#hatch)"
                 stroke="hsl(var(--destructive))"
                 strokeWidth={1}
               />
@@ -144,7 +144,7 @@ const SheetSVG = ({ state = defaultSheetState }: SheetSVGProps) => {
                 y={c.y}
                 width={c.w}
                 height={c.h}
-                fill="hsl(var(--destructive) / 0.15)"
+                fill="url(#hatch)"
                 stroke="hsl(var(--destructive))"
                 strokeWidth={1}
               />
