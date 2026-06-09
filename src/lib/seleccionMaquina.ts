@@ -7,6 +7,7 @@
 
 import type { Pieza } from "./uiIndustrial";
 import { maquinasTaller } from "./motorMaquinas";
+import { detectarAlaMachacada } from "./reglasProceso";
 
 // ---------------------------------------------------------
 // 15.1 — TIPOS DE RESULTADO
@@ -17,19 +18,6 @@ export interface ResultadoSeleccionMaquina {
   maquinasValidas: string[];
   maquinasInvalidas: string[];
   avisos: string[];
-}
-
-// ---------------------------------------------------------
-// 15.2 — DETECCIÓN DE ALA MACHACADA (helper local)
-// ---------------------------------------------------------
-// Se considera "ala machacada" cuando al menos un pliegue
-// tiene una longitud menor a 10 mm, lo que requiere
-// machacado para realizar el plegado correctamente.
-// TODO: mover a Módulo 16 cuando esté disponible.
-
-function detectarAlaMachacada(pieza: Pieza): boolean {
-  const UMBRAL_ALA_MACHACADA = 10; // mm
-  return pieza.pliegues.some(p => p.longitud < UMBRAL_ALA_MACHACADA);
 }
 
 // ---------------------------------------------------------
