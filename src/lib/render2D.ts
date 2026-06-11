@@ -156,3 +156,6 @@ export function plieguesAGeometria2D(
 
   return resultado;
 }
+
+// Alias: nombre alternativo usado por componentes de UI
+export const renderPliegues2D = renderPieza2D;
