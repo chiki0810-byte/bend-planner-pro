@@ -202,3 +202,97 @@ export function procesarEvento(
   callbacks?.onInteraccion(evento);
   return nuevo;
 }
+
+// Re-export para que los componentes puedan importar todo desde un solo módulo
+export type { PliegueVisual as PliegueVisualRender } from "./render2D";
+
+/**
+ * Crea un estado de interacción nuevo (alias de estadoInicial).
+ */
+export function crearEstadoInteraccion(): EstadoInteraccion {
+  return { ...estadoInicial };
+}
+
+/**
+ * Conecta los eventos de mouse/wheel de un SVG al estado de interacción.
+ * Devuelve una función de limpieza para retirar los listeners.
+ */
+export function conectarInteraccionSVG(
+  svg: SVGSVGElement,
+  pliegues: PliegueVisual[],
+  getEstado: () => EstadoInteraccion,
+  setEstado: (e: EstadoInteraccion) => void,
+  callbacks?: InteraccionCallbacks
+): () => void {
+  let arrastrando = false;
+  let ultimoX = 0;
+  let ultimoY = 0;
+
+  const puntoEnSVG = (clientX: number, clientY: number): Punto2D => {
+    const rect = svg.getBoundingClientRect();
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+
+  const onWheel = (e: WheelEvent) => {
+    e.preventDefault();
+    const centro = puntoEnSVG(e.clientX, e.clientY);
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    const nuevo = aplicarZoom(getEstado(), factor, centro);
+    setEstado(nuevo);
+    callbacks?.onInteraccion({ tipo: "zoom", escala: factor });
+  };
+
+  const onMouseDown = (e: MouseEvent) => {
+    arrastrando = true;
+    ultimoX = e.clientX;
+    ultimoY = e.clientY;
+  };
+
+  const onMouseMove = (e: MouseEvent) => {
+    const punto = puntoEnSVG(e.clientX, e.clientY);
+    const mundo = pantallaAMundo(punto, getEstado());
+
+    if (arrastrando) {
+      const dx = e.clientX - ultimoX;
+      const dy = e.clientY - ultimoY;
+      ultimoX = e.clientX;
+      ultimoY = e.clientY;
+      const nuevo = aplicarPan(getEstado(), dx, dy);
+      setEstado(nuevo);
+      callbacks?.onInteraccion({ tipo: "pan", desplazamiento: { x: dx, y: dy } });
+    } else {
+      const id = detectarPliegueEn(mundo, pliegues, 8);
+      const estado = getEstado();
+      if (estado.pliegueHover !== id) {
+        setEstado(hoverPliegue(estado, id));
+        callbacks?.onInteraccion({ tipo: "hover", pliegueId: id });
+      }
+    }
+  };
+
+  const onMouseUp = () => {
+    arrastrando = false;
+  };
+
+  const onClick = (e: MouseEvent) => {
+    const punto = puntoEnSVG(e.clientX, e.clientY);
+    const mundo = pantallaAMundo(punto, getEstado());
+    const id = detectarPliegueEn(mundo, pliegues, 8);
+    setEstado(seleccionarPliegue(getEstado(), id));
+    callbacks?.onInteraccion({ tipo: "seleccion", pliegueId: id });
+  };
+
+  svg.addEventListener("wheel", onWheel, { passive: false });
+  svg.addEventListener("mousedown", onMouseDown);
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mouseup", onMouseUp);
+  svg.addEventListener("click", onClick);
+
+  return () => {
+    svg.removeEventListener("wheel", onWheel);
+    svg.removeEventListener("mousedown", onMouseDown);
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
+    svg.removeEventListener("click", onClick);
+  };
+}
