@@ -18,9 +18,15 @@ export interface SheetStoreState {
   plieguesProcesados: PliegueProcesado[];
   pliegueSeleccionado: string | null;
   pasoActual: number;
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
   setPlieguesProcesados: (p: PliegueProcesado[]) => void;
   setPliegueSeleccionado: (id: string | null) => void;
   setPasoActual: (paso: number) => void;
+  setZoom: (factor: number) => void;
+  setOffset: (x: number, y: number) => void;
+  resetVista: () => void;
   reset: () => void;
 }
 
