@@ -36,14 +36,23 @@ let state: SheetStoreState = {
   plieguesProcesados: [],
   pliegueSeleccionado: null,
   pasoActual: 0,
+  zoom: 1,
+  offsetX: 0,
+  offsetY: 0,
   setPlieguesProcesados: (plieguesProcesados) => set({ plieguesProcesados }),
   setPliegueSeleccionado: (pliegueSeleccionado) => set({ pliegueSeleccionado }),
   setPasoActual: (pasoActual) => set({ pasoActual }),
+  setZoom: (factor) => set({ zoom: state.zoom * factor }),
+  setOffset: (offsetX, offsetY) => set({ offsetX, offsetY }),
+  resetVista: () => set({ zoom: 1, offsetX: 0, offsetY: 0 }),
   reset: () =>
     set({
       plieguesProcesados: [],
       pliegueSeleccionado: null,
       pasoActual: 0,
+      zoom: 1,
+      offsetX: 0,
+      offsetY: 0,
     }),
 };
 
