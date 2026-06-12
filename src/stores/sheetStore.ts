@@ -11,6 +11,7 @@ export interface PliegueProcesado {
   longitud: number;
   colision: boolean;
   fuerza: number;
+  tiempo?: number;
 }
 
 export interface SheetStoreState {
