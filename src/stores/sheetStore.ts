@@ -41,11 +41,13 @@ let state: SheetStoreState = {
   zoom: 1,
   offsetX: 0,
   offsetY: 0,
+  ultimoSVG: null,
   setPlieguesProcesados: (plieguesProcesados) => set({ plieguesProcesados }),
   setPliegueSeleccionado: (pliegueSeleccionado) => set({ pliegueSeleccionado }),
   setPasoActual: (pasoActual) => set({ pasoActual }),
   setZoom: (factor) => set({ zoom: state.zoom * factor }),
   setOffset: (offsetX, offsetY) => set({ offsetX, offsetY }),
+  setUltimoSVG: (ultimoSVG) => set({ ultimoSVG }),
   resetVista: () => set({ zoom: 1, offsetX: 0, offsetY: 0 }),
   reset: () =>
     set({
@@ -55,6 +57,7 @@ let state: SheetStoreState = {
       zoom: 1,
       offsetX: 0,
       offsetY: 0,
+      ultimoSVG: null,
     }),
 };
 
