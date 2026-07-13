@@ -21,11 +21,13 @@ export interface SheetStoreState {
   zoom: number;
   offsetX: number;
   offsetY: number;
+  ultimoSVG: string | null;
   setPlieguesProcesados: (p: PliegueProcesado[]) => void;
   setPliegueSeleccionado: (id: string | null) => void;
   setPasoActual: (paso: number) => void;
   setZoom: (factor: number) => void;
   setOffset: (x: number, y: number) => void;
+  setUltimoSVG: (svg: string | null) => void;
   resetVista: () => void;
   reset: () => void;
 }
@@ -39,11 +41,13 @@ let state: SheetStoreState = {
   zoom: 1,
   offsetX: 0,
   offsetY: 0,
+  ultimoSVG: null,
   setPlieguesProcesados: (plieguesProcesados) => set({ plieguesProcesados }),
   setPliegueSeleccionado: (pliegueSeleccionado) => set({ pliegueSeleccionado }),
   setPasoActual: (pasoActual) => set({ pasoActual }),
   setZoom: (factor) => set({ zoom: state.zoom * factor }),
   setOffset: (offsetX, offsetY) => set({ offsetX, offsetY }),
+  setUltimoSVG: (ultimoSVG) => set({ ultimoSVG }),
   resetVista: () => set({ zoom: 1, offsetX: 0, offsetY: 0 }),
   reset: () =>
     set({
@@ -53,6 +57,7 @@ let state: SheetStoreState = {
       zoom: 1,
       offsetX: 0,
       offsetY: 0,
+      ultimoSVG: null,
     }),
 };
 
