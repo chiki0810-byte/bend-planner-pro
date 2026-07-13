@@ -62,6 +62,7 @@ const App = () => (
                 <Route path="/remates-desiguales" element={<RematesDesigualesPage />} />
                 <Route path="/chapa-svg" element={<ChapaSVGPage />} />
               </Route>
+              <Route path="/chapa" element={<ChapaLayout />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </RematesProvider>
