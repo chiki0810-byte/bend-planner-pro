@@ -24,6 +24,7 @@ import ValidacionMaquinaPage from "./pages/ValidacionMaquinaPage";
 import SugeridorVueltasPage from "./pages/SugeridorVueltasPage";
 import RematesDesigualesPage from "./pages/RematesDesigualesPage";
 import ChapaSVGPage from "./pages/ChapaSVGPage";
+import ChapaLayout from "./pages/ChapaLayout";
 import NotFound from "./pages/NotFound";
 import { AppStateProvider } from "./state/AppStateContext";
 import { RematesProvider } from "./state/RematesContext";
