@@ -25,6 +25,15 @@ export const ValidacionChapa: React.FC = () => {
     for (let i = 0; i < plieguesProcesados.length - 1; i++) {
       const a = plieguesProcesados[i];
       const b = plieguesProcesados[i + 1];
+      const aTieneCoords =
+        a.x1 !== undefined && a.y1 !== undefined &&
+        a.x2 !== undefined && a.y2 !== undefined;
+      const bTieneCoords =
+        b.x1 !== undefined && b.y1 !== undefined &&
+        b.x2 !== undefined && b.y2 !== undefined;
+      if (!aTieneCoords || !bTieneCoords) {
+        continue;
+      }
       const conecta =
         (a.x2 === b.x1 && a.y2 === b.y1) ||
         (a.x1 === b.x2 && a.y1 === b.y2);
