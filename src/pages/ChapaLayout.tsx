@@ -6,6 +6,13 @@ import { PanelPliegue } from "../components/PanelPliegue";
 import { PanelEstadisticas } from "../components/PanelEstadisticas";
 import { PanelControl } from "../components/PanelControl";
 import { SheetSVGInteractive } from "../components/SheetSVGInteractive";
+import { ExportarChapa } from "../components/ExportarChapa";
+import { ImportarChapa } from "../components/ImportarChapa";
+import { ValidacionChapa } from "../components/ValidacionChapa";
+import { NormalizacionChapa } from "../components/NormalizacionChapa";
+import { SimulacionChapa } from "../components/SimulacionChapa";
+import { SimulacionCompletaChapa } from "../components/SimulacionCompletaChapa";
+import { MovimientoGlobalChapa } from "../components/MovimientoGlobalChapa";
 import { useSheetStore } from "../stores/sheetStore";
 import type { PliegueVisual } from "../lib/render2D";
 
@@ -75,15 +82,28 @@ export const ChapaLayout: React.FC = () => {
         <PanelEstadisticas />
       </div>
 
-      {/* Panel inferior: controles */}
+      {/* Panel inferior: controles y utilidades */}
       <div
         style={{
           gridColumn: "1 / 4",
           borderTop: "1px solid #ccc",
           background: "#f7f7f7",
+          padding: "12px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "12px",
+          overflow: "auto",
+          maxHeight: "40vh",
         }}
       >
         <PanelControl />
+        <ExportarChapa />
+        <ImportarChapa />
+        <ValidacionChapa />
+        <NormalizacionChapa />
+        <SimulacionChapa />
+        <SimulacionCompletaChapa />
+        <MovimientoGlobalChapa />
       </div>
     </div>
   );
