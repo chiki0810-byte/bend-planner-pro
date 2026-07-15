@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
+import PortadaApp from "./pages/PortadaApp";
 import AppLayout from "./components/AppLayout";
 import CalculadoraPage from "./pages/CalculadoraPage";
 import FichaPiezaRapidaPage from "./pages/FichaPiezaRapidaPage";
@@ -40,7 +40,7 @@ const App = () => (
         <AppStateProvider>
           <RematesProvider>
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<PortadaApp />} />
               <Route element={<AppLayout />}>
                 <Route path="/calculadora" element={<CalculadoraPage />} />
                 <Route path="/fichapiezarapida" element={<FichaPiezaRapidaPage />} />
