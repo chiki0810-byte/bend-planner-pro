@@ -1,19 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LoginAcceso from "../components/LoginAcceso";
 
 /**
  * Portada principal de la app Sheet Metal.
  * - Diseño industrial limpio
  * - Botón grande para entrar a /chapa
- * - Preparada para integrar acceso con clave
+ * - Integra acceso con clave maestra
  */
 
 const PortadaApp: React.FC = () => {
   const navigate = useNavigate();
+  const [accesoConcedido, setAccesoConcedido] = useState(false);
 
   const entrar = () => {
     navigate("/chapa");
   };
+
+  if (!accesoConcedido) {
+    return <LoginAcceso onAccesoCorrecto={() => setAccesoConcedido(true)} />;
+  }
 
   return (
     <div style={container}>
