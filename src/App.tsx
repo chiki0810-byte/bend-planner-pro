@@ -40,7 +40,7 @@ const App = () => (
         <AppStateProvider>
           <RematesProvider>
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<PortadaApp />} />
               <Route element={<AppLayout />}>
                 <Route path="/calculadora" element={<CalculadoraPage />} />
                 <Route path="/fichapiezarapida" element={<FichaPiezaRapidaPage />} />
