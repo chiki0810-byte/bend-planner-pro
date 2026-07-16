@@ -56,11 +56,12 @@ export const ChapaLayout: React.FC = () => {
       {/* Centro: visor interactivo */}
       <div
         style={{
-          position: "relative",
+          height: "calc(100vh - 180px)",
+          width: "100%",
+          overflow: "hidden",
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
-          background: "#fff",
+          alignItems: "center",
         }}
       >
         <SheetSVGInteractive
