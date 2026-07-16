@@ -1,6 +1,21 @@
 import React from "react";
 import { useSheetStore } from "../stores/sheetStore";
 
+const controlesCompactos: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "8px",
+  padding: "10px",
+  justifyContent: "center",
+  alignItems: "center",
+};
+
+const botonCompacto: React.CSSProperties = {
+  padding: "6px 10px",
+  fontSize: "14px",
+  borderRadius: "6px",
+};
+
 interface PanelControlProps {
   ancho?: number;
 }
