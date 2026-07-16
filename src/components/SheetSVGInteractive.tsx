@@ -20,6 +20,37 @@ interface SheetSVGInteractiveProps {
   height?: number;
 }
 
+const aplicarZoom = (elemento: HTMLElement, factor: number) => {
+  const escalaActual = parseFloat(elemento.dataset.scale || "1");
+  const nuevaEscala = Math.min(Math.max(escalaActual * factor, 0.5), 3);
+  elemento.style.transform = `scale(${nuevaEscala})`;
+  elemento.dataset.scale = nuevaEscala.toString();
+};
+
+const manejarPinch = (elemento: HTMLElement) => {
+  let distanciaInicial = 0;
+
+  elemento.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      distanciaInicial = Math.sqrt(dx * dx + dy * dy);
+    }
+  });
+
+  elemento.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const distanciaActual = Math.sqrt(dx * dx + dy * dy);
+      if (distanciaInicial > 0) {
+        const factor = distanciaActual / distanciaInicial;
+        aplicarZoom(elemento, factor);
+      }
+    }
+  });
+};
+
 export const SheetSVGInteractive: React.FC<SheetSVGInteractiveProps> = ({
   pliegues,
   onSeleccion,
