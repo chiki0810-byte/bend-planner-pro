@@ -1,13 +1,6 @@
 import React, { useState } from "react";
 
-/**
- * Módulo de acceso con clave:
- * - Clave maestra definida por ti
- * - Bloquea el acceso a /chapa si no es correcta
- * - Preparado para integrarse con la portada
- */
-
-const CLAVE_MAESTRA = "victor2026"; // <-- cámbiala cuando quieras
+const CLAVE_MAESTRA = "victor2026";
 
 const LoginAcceso: React.FC<{ onAccesoCorrecto: () => void }> = ({ onAccesoCorrecto }) => {
   const [clave, setClave] = useState("");
@@ -23,7 +16,7 @@ const LoginAcceso: React.FC<{ onAccesoCorrecto: () => void }> = ({ onAccesoCorre
   };
 
   return (
-    <div style={container}>
+    <div style={fondoMetalico}>
       <div style={card}>
         <h2 style={titulo}>Acceso restringido</h2>
         <p style={subtitulo}>Introduce la clave para entrar</p>
@@ -45,50 +38,54 @@ const LoginAcceso: React.FC<{ onAccesoCorrecto: () => void }> = ({ onAccesoCorre
 
 export default LoginAcceso;
 
-const container: React.CSSProperties = {
+// 🎨 Fondo metálico industrial
+const fondoMetalico: React.CSSProperties = {
   width: "100%",
   height: "100vh",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
-  background: "#e5e5e5",
+  background: "linear-gradient(135deg, #b5b5b5, #e0e0e0, #9d9d9d)",
+  backgroundSize: "400% 400%",
 };
 
+// Tarjeta elegante
 const card: React.CSSProperties = {
-  background: "white",
+  background: "rgba(255,255,255,0.9)",
   padding: "40px",
   borderRadius: "12px",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
   textAlign: "center",
   maxWidth: "420px",
 };
 
-const titulo: React.CSSProperties = {
+// Estilos
+const titulo = {
   margin: "0 0 12px 0",
   fontSize: "28px",
   fontWeight: 700,
   color: "#333",
 };
 
-const subtitulo: React.CSSProperties = {
+const subtitulo = {
   margin: "0 0 24px 0",
   fontSize: "16px",
   color: "#555",
 };
 
-const input: React.CSSProperties = {
+const input = {
   width: "100%",
   padding: "12px",
   fontSize: "16px",
   marginBottom: "16px",
   borderRadius: "6px",
-  border: "1px solid #ccc",
+  border: "1px solid #aaa",
 };
 
-const btn: React.CSSProperties = {
+const btn = {
   padding: "12px 20px",
   fontSize: "18px",
-  background: "#28a745",
+  background: "#007bff",
   color: "white",
   border: "none",
   borderRadius: "6px",
@@ -96,7 +93,7 @@ const btn: React.CSSProperties = {
   width: "100%",
 };
 
-const errorMsg: React.CSSProperties = {
+const errorMsg = {
   color: "red",
   marginBottom: "12px",
 };
