@@ -55,16 +55,16 @@ export const PanelControl: React.FC<PanelControlProps> = ({ ancho = 240 }) => {
       <h3>Controles</h3>
 
       {/* ZOOM */}
-      <div style={{ display: "flex", gap: "8px" }}>
+      <div style={controlesCompactos}>
         <button
           onClick={() => setZoom(1.1)}
-          style={btn}
+          style={botonCompacto}
         >
           Zoom +
         </button>
         <button
           onClick={() => setZoom(0.9)}
-          style={btn}
+          style={botonCompacto}
         >
           Zoom –
         </button>
@@ -73,7 +73,7 @@ export const PanelControl: React.FC<PanelControlProps> = ({ ancho = 240 }) => {
       {/* PAN RESET */}
       <button
         onClick={() => resetVista()}
-        style={btnFull}
+        style={botonCompacto}
       >
         Reset vista
       </button>
@@ -81,7 +81,7 @@ export const PanelControl: React.FC<PanelControlProps> = ({ ancho = 240 }) => {
       {/* CENTRAR */}
       <button
         onClick={() => setOffset(0, 0)}
-        style={btnFull}
+        style={botonCompacto}
       >
         Centrar
       </button>
@@ -89,11 +89,11 @@ export const PanelControl: React.FC<PanelControlProps> = ({ ancho = 240 }) => {
       {/* MODO SECUENCIA */}
       <h4>Modo Secuencia</h4>
 
-      <div style={{ display: "flex", gap: "8px" }}>
-        <button onClick={retrocederPaso} style={btn}>
+      <div style={controlesCompactos}>
+        <button onClick={retrocederPaso} style={botonCompacto}>
           ◀
         </button>
-        <button onClick={avanzarPaso} style={btn}>
+        <button onClick={avanzarPaso} style={botonCompacto}>
           ▶
         </button>
       </div>
@@ -103,24 +103,4 @@ export const PanelControl: React.FC<PanelControlProps> = ({ ancho = 240 }) => {
       </div>
     </div>
   );
-};
-
-const btn: React.CSSProperties = {
-  padding: "8px 12px",
-  background: "#0057ff",
-  color: "white",
-  border: "none",
-  borderRadius: "4px",
-  cursor: "pointer",
-  flex: 1
-};
-
-const btnFull: React.CSSProperties = {
-  padding: "8px 12px",
-  background: "#444",
-  color: "white",
-  border: "none",
-  borderRadius: "4px",
-  cursor: "pointer",
-  width: "100%"
 };
