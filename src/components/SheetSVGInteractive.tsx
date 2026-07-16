@@ -97,26 +97,36 @@ export const SheetSVGInteractive: React.FC<SheetSVGInteractiveProps> = ({
     return cleanup;
   }, [pliegues, onSeleccion, onHover]);
 
+  useEffect(() => {
+    const visor = document.getElementById("visor-chapa");
+    if (visor) {
+      visor.dataset.scale = "1";
+      manejarPinch(visor);
+    }
+  }, []);
+
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${width} ${height}`}
-      width={width}
-      height={height}
-      style={{
-        background: "hsl(var(--muted))",
-        border: "1px solid hsl(var(--border))",
-        borderRadius: 8,
-        cursor: "grab",
-        touchAction: "none",
-        userSelect: "none",
-      }}
-    >
-      <g
-        transform={transformacionSVG(estado)}
-        dangerouslySetInnerHTML={{ __html: svgMarkup }}
-      />
-    </svg>
+    <div id="visor-chapa" style={{ touchAction: "none" }}>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        height={height}
+        style={{
+          background: "hsl(var(--muted))",
+          border: "1px solid hsl(var(--border))",
+          borderRadius: 8,
+          cursor: "grab",
+          touchAction: "none",
+          userSelect: "none",
+        }}
+      >
+        <g
+          transform={transformacionSVG(estado)}
+          dangerouslySetInnerHTML={{ __html: svgMarkup }}
+        />
+      </svg>
+    </div>
   );
 };
 
