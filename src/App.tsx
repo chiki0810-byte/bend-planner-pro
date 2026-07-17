@@ -2,8 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PortadaApp from "./pages/PortadaApp";
+import PortadaModerna from "./pages/PortadaModerna";
+import LoginPage from "./pages/LoginPage";
 import AppLayout from "./components/AppLayout";
 import CalculadoraPage from "./pages/CalculadoraPage";
 import FichaPiezaRapidaPage from "./pages/FichaPiezaRapidaPage";
@@ -40,7 +42,10 @@ const App = () => (
         <AppStateProvider>
           <RematesProvider>
             <Routes>
-              <Route path="/" element={<PortadaApp />} />
+              <Route path="/" element={<Navigate to="/portada-moderna" replace />} />
+              <Route path="/portada-moderna" element={<PortadaModerna />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/portada-antigua" element={<PortadaApp />} />
               <Route element={<AppLayout />}>
                 <Route path="/calculadora" element={<CalculadoraPage />} />
                 <Route path="/fichapiezarapida" element={<FichaPiezaRapidaPage />} />
