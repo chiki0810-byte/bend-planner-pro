@@ -11,25 +11,25 @@ const PortadaModerna: React.FC = () => {
         justifyContent: "center",
         alignItems: "center",
         height: "100vh",
-        backgroundColor: "#F4F4F7",
+        backgroundColor: "#EFEFF3",
       }}
     >
       <div
         style={{
           backgroundColor: "white",
           padding: "40px",
-          borderRadius: "16px",
-          boxShadow: "0px 4px 12px rgba(0,0,0,0.15)",
+          borderRadius: "18px",
+          boxShadow: "0px 6px 18px rgba(0,0,0,0.15)",
           width: "90%",
-          maxWidth: "420px",
+          maxWidth: "430px",
           textAlign: "center",
         }}
       >
         <h1
           style={{
-            fontSize: "32px",
-            marginBottom: "10px",
-            color: "#1E1E1E",
+            fontSize: "34px",
+            marginBottom: "12px",
+            color: "#222",
           }}
         >
           Sheet Metal Buddy
@@ -37,12 +37,12 @@ const PortadaModerna: React.FC = () => {
 
         <p
           style={{
-            fontSize: "18px",
-            marginBottom: "30px",
-            color: "#555",
+            fontSize: "19px",
+            marginBottom: "32px",
+            color: "#666",
           }}
         >
-          Sistema técnico para visualización y simulación de chapa
+          Plataforma técnica para visualización y simulación de chapa
         </p>
 
         <button
@@ -50,12 +50,12 @@ const PortadaModerna: React.FC = () => {
             width: "100%",
             padding: "16px",
             fontSize: "20px",
-            borderRadius: "10px",
+            borderRadius: "12px",
             backgroundColor: "#1E88E5",
             color: "white",
             border: "none",
             cursor: "pointer",
-            boxShadow: "0px 3px 8px rgba(0,0,0,0.2)",
+            boxShadow: "0px 4px 10px rgba(0,0,0,0.25)",
           }}
           onClick={() => navegar("/login")}
         >
