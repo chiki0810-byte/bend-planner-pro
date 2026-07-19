@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PortadaApp from "./pages/PortadaApp";
 import PortadaModerna from "./pages/PortadaModerna";
 import LoginPage from "./pages/LoginPage";
+import MenuPrincipal from "./components/MenuPrincipal";
 import AppLayout from "./components/AppLayout";
 import CalculadoraPage from "./pages/CalculadoraPage";
 import FichaPiezaRapidaPage from "./pages/FichaPiezaRapidaPage";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/" element={<Navigate to="/portada-moderna" replace />} />
               <Route path="/portada-moderna" element={<PortadaModerna />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/menu-principal" element={<MenuPrincipal />} />
               <Route path="/portada-antigua" element={<PortadaApp />} />
               <Route element={<AppLayout />}>
                 <Route path="/calculadora" element={<CalculadoraPage />} />
