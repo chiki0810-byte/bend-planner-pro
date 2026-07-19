@@ -1,0 +1,15 @@
+import { useNavigate } from "react-router-dom";
+
+function MenuPrincipal() {
+  const navegar = useNavigate();
+
+  return (
+    <div className="menu-principal">
+      <button onClick={() => navegar("/portada-moderna")}>Portada</button>
+      <button onClick={() => navegar("/login")}>Login</button>
+      <button onClick={() => navegar("/visor-chapa")}>Visor Chapa</button>
+    </div>
+  );
+}
+
+export default MenuPrincipal;
