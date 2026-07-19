@@ -6,16 +6,9 @@ function PortadaModerna() {
   return (
     <div className="portada-contenedor">
       <div className="portada-tarjeta">
-        <h1 className="portada-titulo">Sheet Metal Buddy</h1>
-        <p className="portada-subtitulo">
-          Plataforma técnica para visualización y simulación de chapa
-        </p>
-        <button
-          className="portada-boton"
-          onClick={() => navegar("/login")}
-        >
-          Entrar
-        </button>
+        <h1>Sheet Metal Buddy</h1>
+        <p>Plataforma técnica para visualización y simulación de chapa</p>
+        <button onClick={() => navegar("/login")}>Entrar</button>
       </div>
     </div>
   );
