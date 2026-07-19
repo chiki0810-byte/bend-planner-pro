@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import "./PortadaModerna.css";
 
 function PortadaModerna() {
   const navegar = useNavigate();
