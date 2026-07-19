@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import "./VisorChapa.css";
 
 function VisorChapa() {
   const navegar = useNavigate();
