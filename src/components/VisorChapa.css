@@ -32,6 +32,56 @@
   min-height: 120px;
 }
 
+.visor-contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.visor-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visor-seccion h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.visor-seccion p {
+  margin: 0;
+}
+
+.visor-layout-movil {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.visor-layout-movil .visor-secuencia {
+  order: 1;
+  min-height: 60px;
+}
+
+.visor-layout-movil .visor-estadisticas {
+  order: 2;
+  min-height: 60px;
+}
+
+.visor-layout-movil .visor-controles {
+  order: 3;
+  min-height: 50px;
+}
+
+.visor-layout-movil .visor-seccion {
+  gap: 4px;
+}
+
+.visor-layout-movil .visor-seccion h3 {
+  font-size: 15px;
+}
+
 .visor-chapa button {
   width: 100%;
   padding: 16px;
