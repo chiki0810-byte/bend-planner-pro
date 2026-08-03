@@ -19,7 +19,7 @@ function VisorChapa() {
       </div>
       <button onClick={() => navegar("/menu-principal")}>
         Volver al menú principal
-       </button>
+      </button>
     </div>
   );
 }
