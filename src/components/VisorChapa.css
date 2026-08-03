@@ -53,33 +53,27 @@
   margin: 0;
 }
 
-.visor-layout-movil {
+.visor-seccion.visor-layout-movil {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.visor-layout-movil .visor-secuencia {
-  order: 1;
-  min-height: 60px;
-}
-
-.visor-layout-movil .visor-estadisticas {
-  order: 2;
-  min-height: 60px;
-}
-
-.visor-layout-movil .visor-controles {
-  order: 3;
+  gap: 4px;
   min-height: 50px;
 }
 
-.visor-layout-movil .visor-seccion {
-  gap: 4px;
+.visor-seccion.visor-layout-movil h3 {
+  font-size: 15px;
 }
 
-.visor-layout-movil .visor-seccion h3 {
-  font-size: 15px;
+.visor-seccion.visor-layout-movil.visor-secuencia {
+  order: 1;
+}
+
+.visor-seccion.visor-layout-movil.visor-estadisticas {
+  order: 2;
+}
+
+.visor-seccion.visor-layout-movil.visor-controles {
+  order: 3;
 }
 
 .visor-chapa button {
