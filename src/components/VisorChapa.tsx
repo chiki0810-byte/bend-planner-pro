@@ -14,7 +14,7 @@ function VisorChapa() {
 
   return (
     <div className={`visor-chapa ${esCompacto ? "visor-chapa-compacto" : ""}`}>
-      <div className="visor-area">
+      <div className={`visor-area ${esCompacto ? "visor-interno-compacto" : ""}`}>
         <p>Datos del visor</p>
       </div>
       <button onClick={() => navegar("/menu-principal")}>
