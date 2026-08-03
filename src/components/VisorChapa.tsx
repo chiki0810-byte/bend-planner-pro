@@ -15,16 +15,16 @@ function VisorChapa() {
   return (
     <div className={`visor-chapa ${esCompacto ? "visor-chapa-compacto" : ""}`}>
       <div className={`visor-area ${esCompacto ? "visor-interno-compacto" : ""}`}>
-        <div className={`visor-contenido ${esCompacto ? "visor-layout-movil" : ""}`}>
-          <section className="visor-seccion visor-secuencia">
+        <div className="visor-contenido">
+          <section className={`visor-seccion visor-secuencia ${esCompacto ? "visor-layout-movil" : ""}`}>
             <h3>Secuencia de pliegues</h3>
             <p>Orden de plegado</p>
           </section>
-          <section className="visor-seccion visor-estadisticas">
+          <section className={`visor-seccion visor-estadisticas ${esCompacto ? "visor-layout-movil" : ""}`}>
             <h3>Estadísticas</h3>
             <p>Resumen de la pieza</p>
           </section>
-          <section className="visor-seccion visor-controles">
+          <section className={`visor-seccion visor-controles ${esCompacto ? "visor-layout-movil" : ""}`}>
             <h3>Controles</h3>
             <p>Ajustes del visor</p>
           </section>
