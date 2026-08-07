@@ -82,3 +82,36 @@
   gap: 8px;
   font-size: 14px;
 }
+
+/* La portada gestiona su propio responsive */
+@media (max-width: 480px) {
+  .portada-contenedor .portada-tarjeta {
+    padding: 28px 20px 32px !important;
+    margin-top: 0 !important;
+  }
+
+  .portada-contenedor h1 {
+    font-size: 28px !important;
+  }
+
+  .portada-contenedor .portada-encabezado p {
+    font-size: 15px !important;
+  }
+
+  .portada-contenedor .portada-acceso {
+    padding: 14px 16px !important;
+  }
+
+  .portada-contenedor .portada-boton-principal {
+    padding: 16px !important;
+    font-size: 18px !important;
+  }
+
+  .portada-contenedor .portada-acceso-texto strong {
+    font-size: 16px !important;
+  }
+
+  .portada-contenedor .portada-acceso-texto small {
+    font-size: 13px !important;
+  }
+}

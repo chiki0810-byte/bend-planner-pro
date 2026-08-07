@@ -1,41 +1,210 @@
 .portada-contenedor {
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #EFEFF3;
+  align-items: flex-start;
+  padding: 24px 16px 40px;
+  background: radial-gradient(
+      120% 90% at 50% 0%,
+      #17335c 0%,
+      rgba(23, 51, 92, 0) 60%
+    ),
+    linear-gradient(160deg, #071223 0%, #0c1c33 45%, #0a1526 100%);
+  color: #eaf1fb;
 }
 
 .portada-tarjeta {
-  background-color: white;
-  padding: 40px;
-  border-radius: 18px;
-  box-shadow: 0px 6px 18px rgba(0,0,0,0.15);
-  width: 90%;
-  max-width: 430px;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 28px 20px 32px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(120, 170, 235, 0.16);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
   text-align: center;
+  animation: portada-entrada 420ms ease-out both;
+}
+
+@keyframes portada-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.portada-encabezado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.portada-ilustracion {
+  width: 132px;
+  height: auto;
+  color: #4da3ff;
+  filter: drop-shadow(0 4px 12px rgba(77, 163, 255, 0.35));
 }
 
 .portada-tarjeta h1 {
-  font-size: 34px;
-  color: #222;
-  margin-bottom: 12px;
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
-.portada-tarjeta p {
-  font-size: 19px;
-  color: #666;
-  margin-bottom: 32px;
+.portada-encabezado p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #a9bdd8;
+  max-width: 34ch;
 }
 
-.portada-tarjeta button {
+.portada-accesos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.portada-acceso {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(120, 170, 235, 0.18);
+  background: rgba(14, 32, 58, 0.72);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  transition: transform 160ms ease, border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.portada-acceso:hover,
+.portada-acceso:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(77, 163, 255, 0.5);
+  background: rgba(20, 44, 76, 0.85);
+  outline: none;
+}
+
+.portada-acceso:active {
+  transform: translateY(0);
+}
+
+.portada-acceso-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(77, 163, 255, 0.14);
+  color: #6fb6ff;
+}
+
+.portada-acceso-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.portada-acceso-texto strong {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.portada-acceso-texto small {
+  font-size: 13px;
+  line-height: 1.35;
+  color: #9fb4d1;
+}
+
+.portada-boton-principal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
   padding: 16px;
-  font-size: 20px;
-  border-radius: 12px;
-  background-color: #1E88E5;
-  color: white;
+  font-size: 18px;
+  font-weight: 600;
   border: none;
+  border-radius: 14px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1e88e5 0%, #3f6fe0 100%);
+  box-shadow: 0 10px 24px rgba(30, 136, 229, 0.35);
   cursor: pointer;
-  box-shadow: 0px 4px 10px rgba(0,0,0,0.25);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.portada-boton-principal:hover,
+.portada-boton-principal:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(30, 136, 229, 0.45);
+  outline: none;
+}
+
+@media (min-width: 640px) {
+  .portada-contenedor {
+    align-items: center;
+    padding: 40px 24px;
+  }
+
+  .portada-tarjeta {
+    max-width: 720px;
+    padding: 40px 36px;
+    gap: 28px;
+  }
+
+  .portada-tarjeta h1 {
+    font-size: 38px;
+  }
+
+  .portada-encabezado p {
+    font-size: 17px;
+    max-width: 46ch;
+  }
+
+  .portada-ilustracion {
+    width: 180px;
+  }
+
+  .portada-accesos {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .portada-boton-principal {
+    max-width: 320px;
+    margin: 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portada-tarjeta,
+  .portada-acceso,
+  .portada-boton-principal {
+    animation: none;
+    transition: none;
+  }
 }
