@@ -90,10 +90,12 @@
     margin-top: 0 !important;
   }
 
-  .portada-contenedor h1,
-  .portada-contenedor p,
-  .portada-contenedor button {
-    font-size: revert !important;
+  .portada-contenedor h1 {
+    font-size: 28px !important;
+  }
+
+  .portada-contenedor .portada-encabezado p {
+    font-size: 15px !important;
   }
 
   .portada-contenedor .portada-acceso {
