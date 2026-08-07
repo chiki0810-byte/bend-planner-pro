@@ -12,3 +12,73 @@
     font-size: 16px;
   }
 }
+
+@media (max-width: 480px) {
+  .visor-chapa {
+    max-width: 360px !important;
+    margin: 0 auto !important;
+    padding: 10px !important;
+  }
+
+  .visor-area {
+    max-width: 360px !important;
+    margin: 0 auto !important;
+    padding: 10px !important;
+  }
+
+  .visor-seccion {
+    padding: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  h3 {
+    font-size: 16px !important;
+  }
+
+  p {
+    font-size: 14px !important;
+  }
+
+  button {
+    font-size: 14px !important;
+    padding: 8px !important;
+  }
+}
+
+/* Modo compacto manual (independiente del tamaño de pantalla) */
+.modo-compacto.visor-chapa {
+  max-width: 360px !important;
+  margin: 0 auto !important;
+  padding: 10px !important;
+}
+
+.modo-compacto .visor-area {
+  max-width: 360px !important;
+  margin: 0 auto !important;
+  padding: 10px !important;
+}
+
+.modo-compacto .visor-seccion {
+  padding: 10px !important;
+  margin-bottom: 12px !important;
+}
+
+.modo-compacto h3 {
+  font-size: 16px !important;
+}
+
+.modo-compacto p {
+  font-size: 14px !important;
+}
+
+.modo-compacto button {
+  font-size: 14px !important;
+  padding: 8px !important;
+}
+
+.interruptor-compacto {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}

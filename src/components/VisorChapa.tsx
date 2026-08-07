@@ -4,16 +4,31 @@ import "./VisorChapa.css";
 
 function VisorChapa() {
   const navegar = useNavigate();
-  const [esCompacto, setEsCompacto] = useState(window.innerWidth < 480);
+  const [pantallaPequena, setPantallaPequena] = useState(window.innerWidth < 480);
+  const [compactoManual, setCompactoManual] = useState(false);
 
   useEffect(() => {
-    const manejarResize = () => setEsCompacto(window.innerWidth < 480);
+    const manejarResize = () => setPantallaPequena(window.innerWidth < 480);
     window.addEventListener("resize", manejarResize);
     return () => window.removeEventListener("resize", manejarResize);
   }, []);
 
+  const esCompacto = pantallaPequena || compactoManual;
+
   return (
-    <div className={`visor-chapa ${esCompacto ? "visor-chapa-compacto" : ""}`}>
+    <div
+      className={`visor-chapa ${esCompacto ? "visor-chapa-compacto" : ""} ${
+        compactoManual ? "modo-compacto" : ""
+      }`}
+    >
+      <label className="interruptor-compacto">
+        <input
+          type="checkbox"
+          checked={compactoManual}
+          onChange={(e) => setCompactoManual(e.target.checked)}
+        />
+        Modo compacto
+      </label>
       <div className={`visor-area ${esCompacto ? "visor-interno-compacto" : ""}`}>
         <div className="visor-contenido">
           <section className={`visor-seccion visor-secuencia ${esCompacto ? "visor-layout-movil" : ""}`}>
