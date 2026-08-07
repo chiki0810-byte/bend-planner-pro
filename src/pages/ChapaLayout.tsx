@@ -16,8 +16,26 @@ import { MovimientoGlobalChapa } from "../components/MovimientoGlobalChapa";
 import { useSheetStore } from "../stores/sheetStore";
 import type { PliegueVisual } from "../lib/render2D";
 
+type TabMovil = "pliegues" | "visor" | "estadisticas";
+
+const useEsMovil = () => {
+  const [esMovil, setEsMovil] = React.useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const on = () => setEsMovil(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return esMovil;
+};
+
 export const ChapaLayout: React.FC = () => {
   const { plieguesProcesados, setPliegueSeleccionado } = useSheetStore();
+  const esMovil = useEsMovil();
+  const [tab, setTab] = React.useState<TabMovil>("pliegues");
 
   // Derivar geometría visual simple a partir de los pliegues procesados
   const pliegues: PliegueVisual[] = useMemo(() => {
@@ -38,6 +56,122 @@ export const ChapaLayout: React.FC = () => {
       });
   }, [plieguesProcesados]);
 
+  const panelSecuencia = <PanelSecuencia />;
+  const visor = (
+    <SheetSVGInteractive
+      pliegues={pliegues}
+      onSeleccion={(id) => setPliegueSeleccionado(id)}
+    />
+  );
+  const panelDatos = (
+    <>
+      <PanelPliegue />
+      <PanelEstadisticas />
+    </>
+  );
+  const controles = (
+    <>
+      <PanelControl />
+      <ExportarChapa />
+      <ImportarChapa />
+      <ValidacionChapa />
+      <NormalizacionChapa />
+      <SimulacionChapa />
+      <SimulacionCompletaChapa />
+      <MovimientoGlobalChapa />
+    </>
+  );
+
+  if (esMovil) {
+    const tabs: { id: TabMovil; label: string }[] = [
+      { id: "pliegues", label: "Pliegues" },
+      { id: "visor", label: "Visor" },
+      { id: "estadisticas", label: "Estadísticas" },
+    ];
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          width: "100%",
+          maxWidth: "100vw",
+          overflowX: "hidden",
+          background: "#eaeaea",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            background: "#f7f7f7",
+            borderBottom: "1px solid #ccc",
+          }}
+        >
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                padding: "10px 4px",
+                fontSize: 13,
+                fontWeight: tab === t.id ? 700 : 500,
+                color: tab === t.id ? "#0b64d6" : "#444",
+                background: tab === t.id ? "#fff" : "transparent",
+                border: "none",
+                borderBottom:
+                  tab === t.id ? "2px solid #0b64d6" : "2px solid transparent",
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ flex: 1, width: "100%", overflowX: "hidden", overflowY: "auto" }}>
+          {tab === "pliegues" && <div style={{ width: "100%" }}>{panelSecuencia}</div>}
+          {tab === "visor" && (
+            <div
+              style={{
+                width: "100%",
+                height: "55vh",
+                overflow: "hidden",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              {visor}
+            </div>
+          )}
+          {tab === "estadisticas" && (
+            <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+              {panelDatos}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            borderTop: "1px solid #ccc",
+            background: "#f7f7f7",
+            padding: "10px",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px",
+            width: "100%",
+            overflowX: "hidden",
+          }}
+        >
+          {controles}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -50,7 +184,7 @@ export const ChapaLayout: React.FC = () => {
     >
       {/* Panel izquierdo: Secuencia */}
       <div style={{ borderRight: "1px solid #ccc", overflow: "hidden" }}>
-        <PanelSecuencia />
+        {panelSecuencia}
       </div>
 
       {/* Centro: visor interactivo */}
@@ -64,10 +198,7 @@ export const ChapaLayout: React.FC = () => {
           alignItems: "center",
         }}
       >
-        <SheetSVGInteractive
-          pliegues={pliegues}
-          onSeleccion={(id) => setPliegueSeleccionado(id)}
-        />
+        {visor}
       </div>
 
       {/* Panel derecho: datos + estadísticas */}
@@ -79,8 +210,7 @@ export const ChapaLayout: React.FC = () => {
           overflow: "auto",
         }}
       >
-        <PanelPliegue />
-        <PanelEstadisticas />
+        {panelDatos}
       </div>
 
       {/* Panel inferior: controles y utilidades */}
@@ -97,17 +227,11 @@ export const ChapaLayout: React.FC = () => {
           maxHeight: "40vh",
         }}
       >
-        <PanelControl />
-        <ExportarChapa />
-        <ImportarChapa />
-        <ValidacionChapa />
-        <NormalizacionChapa />
-        <SimulacionChapa />
-        <SimulacionCompletaChapa />
-        <MovimientoGlobalChapa />
+        {controles}
       </div>
     </div>
   );
 };
+
 
 export default ChapaLayout;
