@@ -115,23 +115,7 @@ All colors MUST be HSL.
 }
 
 @layer components {
-  .portada-contenedor {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #EFEFF3;
-  }
 
-  .portada-tarjeta {
-    background-color: white;
-    padding: 40px;
-    border-radius: 18px;
-    box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.15);
-    width: 90%;
-    max-width: 430px;
-    text-align: center;
-  }
 
   .portada-titulo {
     font-size: 34px;
