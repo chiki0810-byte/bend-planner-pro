@@ -83,17 +83,25 @@ export function computeBend(
   const outsideSetback = Math.tan((Math.PI / 180) * (input.angle / 2)) * (R + t);
   const bendDeduction = 2 * outsideSetback - bendAllowance;
 
+  const direction = input.direction ?? 1;
+
   return {
     order,
     angle: input.angle,
     distanceFromPrevious: input.distance,
     innerRadius: round(R),
+    thickness: t,
     kFactor: round(K, 3),
-    direction: input.direction ?? 1,
+    direction,
+    directionLabel: directionLabel(direction),
     tolerance: input.tolerance ?? 0.1,
     bendAllowance: round(bendAllowance),
     bendDeduction: round(bendDeduction),
     outsideSetback: round(outsideSetback),
+    associatedDimension: input.associatedDimension ?? DEFAULT_BEND_METADATA.associatedDimension,
+    criticalDimension: input.criticalDimension ?? DEFAULT_BEND_METADATA.criticalDimension,
+    compensationAllowed: input.compensationAllowed ?? DEFAULT_BEND_METADATA.compensationAllowed,
+    compensationAmount: input.compensationAmount ?? DEFAULT_BEND_METADATA.compensationAmount,
   };
 }
 
