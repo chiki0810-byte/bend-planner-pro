@@ -22,6 +22,8 @@ const SUPPORTED_THICKNESSES = [0.5, 0.6, 0.8, 1.0, 1.2, 1.5];
 
 interface BendRow extends BendItemValue {
   id: string;
+  manualR?: boolean;
+  manualK?: boolean;
 }
 
 const newBend = (defRadius: number, defK: number): BendRow => ({
@@ -50,11 +52,21 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     });
   }, []);
 
-  // Recargar defaults al cambiar material/espesor
+  // Recargar defaults al cambiar material/espesor y sincronizar plegados no editados
   useEffect(() => {
     const t = parseFloat(thickness);
     if (!material || !t) return;
-    getMaterialDefaults(material, t).then(setDefaults);
+    let cancelled = false;
+    getMaterialDefaults(material, t).then(def => {
+      if (cancelled) return;
+      setDefaults(def);
+      setBends(prev => prev.map(b => ({
+        ...b,
+        innerRadius: b.manualR ? b.innerRadius : def.innerRadius,
+        kFactor: b.manualK ? b.kFactor : def.kFactor,
+      })));
+    });
+    return () => { cancelled = true; };
   }, [material, thickness]);
 
   useEffect(() => {
@@ -62,13 +74,20 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     setThickness(String(initialState.thickness));
     setMaterial(initialState.material);
     setPieceLength(String(initialState.pieceLength));
-    setBends(initialState.bends.map(b => ({ id: crypto.randomUUID(), ...b })));
+    setBends(initialState.bends.map(b => ({
+      id: crypto.randomUUID(), ...b, manualR: true, manualK: true,
+    })));
   }, [initialState]);
 
   const addBend = () => setBends([...bends, newBend(defaults.innerRadius, defaults.kFactor)]);
   const removeBend = (id: string) => setBends(bends.filter(b => b.id !== id));
   const updateBend = (id: string, v: BendItemValue) =>
-    setBends(bends.map(b => b.id === id ? { ...b, ...v } : b));
+    setBends(bends.map(b => b.id === id ? {
+      ...b, ...v,
+      manualR: b.manualR || v.innerRadius !== b.innerRadius,
+      manualK: b.manualK || v.kFactor !== b.kFactor,
+    } : b));
+
 
   const calculate = async () => {
     const t = parseFloat(thickness);
@@ -100,7 +119,8 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
 
     onCalculate(result, {
       material, thickness: t, pieceLength: L,
-      bends: bends.map(({ id, ...rest }) => rest),
+      bends: bends.map(({ id, manualR, manualK, ...rest }) => rest),
+
     });
   };
 
