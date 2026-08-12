@@ -38,6 +38,7 @@ const navItems = [
   { to: "/sugeridor-vueltas", label: "Sugeridor de Vueltas", icon: ListOrdered },
   { to: "/remates-desiguales", label: "Remates Desiguales", icon: Scissors },
   { to: "/chapa-svg", label: "Chapa SVG", icon: Layers3 },
+  { to: "/chapa", label: "Plegado de Chapa", icon: Layers3 },
   { to: "/historial", label: "Historial", icon: FolderClock },
   { to: "/plantillas", label: "Plantillas", icon: LayoutTemplate },
   { to: "/materiales", label: "Materiales", icon: Layers3 },

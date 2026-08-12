@@ -8,7 +8,7 @@ function MenuPrincipal() {
     <div className="menu-principal">
       <button onClick={() => navegar("/portada-moderna")}>Portada</button>
       <button onClick={() => navegar("/login")}>Login</button>
-      <button onClick={() => navegar("/visor-chapa")}>Visor Chapa</button>
+      <button onClick={() => navegar("/chapa")}>Chapa</button>
     </div>
   );
 }
