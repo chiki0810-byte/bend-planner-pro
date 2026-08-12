@@ -7,7 +7,27 @@
 //   K     = factor K (posición fibra neutra)
 //   t     = espesor (mm)
 
-export interface BendInput {
+export type BendDirectionLabel = 'up' | 'down';
+
+/** Campos de metadatos preparados para futuras funciones (marcado, compensación,
+ *  cotas críticas, secuencia, remates). No afectan a ningún cálculo actual. */
+export interface BendMetadata {
+  associatedDimension: number | null;
+  criticalDimension: boolean;
+  compensationAllowed: boolean;
+  compensationAmount: number;
+}
+
+export const DEFAULT_BEND_METADATA: BendMetadata = {
+  associatedDimension: null,
+  criticalDimension: false,
+  compensationAllowed: false,
+  compensationAmount: 0,
+};
+
+export const directionLabel = (d: 1 | -1): BendDirectionLabel => (d === -1 ? 'down' : 'up');
+
+export interface BendInput extends Partial<BendMetadata> {
   angle: number;         // grados de plegado (ángulo de la operación)
   distance: number;      // distancia desde plegado anterior o borde (mm)
   innerRadius?: number;  // radio interior (mm), si vacío => 1.5 * t
@@ -16,18 +36,21 @@ export interface BendInput {
   tolerance?: number;    // tolerancia +/- (mm)
 }
 
-export interface BendOutput {
+export interface BendOutput extends BendMetadata {
   order: number;
   angle: number;
   distanceFromPrevious: number;
   innerRadius: number;
+  thickness: number;
   kFactor: number;
   direction: 1 | -1;
+  directionLabel: BendDirectionLabel;
   tolerance: number;
   bendAllowance: number;
   bendDeduction: number;
   outsideSetback: number;
 }
+
 
 export interface DefaultsByThickness {
   bendAllowance90: number; // referencia (no se usa para cálculo si hay fórmula)
