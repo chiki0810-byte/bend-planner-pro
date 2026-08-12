@@ -119,7 +119,8 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
 
     onCalculate(result, {
       material, thickness: t, pieceLength: L,
-      bends: bends.map(({ id, ...rest }) => rest),
+      bends: bends.map(({ id, manualR, manualK, ...rest }) => rest),
+
     });
   };
 
