@@ -13,6 +13,11 @@ export interface BendItemValue {
   kFactor: number;
   direction: 1 | -1;
   tolerance: number;
+  // Campos opcionales reservados para futuras funciones (no usados aún en la UI)
+  associatedDimension?: number | null;
+  criticalDimension?: boolean;
+  compensationAllowed?: boolean;
+  compensationAmount?: number;
 }
 
 interface BendItemProps {
