@@ -96,7 +96,12 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     })));
   }, [initialState]);
 
-  const addBend = () => setBends([...bends, newBend(defaults.innerRadius, defaults.kFactor)]);
+  const addBend = () => {
+    const last = bends[bends.length - 1];
+    const defRadius = isCalibrated ? defaults.innerRadius : (last?.innerRadius ?? 0);
+    const defK = isCalibrated ? defaults.kFactor : (last?.kFactor ?? 0);
+    setBends([...bends, newBend(defRadius, defK)]);
+  };
   const removeBend = (id: string) => setBends(bends.filter(b => b.id !== id));
   const updateBend = (id: string, v: BendItemValue) =>
     setBends(bends.map(b => b.id === id ? {
@@ -109,8 +114,8 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const calculate = async () => {
     const t = parseFloat(thickness);
     const L = parseFloat(pieceLength);
-    if (!t || !L || !material) return;
-    const def = await getMaterialDefaults(material, t);
+    if (!t || !L || !material || !isCalibrated) return;
+    const { defaults: def } = await getMaterialDefaultsWithCalibration(material, t);
 
     const bendResults = bends.map((b, i) =>
       computeBend(
