@@ -167,7 +167,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
             <Select value={thickness} onValueChange={setThickness}>
               <SelectTrigger><SelectValue placeholder="Espesor" /></SelectTrigger>
               <SelectContent>
-                {SUPPORTED_THICKNESSES.map(t => (
+                {availableThicknesses.map(t => (
                   <SelectItem key={t} value={String(t)}>{t} mm</SelectItem>
                 ))}
               </SelectContent>
@@ -191,9 +191,17 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
         </div>
 
         {material && thickness && (
-          <div className="text-xs text-muted-foreground bg-muted/40 p-2 rounded border">
-            Defaults para {material} {thickness}mm — R int: <b>{defaults.innerRadius}</b> ·
-            K: <b>{defaults.kFactor}</b>
+          <div className={`text-xs p-2 rounded border ${isCalibrated ? "text-muted-foreground bg-muted/40" : "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/30 dark:border-amber-900"}`}>
+            {isCalibrated ? (
+              <>
+                Defaults para {material} {thickness}mm — R int: <b>{defaults.innerRadius}</b> ·
+                K: <b>{defaults.kFactor}</b>
+              </>
+            ) : (
+              <>
+                Espesor {thickness} mm de {material}: <b>pendiente de calibración</b>. Introduce R y K manualmente o añade valores en Materiales.
+              </>
+            )}
           </div>
         )}
 
@@ -221,7 +229,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
         </div>
 
         <Button onClick={calculate} className="w-full" size="lg"
-          disabled={!thickness || !material || !pieceLength}>
+          disabled={!thickness || !material || !pieceLength || !isCalibrated}>
           <Calculator className="w-4 h-4 mr-2" />
           Calcular Plegado
         </Button>
