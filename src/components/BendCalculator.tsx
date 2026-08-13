@@ -71,14 +71,17 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     const t = parseFloat(thickness);
     if (!material || !t) return;
     let cancelled = false;
-    getMaterialDefaults(material, t).then(def => {
+    getMaterialDefaultsWithCalibration(material, t).then(({ defaults: def, calibrated }) => {
       if (cancelled) return;
+      setIsCalibrated(calibrated);
       setDefaults(def);
-      setBends(prev => prev.map(b => ({
-        ...b,
-        innerRadius: b.manualR ? b.innerRadius : def.innerRadius,
-        kFactor: b.manualK ? b.kFactor : def.kFactor,
-      })));
+      if (calibrated) {
+        setBends(prev => prev.map(b => ({
+          ...b,
+          innerRadius: b.manualR ? b.innerRadius : def.innerRadius,
+          kFactor: b.manualK ? b.kFactor : def.kFactor,
+        })));
+      }
     });
     return () => { cancelled = true; };
   }, [material, thickness]);
