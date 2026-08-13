@@ -18,7 +18,7 @@ interface BendCalculatorProps {
   initialState?: CalculatorState | null;
 }
 
-const SUPPORTED_THICKNESSES = [0.5, 0.6, 0.8, 1.0, 1.2, 1.5];
+const BASE_THICKNESSES = [0.5, 0.6, 0.8, 1.0, 1.2, 1.5];
 
 interface BendRow extends BendItemValue {
   id: string;
@@ -42,7 +42,21 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const [pieceLength, setPieceLength] = useState<string>("");
   const [materials, setMaterials] = useState<string[]>([]);
   const [defaults, setDefaults] = useState({ kFactor: 0.38, innerRadius: 1.5, bendAllowance90: 1.6 });
+  const [isCalibrated, setIsCalibrated] = useState(true);
   const [bends, setBends] = useState<BendRow[]>([newBend(1.5, 0.38)]);
+
+  const availableThicknesses = useMemo(
+    () => (material === "Galvanizado" ? [...BASE_THICKNESSES, 2.0] : BASE_THICKNESSES),
+    [material],
+  );
+
+  // Resetear espesor si el material cambiado no lo soporta
+  useEffect(() => {
+    const t = parseFloat(thickness);
+    if (material && thickness && !availableThicknesses.some(x => Math.abs(x - t) < 1e-6)) {
+      setThickness("");
+    }
+  }, [material, availableThicknesses, thickness]);
 
   // Cargar materiales únicos desde storage
   useEffect(() => {
