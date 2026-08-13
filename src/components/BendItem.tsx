@@ -18,6 +18,7 @@ export interface BendItemValue {
   criticalDimension?: boolean;
   compensationAllowed?: boolean;
   compensationAmount?: number;
+  dimensionReference?: "inside" | "outside" | null;
 }
 
 interface BendItemProps {
@@ -103,6 +104,45 @@ const BendItem = ({ index, value, onChange, onRemove, canRemove, defaultRadius, 
           <Input type="number" step="0.05" min="0" value={value.tolerance}
             onChange={(e) => set('tolerance', parseFloat(e.target.value) || 0)}
             className="h-8 text-xs" />
+        </div>
+      </div>
+
+      <div className="space-y-2 pt-1 border-t border-border/50">
+        <Label className="text-xs text-muted-foreground">Cota de referencia</Label>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              name={`dimensionReference-${index}`}
+              value="inside"
+              checked={value.dimensionReference === "inside"}
+              onChange={() => set('dimensionReference', 'inside')}
+              className="accent-primary"
+            />
+            Interior
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              name={`dimensionReference-${index}`}
+              value="outside"
+              checked={value.dimensionReference === "outside"}
+              onChange={() => set('dimensionReference', 'outside')}
+              className="accent-primary"
+            />
+            Exterior
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              name={`dimensionReference-${index}`}
+              value=""
+              checked={!value.dimensionReference}
+              onChange={() => set('dimensionReference', null)}
+              className="accent-primary"
+            />
+            Ninguna
+          </label>
         </div>
       </div>
     </div>

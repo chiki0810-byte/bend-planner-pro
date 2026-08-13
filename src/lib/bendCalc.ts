@@ -16,6 +16,7 @@ export interface BendMetadata {
   criticalDimension: boolean;
   compensationAllowed: boolean;
   compensationAmount: number;
+  dimensionReference: "inside" | "outside" | null;
 }
 
 export const DEFAULT_BEND_METADATA: BendMetadata = {
@@ -23,6 +24,7 @@ export const DEFAULT_BEND_METADATA: BendMetadata = {
   criticalDimension: false,
   compensationAllowed: false,
   compensationAmount: 0,
+  dimensionReference: null,
 };
 
 export const directionLabel = (d: 1 | -1): BendDirectionLabel => (d === -1 ? 'down' : 'up');
@@ -102,6 +104,7 @@ export function computeBend(
     criticalDimension: input.criticalDimension ?? DEFAULT_BEND_METADATA.criticalDimension,
     compensationAllowed: input.compensationAllowed ?? DEFAULT_BEND_METADATA.compensationAllowed,
     compensationAmount: input.compensationAmount ?? DEFAULT_BEND_METADATA.compensationAmount,
+    dimensionReference: input.dimensionReference ?? DEFAULT_BEND_METADATA.dimensionReference,
   };
 }
 
