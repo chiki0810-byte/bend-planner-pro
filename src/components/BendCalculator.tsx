@@ -106,6 +106,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
           criticalDimension: b.criticalDimension,
           compensationAllowed: b.compensationAllowed,
           compensationAmount: b.compensationAmount,
+          dimensionReference: b.dimensionReference,
         },
         t, def, i + 1,
       ),
