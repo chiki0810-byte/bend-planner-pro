@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,7 +8,7 @@ import { Calculator, Plus } from "lucide-react";
 import { BendResult, CalculatorState } from "@/pages/Index";
 import BendItem, { BendItemValue } from "./BendItem";
 import { computeBend } from "@/lib/bendCalc";
-import { getMaterialDefaults, listMaterials } from "@/lib/storage";
+import { getMaterialDefaultsWithCalibration, listMaterials } from "@/lib/storage";
 
 interface BendCalculatorProps {
   onCalculate: (
@@ -18,7 +18,7 @@ interface BendCalculatorProps {
   initialState?: CalculatorState | null;
 }
 
-const SUPPORTED_THICKNESSES = [0.5, 0.6, 0.8, 1.0, 1.2, 1.5];
+const BASE_THICKNESSES = [0.5, 0.6, 0.8, 1.0, 1.2, 1.5];
 
 interface BendRow extends BendItemValue {
   id: string;
@@ -42,7 +42,21 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const [pieceLength, setPieceLength] = useState<string>("");
   const [materials, setMaterials] = useState<string[]>([]);
   const [defaults, setDefaults] = useState({ kFactor: 0.38, innerRadius: 1.5, bendAllowance90: 1.6 });
+  const [isCalibrated, setIsCalibrated] = useState(true);
   const [bends, setBends] = useState<BendRow[]>([newBend(1.5, 0.38)]);
+
+  const availableThicknesses = useMemo(
+    () => (material === "Galvanizado" ? [...BASE_THICKNESSES, 2.0] : BASE_THICKNESSES),
+    [material],
+  );
+
+  // Resetear espesor si el material cambiado no lo soporta
+  useEffect(() => {
+    const t = parseFloat(thickness);
+    if (material && thickness && !availableThicknesses.some(x => Math.abs(x - t) < 1e-6)) {
+      setThickness("");
+    }
+  }, [material, availableThicknesses, thickness]);
 
   // Cargar materiales únicos desde storage
   useEffect(() => {
@@ -57,14 +71,17 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     const t = parseFloat(thickness);
     if (!material || !t) return;
     let cancelled = false;
-    getMaterialDefaults(material, t).then(def => {
+    getMaterialDefaultsWithCalibration(material, t).then(({ defaults: def, calibrated }) => {
       if (cancelled) return;
+      setIsCalibrated(calibrated);
       setDefaults(def);
-      setBends(prev => prev.map(b => ({
-        ...b,
-        innerRadius: b.manualR ? b.innerRadius : def.innerRadius,
-        kFactor: b.manualK ? b.kFactor : def.kFactor,
-      })));
+      if (calibrated) {
+        setBends(prev => prev.map(b => ({
+          ...b,
+          innerRadius: b.manualR ? b.innerRadius : def.innerRadius,
+          kFactor: b.manualK ? b.kFactor : def.kFactor,
+        })));
+      }
     });
     return () => { cancelled = true; };
   }, [material, thickness]);
@@ -79,7 +96,12 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     })));
   }, [initialState]);
 
-  const addBend = () => setBends([...bends, newBend(defaults.innerRadius, defaults.kFactor)]);
+  const addBend = () => {
+    const last = bends[bends.length - 1];
+    const defRadius = isCalibrated ? defaults.innerRadius : (last?.innerRadius ?? 0);
+    const defK = isCalibrated ? defaults.kFactor : (last?.kFactor ?? 0);
+    setBends([...bends, newBend(defRadius, defK)]);
+  };
   const removeBend = (id: string) => setBends(bends.filter(b => b.id !== id));
   const updateBend = (id: string, v: BendItemValue) =>
     setBends(bends.map(b => b.id === id ? {
@@ -92,8 +114,8 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const calculate = async () => {
     const t = parseFloat(thickness);
     const L = parseFloat(pieceLength);
-    if (!t || !L || !material) return;
-    const def = await getMaterialDefaults(material, t);
+    if (!t || !L || !material || !isCalibrated) return;
+    const { defaults: def } = await getMaterialDefaultsWithCalibration(material, t);
 
     const bendResults = bends.map((b, i) =>
       computeBend(
@@ -145,7 +167,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
             <Select value={thickness} onValueChange={setThickness}>
               <SelectTrigger><SelectValue placeholder="Espesor" /></SelectTrigger>
               <SelectContent>
-                {SUPPORTED_THICKNESSES.map(t => (
+                {availableThicknesses.map(t => (
                   <SelectItem key={t} value={String(t)}>{t} mm</SelectItem>
                 ))}
               </SelectContent>
@@ -169,9 +191,17 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
         </div>
 
         {material && thickness && (
-          <div className="text-xs text-muted-foreground bg-muted/40 p-2 rounded border">
-            Defaults para {material} {thickness}mm — R int: <b>{defaults.innerRadius}</b> ·
-            K: <b>{defaults.kFactor}</b>
+          <div className={`text-xs p-2 rounded border ${isCalibrated ? "text-muted-foreground bg-muted/40" : "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/30 dark:border-amber-900"}`}>
+            {isCalibrated ? (
+              <>
+                Defaults para {material} {thickness}mm — R int: <b>{defaults.innerRadius}</b> ·
+                K: <b>{defaults.kFactor}</b>
+              </>
+            ) : (
+              <>
+                Espesor {thickness} mm de {material}: <b>pendiente de calibración</b>. Introduce R y K manualmente o añade valores en Materiales.
+              </>
+            )}
           </div>
         )}
 
@@ -199,7 +229,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
         </div>
 
         <Button onClick={calculate} className="w-full" size="lg"
-          disabled={!thickness || !material || !pieceLength}>
+          disabled={!thickness || !material || !pieceLength || !isCalibrated}>
           <Calculator className="w-4 h-4 mr-2" />
           Calcular Plegado
         </Button>
