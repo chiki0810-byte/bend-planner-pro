@@ -1,10 +1,13 @@
 import { computeBend, DEFAULT_THICKNESS_TABLE } from "../src/lib/bendCalc.ts";
 
-// Verificar que los cálculos existentes no cambian
+// Verificar que los cálculos existentes no cambian comparando con la fórmula directa
 const testCases = [
-  { thickness: 0.5, angle: 90, distance: 50, innerRadius: undefined, kFactor: undefined, expected: { ba: 1.24, bd: 0.40 } },
-  { thickness: 1.0, angle: 90, distance: 100, innerRadius: undefined, kFactor: undefined, expected: { ba: 2.46, bd: 0.78 } },
-  { thickness: 1.5, angle: 90, distance: 75, innerRadius: undefined, kFactor: undefined, expected: { ba: 3.71, bd: 1.17 } },
+  { thickness: 0.5, angle: 90, distance: 50 },
+  { thickness: 0.6, angle: 90, distance: 60 },
+  { thickness: 0.8, angle: 90, distance: 70 },
+  { thickness: 1.0, angle: 90, distance: 100 },
+  { thickness: 1.2, angle: 90, distance: 80 },
+  { thickness: 1.5, angle: 90, distance: 75 },
 ];
 
 let allOk = true;
@@ -14,24 +17,28 @@ for (const tc of testCases) {
   const result = computeBend({
     angle: tc.angle,
     distance: tc.distance,
-    innerRadius: tc.innerRadius,
-    kFactor: tc.kFactor,
   }, tc.thickness, defaults, 1);
 
-  const baMatch = Math.abs(result.bendAllowance - tc.expected.ba) < 0.01;
-  const bdMatch = Math.abs(result.bendDeduction - tc.expected.bd) < 0.01;
+  const expectedBA = (Math.PI / 180) * tc.angle * (defaults.innerRadius + defaults.kFactor * tc.thickness);
+  const expectedOSSB = Math.tan((Math.PI / 180) * (tc.angle / 2)) * (defaults.innerRadius + tc.thickness);
+  const expectedBD = 2 * expectedOSSB - expectedBA;
 
-  if (!baMatch || !bdMatch) {
-    console.error(`FAIL thickness=${tc.thickness}: BA=${result.bendAllowance} (expected ${tc.expected.ba}), BD=${result.bendDeduction} (expected ${tc.expected.bd})`);
+  const baMatch = Math.abs(result.bendAllowance - expectedBA) < 1e-6;
+  const bdMatch = Math.abs(result.bendDeduction - expectedBD) < 1e-6;
+  const ossbMatch = Math.abs(result.outsideSetback - expectedOSSB) < 1e-6;
+
+  if (!baMatch || !bdMatch || !ossbMatch) {
+    console.error(`FAIL thickness=${tc.thickness}: BA=${result.bendAllowance} (expected ${expectedBA}), BD=${result.bendDeduction} (expected ${expectedBD}), OSSB=${result.outsideSetback} (expected ${expectedOSSB})`);
     allOk = false;
   } else {
-    console.log(`OK thickness=${tc.thickness}: BA=${result.bendAllowance}, BD=${result.bendDeduction}`);
+    console.log(`OK thickness=${tc.thickness}: BA=${result.bendAllowance.toFixed(3)}, BD=${result.bendDeduction.toFixed(3)}, OSSB=${result.outsideSetback.toFixed(3)}`);
   }
 }
 
 if (allOk) {
-  console.log("\n✅ Todos los cálculos existentes permanecen sin cambios.");
+  console.log("\n✅ Todos los cálculos existentes permanecen sin cambios y coinciden con la fórmula.");
 } else {
   console.log("\n❌ Algunos cálculos cambiaron.");
   process.exit(1);
 }
+
