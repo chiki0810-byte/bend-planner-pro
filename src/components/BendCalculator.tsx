@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,7 +8,7 @@ import { Calculator, Plus } from "lucide-react";
 import { BendResult, CalculatorState } from "@/pages/Index";
 import BendItem, { BendItemValue } from "./BendItem";
 import { computeBend } from "@/lib/bendCalc";
-import { getMaterialDefaults, listMaterials } from "@/lib/storage";
+import { getMaterialDefaultsWithCalibration, listMaterials } from "@/lib/storage";
 
 interface BendCalculatorProps {
   onCalculate: (
