@@ -179,12 +179,26 @@ export async function deleteMaterial(id: number): Promise<void> {
 }
 
 export async function getMaterialDefaults(material: string, thickness: number): Promise<DefaultsByThickness> {
+  const { defaults } = await getMaterialDefaultsWithCalibration(material, thickness);
+  return defaults;
+}
+
+export async function getMaterialDefaultsWithCalibration(
+  material: string,
+  thickness: number,
+): Promise<{ defaults: DefaultsByThickness; calibrated: boolean }> {
   const all = await listMaterials();
   const found = all.find(m => m.material === material && Math.abs(m.thickness - thickness) < 1e-6);
   if (found) {
-    return { bendAllowance90: found.bendAllowance90, kFactor: found.kFactor, innerRadius: found.innerRadius };
+    return {
+      defaults: { bendAllowance90: found.bendAllowance90, kFactor: found.kFactor, innerRadius: found.innerRadius },
+      calibrated: true,
+    };
   }
-  return DEFAULT_THICKNESS_TABLE[thickness] ?? { bendAllowance90: 1.5, kFactor: 0.38, innerRadius: thickness * 1.5 };
+  return {
+    defaults: DEFAULT_THICKNESS_TABLE[thickness] ?? { bendAllowance90: 1.5, kFactor: 0.38, innerRadius: thickness * 1.5 },
+    calibrated: false,
+  };
 }
 
 // ----- Templates -----
