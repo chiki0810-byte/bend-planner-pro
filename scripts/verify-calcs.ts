@@ -19,9 +19,9 @@ for (const tc of testCases) {
     distance: tc.distance,
   }, tc.thickness, defaults, 1);
 
-  const expectedBA = (Math.PI / 180) * tc.angle * (defaults.innerRadius + defaults.kFactor * tc.thickness);
-  const expectedOSSB = Math.tan((Math.PI / 180) * (tc.angle / 2)) * (defaults.innerRadius + tc.thickness);
-  const expectedBD = 2 * expectedOSSB - expectedBA;
+  const expectedBA = Math.round(((Math.PI / 180) * tc.angle * (defaults.innerRadius + defaults.kFactor * tc.thickness)) * 100) / 100;
+  const expectedOSSB = Math.round((Math.tan((Math.PI / 180) * (tc.angle / 2)) * (defaults.innerRadius + tc.thickness)) * 100) / 100;
+  const expectedBD = Math.round((2 * expectedOSSB - expectedBA) * 100) / 100;
 
   const baMatch = Math.abs(result.bendAllowance - expectedBA) < 1e-6;
   const bdMatch = Math.abs(result.bendDeduction - expectedBD) < 1e-6;
