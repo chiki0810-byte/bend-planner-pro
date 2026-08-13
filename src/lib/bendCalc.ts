@@ -16,6 +16,7 @@ export interface BendMetadata {
   criticalDimension: boolean;
   compensationAllowed: boolean;
   compensationAmount: number;
+  dimensionReference: "inside" | "outside" | null;
 }
 
 export const DEFAULT_BEND_METADATA: BendMetadata = {
