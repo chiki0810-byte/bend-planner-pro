@@ -118,35 +118,53 @@ export async function deletePiece(id: number): Promise<void> {
 }
 
 // ----- Materials -----
-const DEFAULT_MATERIALS = ['Acero al carbono', 'Acero inoxidable', 'Aluminio', 'Galvanizado'];
+/** Catálogo genérico de materiales (base de la app, no específico de un taller). */
+export const BASE_MATERIALS = [
+  'Acero',
+  'Inox',
+  'Aluminio',
+  'Galvanizado',
+  'Corten',
+  'Duro 500',
+  'Duro 600',
+  'Latón',
+  'Cobre',
+];
 
-export async function listMaterials(): Promise<MaterialRow[]> {
-  let rows: MaterialRow[];
+async function fetchMaterials(): Promise<MaterialRow[]> {
   if (isNative()) {
     const db = await getNativeDb();
     const res = await db.query(`SELECT * FROM materials ORDER BY material, thickness;`);
-    rows = (res.values ?? []) as MaterialRow[];
-  } else {
-    rows = await webDb.materials.toArray();
+    return (res.values ?? []) as MaterialRow[];
   }
-  if (rows.length === 0) {
-    await seedDefaultMaterials();
-    return listMaterials();
-  }
-  return rows;
+  return await webDb.materials.toArray();
 }
 
-async function seedDefaultMaterials() {
-  for (const mat of DEFAULT_MATERIALS) {
+export async function listMaterials(): Promise<MaterialRow[]> {
+  const rows = await fetchMaterials();
+  const added = await ensureBaseMaterials(rows);
+  return added ? await fetchMaterials() : rows;
+}
+
+/** Inserta únicamente las combinaciones material+espesor que faltan.
+ *  Idempotente: nunca duplica ni sobrescribe valores existentes. */
+async function ensureBaseMaterials(existing: MaterialRow[]): Promise<boolean> {
+  const key = (m: string, t: number) => `${m}|${t.toFixed(2)}`;
+  const present = new Set(existing.map(r => key(r.material, r.thickness)));
+  let inserted = false;
+  for (const mat of BASE_MATERIALS) {
     for (const [tStr, def] of Object.entries(DEFAULT_THICKNESS_TABLE)) {
       const t = parseFloat(tStr);
+      if (present.has(key(mat, t))) continue;
       await upsertMaterial({
         material: mat, thickness: t,
         bendAllowance90: def.bendAllowance90,
         kFactor: def.kFactor, innerRadius: def.innerRadius,
       });
+      inserted = true;
     }
   }
+  return inserted;
 }
 
 export async function upsertMaterial(m: Omit<MaterialRow, 'id'>): Promise<void> {
