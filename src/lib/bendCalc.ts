@@ -70,6 +70,33 @@ export const DEFAULT_THICKNESS_TABLE: Record<number, DefaultsByThickness> = {
   1.5: { bendAllowance90: 2.4, kFactor: 0.42, innerRadius: 2.2 },
 };
 
+export interface BendMathInput {
+  angle: number;
+  thickness: number;
+  innerRadius: number;
+  kFactor: number;
+}
+
+export interface BendMathOutput {
+  bendAllowance: number;
+  outsideSetback: number;
+  bendDeduction: number;
+}
+
+export function calculateBendMath(input: BendMathInput): BendMathOutput {
+  const angleRad = (Math.PI / 180) * input.angle;
+  const bendAllowance = angleRad * (input.innerRadius + input.kFactor * input.thickness);
+  // Outside setback: OSSB = tan(angle/2) * (R + t)
+  const outsideSetback = Math.tan((Math.PI / 180) * (input.angle / 2)) * (input.innerRadius + input.thickness);
+  const bendDeduction = 2 * outsideSetback - bendAllowance;
+
+  return {
+    bendAllowance,
+    outsideSetback,
+    bendDeduction,
+  };
+}
+
 export function computeBend(
   input: BendInput,
   thickness: number,
@@ -79,13 +106,15 @@ export function computeBend(
   const t = thickness;
   const R = input.innerRadius ?? defaults.innerRadius;
   const K = input.kFactor ?? defaults.kFactor;
-  const angleRad = (Math.PI / 180) * input.angle;
-  const bendAllowance = angleRad * (R + K * t);
-  // Outside setback: OSSB = tan(angle/2) * (R + t)
-  const outsideSetback = Math.tan((Math.PI / 180) * (input.angle / 2)) * (R + t);
-  const bendDeduction = 2 * outsideSetback - bendAllowance;
+  const { bendAllowance, outsideSetback, bendDeduction } = calculateBendMath({
+    angle: input.angle,
+    thickness: t,
+    innerRadius: R,
+    kFactor: K,
+  });
 
   const direction = input.direction ?? 1;
+
 
   return {
     order,
