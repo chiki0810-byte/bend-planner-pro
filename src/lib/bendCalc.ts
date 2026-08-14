@@ -115,7 +115,6 @@ export function computeBend(
 
   const direction = input.direction ?? 1;
 
-
   return {
     order,
     angle: input.angle,
