@@ -10,6 +10,7 @@ import {
   ImageIcon, Ruler, Layers, FileText, ChevronUp, ChevronDown,
 } from "lucide-react";
 import { savePiece } from "@/lib/storage";
+import { calculateBendMath } from "@/lib/bendCalc";
 
 // ─── Tipos / estados ──────────────────────────────────────────────────────
 type Sentido = "interior" | "exterior";
