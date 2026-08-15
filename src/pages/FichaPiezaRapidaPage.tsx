@@ -10,6 +10,7 @@ import {
   ImageIcon, Ruler, Layers, FileText, ChevronUp, ChevronDown,
 } from "lucide-react";
 import { savePiece } from "@/lib/storage";
+import { calculateBendMath } from "@/lib/bendCalc";
 
 // ─── Tipos / estados ──────────────────────────────────────────────────────
 type Sentido = "interior" | "exterior";
@@ -114,7 +115,12 @@ const FichaPiezaRapidaPage = () => {
     const K = getK(material);
     const total = pliegues.reduce((acc, p) => {
       const comp = p.angulo
-        ? (Math.PI / 180) * p.angulo * (p.radio + K * espesor)
+        ? calculateBendMath({
+            angle: p.angulo,
+            thickness: espesor,
+            innerRadius: p.radio,
+            kFactor: K,
+          }).bendAllowance
         : 0;
       return acc + (p.longitud || 0) + comp;
     }, 0);
