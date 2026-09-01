@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Calculator, Layers, ImagePlus, X, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { exportRemateProPdf, PliegueExp } from "@/lib/rematesProExport";
+import { calculateBendMath } from "@/lib/bendCalc";
 import logoEmpresa from "@/assets/logo_empresa.png";
 
 type TipoPro = "recto_simetrico" | "recto_asimetrico" | "conico_enchufable";
@@ -56,7 +57,12 @@ const calcularPunta = (lista: Pliegue[], K: number, t: number): number =>
     const L = Number(p.longitud_mm) || 0;
     const A = Number(p.angulo_deg) || 0;
     const R = Number(p.radio_mm) || 0;
-    const compensacion = (Math.PI / 180) * A * (R + K * t);
+    const compensacion = calculateBendMath({
+      angle: A,
+      thickness: t,
+      innerRadius: R,
+      kFactor: K,
+    }).bendAllowance;
     return acc + L + compensacion;
   }, 0);
 
