@@ -130,7 +130,12 @@ export const calcularCanal = (i: CanalInput): CanalResult => {
   let desarrollo = 0;
   let ba_total = 0;
   for (const p of i.pliegues) {
-    const ba = (Math.PI / 180) * (p.angulo_deg || 0) * ((p.radio_mm || 0) + K * t);
+    const ba = calculateBendMath({
+      angle: p.angulo_deg || 0,
+      thickness: t,
+      innerRadius: p.radio_mm || 0,
+      kFactor: K,
+    }).bendAllowance;
     ba_total += ba;
     desarrollo += (p.longitud_mm || 0) + ba;
   }
