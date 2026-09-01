@@ -1,4 +1,5 @@
 // Cálculos del módulo profesional de plegado (offline)
+import { calculateBendMath } from "@/lib/bendCalc";
 
 export const MATERIALES_K: Record<string, number> = {
   Acero: 0.33,
