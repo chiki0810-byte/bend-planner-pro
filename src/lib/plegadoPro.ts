@@ -69,7 +69,12 @@ export const calcularConico = (i: ConicoInput): ConicoResult => {
   // Corrección BA si se pliega en prensa
   let ba = 0;
   if (i.plegado_en_prensa && i.angulo_pliegue_deg) {
-    ba = (Math.PI / 180) * i.angulo_pliegue_deg * R_ef;
+    ba = calculateBendMath({
+      angle: i.angulo_pliegue_deg,
+      thickness: t,
+      innerRadius: R,
+      kFactor: K,
+    }).bendAllowance;
   }
 
   const advertencias: string[] = [];
