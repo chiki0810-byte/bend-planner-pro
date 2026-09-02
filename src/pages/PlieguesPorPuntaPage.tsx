@@ -42,7 +42,7 @@ const materiales = [
 const calcPliegue = (p: Pliegue, radio: number, k: number, espesor: number): PliegueCalc => {
   const rad = (p.angulo * Math.PI) / 180;
   const ba = rad * (radio + k * espesor);
-  const comp = p.longitud - ba;
+  const comp = p.longitud + ba;
   return {
     ba,
     comp,
