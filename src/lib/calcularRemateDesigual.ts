@@ -4,6 +4,7 @@
 // y corrección por longitud antes de programar la pieza.
 
 import type { ValidacionResultado } from "./validarPieza";
+import { calculateBendMath } from "./bendCalc";
 
 export type TipoRemate = "normal" | "cejo";
 
@@ -58,7 +59,12 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   const k = calcularKDinamico(espesor, angulo);
 
   // A) BA = (π/180) · θ · (R + K·t)
-  const ba = +((Math.PI / 180) * angulo * (radio + k * espesor)).toFixed(3);
+  const ba = +calculateBendMath({
+    angle: angulo,
+    thickness: espesor,
+    innerRadius: radio,
+    kFactor: k,
+  }).bendAllowance.toFixed(3);
 
   // B) BD = BA + corrección por alas desiguales
   const diff = Math.abs(alaA - alaB);
