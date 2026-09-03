@@ -33,6 +33,7 @@ interface ResultadoState {
   nombrePieza?: string;
   espesor?: number;
   material?: string;
+  radioInterior?: number;
 }
 
 const ResultadoPiezaPage = () => {
@@ -53,6 +54,7 @@ const ResultadoPiezaPage = () => {
   const desTotal = state.desarrolloTotal ?? desA + desB;
   const espesor = state.espesor ?? 0;
   const material = state.material ?? "";
+  const radioReal = state.radioInterior ?? 0;
 
   // Esquema lineal simple: dibuja segmentos con cambio de dirección por orientación
   const esquema = useMemo(() => {
