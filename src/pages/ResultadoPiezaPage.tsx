@@ -258,7 +258,7 @@ const ResultadoPiezaPage = () => {
                   angulo: p.pliegue.angulo,
                   anguloMaquina: p.calc.anguloMaquina,
                   orientacion: p.pliegue.orientacion,
-                  radio: 0,
+                  radio: radioReal,
                   espesor,
                   cierra: p.pliegue.cierra,
                 })),
