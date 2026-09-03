@@ -307,6 +307,7 @@ const PlieguesPorPuntaPage = () => {
               desarrolloTotal,
               espesor,
               material,
+              radioInterior,
             },
           })
         }
