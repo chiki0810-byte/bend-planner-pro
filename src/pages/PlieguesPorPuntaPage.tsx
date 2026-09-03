@@ -305,6 +305,8 @@ const PlieguesPorPuntaPage = () => {
               desarrolloPuntaA,
               desarrolloPuntaB,
               desarrolloTotal,
+              espesor,
+              material,
             },
           })
         }

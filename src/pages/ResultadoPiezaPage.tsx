@@ -31,6 +31,8 @@ interface ResultadoState {
   desarrolloPuntaB?: number;
   desarrolloTotal?: number;
   nombrePieza?: string;
+  espesor?: number;
+  material?: string;
 }
 
 const ResultadoPiezaPage = () => {
@@ -49,6 +51,8 @@ const ResultadoPiezaPage = () => {
   const desA = state.desarrolloPuntaA ?? 0;
   const desB = state.desarrolloPuntaB ?? 0;
   const desTotal = state.desarrolloTotal ?? desA + desB;
+  const espesor = state.espesor ?? 0;
+  const material = state.material ?? "";
 
   // Esquema lineal simple: dibuja segmentos con cambio de dirección por orientación
   const esquema = useMemo(() => {
@@ -253,13 +257,13 @@ const ResultadoPiezaPage = () => {
                   anguloMaquina: p.calc.anguloMaquina,
                   orientacion: p.pliegue.orientacion,
                   radio: 0,
-                  espesor: 0,
+                  espesor,
                   cierra: p.pliegue.cierra,
                 })),
                 desarrolloTotal: desTotal,
                 desarrolloPuntaA: desA,
                 desarrolloPuntaB: desB,
-                material: "",
+                material,
                 remateDesigual: Math.abs(desA - desB) > 0.5,
               },
             })
