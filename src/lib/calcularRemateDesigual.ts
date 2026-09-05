@@ -2,6 +2,21 @@
 // Cálculo industrial avanzado para alas A/B distintas y corte cejo.
 // No sustituye a software profesional; ofrece BA, BD, K dinámico
 // y corrección por longitud antes de programar la pieza.
+//
+// ORGANIZACIÓN DEL ARCHIVO (etapa de separación conceptual):
+//   SECCIÓN A — MATEMÁTICA FÍSICA DEL PLEGADO
+//     · K dinámico (estimación de fibra neutra)
+//     · BA calculado con calculateBendMath() de bendCalc.ts
+//   SECCIÓN B — CORRECCIONES EMPÍRICAS EXISTENTES (fabricación)
+//     · corrección por alas desiguales (5 %)
+//     · corrección por longitud (2 %)
+//     · reducción por corte cejo (5 %)
+//   SECCIÓN C — COMPOSICIÓN DEL RESULTADO (BD, alas finales, desarrollo)
+//
+// NOTA: los porcentajes de la SECCIÓN B NO son fórmulas físicas universales;
+// son ajustes empíricos heredados. Se mantienen aquí exactamente igual que
+// antes para no alterar resultados, pero aislados para poder sustituirlos
+// más adelante por valores calibrados con casos reales de taller.
 
 import type { ValidacionResultado } from "./validarPieza";
 import { calculateBendMath } from "./bendCalc";
@@ -37,7 +52,12 @@ export interface RemateResultado {
   avisos: RemateAviso[];
 }
 
-// K dinámico aproximado en función de espesor y ángulo.
+/* ────────────────────────────────────────────────────────────────────────────
+ * SECCIÓN A — MATEMÁTICA FÍSICA DEL PLEGADO
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** FÍSICA (aproximada): K dinámico en función de espesor y ángulo.
+ *  Tabla heredada; no se modifica en esta etapa. */
 function calcularKDinamico(espesor: number, angulo: number): number {
   // base K según espesor (rangos típicos chapa fina)
   let k = 0.33;
@@ -52,41 +72,90 @@ function calcularKDinamico(espesor: number, angulo: number): number {
   return Math.max(0.2, Math.min(0.5, +k.toFixed(3)));
 }
 
+/** FÍSICA: BA = (π/180)·θ·(R + K·t) — delegado íntegramente en
+ *  calculateBendMath() (src/lib/bendCalc.ts). Redondeo interno a 3 decimales,
+ *  idéntico al comportamiento previo. */
+function calcularBAFisico(params: {
+  angulo: number;
+  espesor: number;
+  radio: number;
+  k: number;
+}): number {
+  return +calculateBendMath({
+    angle: params.angulo,
+    thickness: params.espesor,
+    innerRadius: params.radio,
+    kFactor: params.k,
+  }).bendAllowance.toFixed(3);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * SECCIÓN B — CORRECCIONES EMPÍRICAS EXISTENTES (no físicas)
+ * Valores heredados del taller. Aislados para futura calibración.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** Factores empíricos existentes. NO son constantes físicas. */
+const CORRECCIONES_EMPIRICAS = {
+  /** 5 % del desnivel entre alas — se suma al BA para obtener BD. */
+  FACTOR_ALAS_DESIGUALES: 0.05,
+  /** 2 % del desnivel entre alas — sólo si el desnivel supera 0,5 mm. */
+  FACTOR_LONGITUD: 0.02,
+  /** Umbral (mm) a partir del cual se aplica la corrección por longitud. */
+  UMBRAL_LONGITUD: 0.5,
+  /** 5 % del ala más corta — reducción aplicada en corte cejo. */
+  FACTOR_CEJO: 0.05,
+} as const;
+
+/** EMPÍRICA: corrección por alas desiguales (5 % del desnivel). */
+function correccionAlasEmpirica(diff: number): number {
+  return +(diff * CORRECCIONES_EMPIRICAS.FACTOR_ALAS_DESIGUALES).toFixed(3);
+}
+
+/** EMPÍRICA: corrección por longitud (2 % del desnivel, sólo si Δ > 0,5 mm). */
+function correccionLongitudEmpirica(diff: number): number {
+  if (diff <= CORRECCIONES_EMPIRICAS.UMBRAL_LONGITUD) return 0;
+  return +(diff * CORRECCIONES_EMPIRICAS.FACTOR_LONGITUD).toFixed(3);
+}
+
+/** EMPÍRICA: reducción por corte cejo (5 % del ala más corta). */
+function reduccionCejoEmpirica(alaA: number, alaB: number): number {
+  return +(Math.min(alaA, alaB) * CORRECCIONES_EMPIRICAS.FACTOR_CEJO).toFixed(3);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * SECCIÓN C — COMPOSICIÓN DEL RESULTADO
+ * ──────────────────────────────────────────────────────────────────────────── */
+
 export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   const { alaA, alaB, espesor, radio, angulo, tipo } = input;
   const avisos: RemateAviso[] = [];
 
+  // --- A) FÍSICA -----------------------------------------------------------
   const k = calcularKDinamico(espesor, angulo);
+  const ba = calcularBAFisico({ angulo, espesor, radio, k });
 
-  // A) BA = (π/180) · θ · (R + K·t)
-  const ba = +calculateBendMath({
-    angle: angulo,
-    thickness: espesor,
-    innerRadius: radio,
-    kFactor: k,
-  }).bendAllowance.toFixed(3);
-
-  // B) BD = BA + corrección por alas desiguales
+  // --- B) CORRECCIONES EMPÍRICAS ------------------------------------------
   const diff = Math.abs(alaA - alaB);
-  const correccionAlas = +(diff * 0.05).toFixed(3); // 5% del desnivel
+
+  // EMPÍRICA (5 %): BD = BA + corrección por alas desiguales
+  const correccionAlas = correccionAlasEmpirica(diff);
   const bd = +(ba + correccionAlas).toFixed(3);
 
-  // D) Corrección por longitud (si A ≠ B)
-  let correccionLongitud = 0;
-  if (diff > 0.5) {
-    correccionLongitud = +(diff * 0.02).toFixed(3); // 2% del desnivel
+  // EMPÍRICA (2 %): corrección por longitud si A ≠ B
+  const correccionLongitud = correccionLongitudEmpirica(diff);
+  if (correccionLongitud > 0) {
     avisos.push({
       nivel: "info",
       mensaje: `Alas desiguales (Δ ${diff.toFixed(1)} mm): aplicando corrección de ${correccionLongitud} mm.`,
     });
   }
 
-  // E) Corte cejo — reducción en el lado más corto
+  // EMPÍRICA (5 %): corte cejo — reducción en el lado más corto
   let reduccionCejo = 0;
   let alaAFinal = alaA;
   let alaBFinal = alaB;
   if (tipo === "cejo") {
-    reduccionCejo = +(Math.min(alaA, alaB) * 0.05).toFixed(3); // 5% del lado corto
+    reduccionCejo = reduccionCejoEmpirica(alaA, alaB);
     if (alaA <= alaB) alaAFinal = +(alaA - reduccionCejo).toFixed(3);
     else alaBFinal = +(alaB - reduccionCejo).toFixed(3);
     avisos.push({
@@ -109,7 +178,7 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
     });
   }
 
-  // F) Desarrollo total avanzado
+  // --- C) Desarrollo total: física (BA) + correcciones empíricas ----------
   const desarrolloTotal = +(
     alaAFinal + alaBFinal + ba + correccionAlas + correccionLongitud
   ).toFixed(3);
