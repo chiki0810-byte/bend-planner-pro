@@ -156,8 +156,11 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   const avisos: RemateAviso[] = [];
 
   // --- A) FÍSICA -----------------------------------------------------------
+  // Un único pliegue en el modelo actual; el motor ya admite varios pliegues
+  // con ángulo/radio/espesor/K propios vía sumarBAPliegues().
   const k = calcularKDinamico(espesor, angulo);
-  const ba = calcularBAFisico({ angulo, espesor, radio, k });
+  const ba = sumarBAPliegues([{ angulo, espesor, radio, k }]);
+
 
   // --- B) CORRECCIONES EMPÍRICAS ------------------------------------------
   const diff = Math.abs(alaA - alaB);
