@@ -230,6 +230,8 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
     desarrolloTotal,
     alaAFinal,
     alaBFinal,
+    desglose: { tramosRectos, sumaBA: ba, correccionesFabricacion },
+
     avisos,
   };
 }
