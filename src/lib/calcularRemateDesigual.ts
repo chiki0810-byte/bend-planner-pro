@@ -40,6 +40,16 @@ export interface RemateAviso {
   mensaje: string;
 }
 
+/** Desglose conceptual del desarrollo (informativo, no altera resultados). */
+export interface RemateDesglose {
+  /** Suma de los tramos rectos solicitados (alas finales). */
+  tramosRectos: number;
+  /** Suma de las BA físicas de cada pliegue (calculateBendMath). */
+  sumaBA: number;
+  /** Suma de las correcciones EMPÍRICAS/LEGACY aplicadas. */
+  correccionesFabricacion: number;
+}
+
 export interface RemateResultado {
   ba: number;              // Bend Allowance
   bd: number;              // Bend Deduction (BA + corrección por alas desiguales)
@@ -50,7 +60,10 @@ export interface RemateResultado {
   alaAFinal: number;
   alaBFinal: number;
   avisos: RemateAviso[];
+  /** Desglose informativo: rectos + BA + correcciones. */
+  desglose?: RemateDesglose;
 }
+
 
 /* ────────────────────────────────────────────────────────────────────────────
  * SECCIÓN A — MATEMÁTICA FÍSICA DEL PLEGADO
@@ -72,22 +85,34 @@ function calcularKDinamico(espesor: number, angulo: number): number {
   return Math.max(0.2, Math.min(0.5, +k.toFixed(3)));
 }
 
-/** FÍSICA: BA = (π/180)·θ·(R + K·t) — delegado íntegramente en
- *  calculateBendMath() (src/lib/bendCalc.ts). Redondeo interno a 3 decimales,
- *  idéntico al comportamiento previo. */
-function calcularBAFisico(params: {
+/** Parámetros físicos de UN pliegue individual. Cada pliegue puede tener
+ *  su propio ángulo, radio, espesor y K. */
+export interface PliegueFisico {
   angulo: number;
   espesor: number;
   radio: number;
-  k: number;
-}): number {
+  /** Si se omite, se estima con calcularKDinamico(espesor, ángulo). */
+  k?: number;
+}
+
+/** FÍSICA: BA = (π/180)·θ·(R + K·t) — delegado íntegramente en
+ *  calculateBendMath() (src/lib/bendCalc.ts). Redondeo interno a 3 decimales,
+ *  idéntico al comportamiento previo. */
+export function calcularBAPliegue(p: PliegueFisico): number {
+  const k = p.k ?? calcularKDinamico(p.espesor, p.angulo);
   return +calculateBendMath({
-    angle: params.angulo,
-    thickness: params.espesor,
-    innerRadius: params.radio,
-    kFactor: params.k,
+    angle: p.angulo,
+    thickness: p.espesor,
+    innerRadius: p.radio,
+    kFactor: k,
   }).bendAllowance.toFixed(3);
 }
+
+/** Suma de las BA físicas de una lista de pliegues (uno o varios). */
+export function sumarBAPliegues(pliegues: PliegueFisico[]): number {
+  return +pliegues.reduce((acc, p) => acc + calcularBAPliegue(p), 0).toFixed(3);
+}
+
 
 /* ────────────────────────────────────────────────────────────────────────────
  * SECCIÓN B — CORRECCIONES EMPÍRICAS EXISTENTES (no físicas)
@@ -123,16 +148,38 @@ function reduccionCejoEmpirica(alaA: number, alaB: number): number {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
+ * LIMITACIÓN CONOCIDA — PUNTA A / PUNTA B INDEPENDIENTES (API PENDIENTE)
+ *
+ * Punta A y Punta B deben poder tener reducciones de fabricación distintas.
+ * La estructura pública actual `RemateInput` NO permite representarlas: sólo
+ * existe `tipo: "normal" | "cejo"`, y la reducción por cejo se aplica de forma
+ * implícita al ala más corta (5 % EMPÍRICO / LEGACY).
+ *
+ * Campos que faltarían (NO añadidos aquí para no romper la API pública):
+ *   · reduccionPuntaA?: number   // mm reales medidos/definidos por taller
+ *   · reduccionPuntaB?: number   // mm reales medidos/definidos por taller
+ *   · tipoPuntaA / tipoPuntaB    // tipo de remate independiente por punta
+ *   · plieguesPuntaA / plieguesPuntaB: PliegueFisico[]  // varios pliegues/punta
+ *
+ * Mientras no exista esa información real (no se inventan valores), el cálculo
+ * mantiene EXACTAMENTE el comportamiento actual.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* ────────────────────────────────────────────────────────────────────────────
  * SECCIÓN C — COMPOSICIÓN DEL RESULTADO
  * ──────────────────────────────────────────────────────────────────────────── */
+
 
 export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   const { alaA, alaB, espesor, radio, angulo, tipo } = input;
   const avisos: RemateAviso[] = [];
 
   // --- A) FÍSICA -----------------------------------------------------------
+  // Un único pliegue en el modelo actual; el motor ya admite varios pliegues
+  // con ángulo/radio/espesor/K propios vía sumarBAPliegues().
   const k = calcularKDinamico(espesor, angulo);
-  const ba = calcularBAFisico({ angulo, espesor, radio, k });
+  const ba = sumarBAPliegues([{ angulo, espesor, radio, k }]);
+
 
   // --- B) CORRECCIONES EMPÍRICAS ------------------------------------------
   const diff = Math.abs(alaA - alaB);
@@ -178,10 +225,13 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
     });
   }
 
-  // --- C) Desarrollo total: física (BA) + correcciones empíricas ----------
+  // --- C) Desarrollo total: rectos + física (BA) + correcciones empíricas --
+  const tramosRectos = +(alaAFinal + alaBFinal).toFixed(3);
+  const correccionesFabricacion = +(correccionAlas + correccionLongitud).toFixed(3);
   const desarrolloTotal = +(
     alaAFinal + alaBFinal + ba + correccionAlas + correccionLongitud
   ).toFixed(3);
+
 
   // Heredar avisos del bloque 4 si existen
   if (input.validacion) {
@@ -199,6 +249,8 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
     desarrolloTotal,
     alaAFinal,
     alaBFinal,
+    desglose: { tramosRectos, sumaBA: ba, correccionesFabricacion },
+
     avisos,
   };
 }
