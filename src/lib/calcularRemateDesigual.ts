@@ -40,6 +40,16 @@ export interface RemateAviso {
   mensaje: string;
 }
 
+/** Desglose conceptual del desarrollo (informativo, no altera resultados). */
+export interface RemateDesglose {
+  /** Suma de los tramos rectos solicitados (alas finales). */
+  tramosRectos: number;
+  /** Suma de las BA físicas de cada pliegue (calculateBendMath). */
+  sumaBA: number;
+  /** Suma de las correcciones EMPÍRICAS/LEGACY aplicadas. */
+  correccionesFabricacion: number;
+}
+
 export interface RemateResultado {
   ba: number;              // Bend Allowance
   bd: number;              // Bend Deduction (BA + corrección por alas desiguales)
@@ -50,7 +60,10 @@ export interface RemateResultado {
   alaAFinal: number;
   alaBFinal: number;
   avisos: RemateAviso[];
+  /** Desglose informativo: rectos + BA + correcciones. */
+  desglose?: RemateDesglose;
 }
+
 
 /* ────────────────────────────────────────────────────────────────────────────
  * SECCIÓN A — MATEMÁTICA FÍSICA DEL PLEGADO
