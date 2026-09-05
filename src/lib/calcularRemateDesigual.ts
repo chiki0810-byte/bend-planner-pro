@@ -148,8 +148,27 @@ function reduccionCejoEmpirica(alaA: number, alaB: number): number {
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
+ * LIMITACIÓN CONOCIDA — PUNTA A / PUNTA B INDEPENDIENTES (API PENDIENTE)
+ *
+ * Punta A y Punta B deben poder tener reducciones de fabricación distintas.
+ * La estructura pública actual `RemateInput` NO permite representarlas: sólo
+ * existe `tipo: "normal" | "cejo"`, y la reducción por cejo se aplica de forma
+ * implícita al ala más corta (5 % EMPÍRICO / LEGACY).
+ *
+ * Campos que faltarían (NO añadidos aquí para no romper la API pública):
+ *   · reduccionPuntaA?: number   // mm reales medidos/definidos por taller
+ *   · reduccionPuntaB?: number   // mm reales medidos/definidos por taller
+ *   · tipoPuntaA / tipoPuntaB    // tipo de remate independiente por punta
+ *   · plieguesPuntaA / plieguesPuntaB: PliegueFisico[]  // varios pliegues/punta
+ *
+ * Mientras no exista esa información real (no se inventan valores), el cálculo
+ * mantiene EXACTAMENTE el comportamiento actual.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/* ────────────────────────────────────────────────────────────────────────────
  * SECCIÓN C — COMPOSICIÓN DEL RESULTADO
  * ──────────────────────────────────────────────────────────────────────────── */
+
 
 export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   const { alaA, alaB, espesor, radio, angulo, tipo } = input;
