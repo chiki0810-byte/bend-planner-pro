@@ -85,22 +85,34 @@ function calcularKDinamico(espesor: number, angulo: number): number {
   return Math.max(0.2, Math.min(0.5, +k.toFixed(3)));
 }
 
-/** FÍSICA: BA = (π/180)·θ·(R + K·t) — delegado íntegramente en
- *  calculateBendMath() (src/lib/bendCalc.ts). Redondeo interno a 3 decimales,
- *  idéntico al comportamiento previo. */
-function calcularBAFisico(params: {
+/** Parámetros físicos de UN pliegue individual. Cada pliegue puede tener
+ *  su propio ángulo, radio, espesor y K. */
+export interface PliegueFisico {
   angulo: number;
   espesor: number;
   radio: number;
-  k: number;
-}): number {
+  /** Si se omite, se estima con calcularKDinamico(espesor, ángulo). */
+  k?: number;
+}
+
+/** FÍSICA: BA = (π/180)·θ·(R + K·t) — delegado íntegramente en
+ *  calculateBendMath() (src/lib/bendCalc.ts). Redondeo interno a 3 decimales,
+ *  idéntico al comportamiento previo. */
+export function calcularBAPliegue(p: PliegueFisico): number {
+  const k = p.k ?? calcularKDinamico(p.espesor, p.angulo);
   return +calculateBendMath({
-    angle: params.angulo,
-    thickness: params.espesor,
-    innerRadius: params.radio,
-    kFactor: params.k,
+    angle: p.angulo,
+    thickness: p.espesor,
+    innerRadius: p.radio,
+    kFactor: k,
   }).bendAllowance.toFixed(3);
 }
+
+/** Suma de las BA físicas de una lista de pliegues (uno o varios). */
+export function sumarBAPliegues(pliegues: PliegueFisico[]): number {
+  return +pliegues.reduce((acc, p) => acc + calcularBAPliegue(p), 0).toFixed(3);
+}
+
 
 /* ────────────────────────────────────────────────────────────────────────────
  * SECCIÓN B — CORRECCIONES EMPÍRICAS EXISTENTES (no físicas)
