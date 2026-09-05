@@ -206,10 +206,13 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
     });
   }
 
-  // --- C) Desarrollo total: física (BA) + correcciones empíricas ----------
+  // --- C) Desarrollo total: rectos + física (BA) + correcciones empíricas --
+  const tramosRectos = +(alaAFinal + alaBFinal).toFixed(3);
+  const correccionesFabricacion = +(correccionAlas + correccionLongitud).toFixed(3);
   const desarrolloTotal = +(
     alaAFinal + alaBFinal + ba + correccionAlas + correccionLongitud
   ).toFixed(3);
+
 
   // Heredar avisos del bloque 4 si existen
   if (input.validacion) {
