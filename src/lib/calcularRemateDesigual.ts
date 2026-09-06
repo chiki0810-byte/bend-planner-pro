@@ -69,6 +69,8 @@ export interface RemateResultado {
   avisos: RemateAviso[];
   /** Desglose informativo: rectos + BA + correcciones. */
   desglose?: RemateDesglose;
+  /** BA individual de cada pliegue (sólo en modo multi-pliegue). */
+  baPorPliegue?: number[];
 }
 
 
