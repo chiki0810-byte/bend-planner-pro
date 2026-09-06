@@ -33,6 +33,13 @@ export interface RemateInput {
   material: string;
   tipo: TipoRemate;
   validacion?: ValidacionResultado;
+  /** NUEVO (opcional): lista de pliegues físicos individuales.
+   *  Si existe y tiene elementos, la BA se calcula pliegue a pliegue.
+   *  Si no existe, se mantiene EXACTAMENTE el comportamiento legacy. */
+  pliegues?: PliegueFisico[];
+  /** NUEVO (opcional): suma de las longitudes de los tramos rectos
+   *  introducidos en pantalla. Sólo se usa en modo multi-pliegue. */
+  sumaTramos?: number;
 }
 
 export interface RemateAviso {
