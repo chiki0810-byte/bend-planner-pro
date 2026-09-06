@@ -242,10 +242,17 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   }
 
   // --- C) Desarrollo total: rectos + física (BA) + correcciones empíricas --
-  const tramosRectos = +(alaAFinal + alaBFinal).toFixed(3);
+  // En modo multi-pliegue los tramos rectos son la suma de TODOS los tramos
+  // introducidos, aplicando (si procede) la misma reducción por cejo.
+  const reduccionAplicada = (alaA - alaAFinal) + (alaB - alaBFinal);
+  const tramosRectos = +(
+    (multi && typeof input.sumaTramos === "number"
+      ? input.sumaTramos - reduccionAplicada
+      : alaAFinal + alaBFinal)
+  ).toFixed(3);
   const correccionesFabricacion = +(correccionAlas + correccionLongitud).toFixed(3);
   const desarrolloTotal = +(
-    alaAFinal + alaBFinal + ba + correccionAlas + correccionLongitud
+    tramosRectos + ba + correccionAlas + correccionLongitud
   ).toFixed(3);
 
 
