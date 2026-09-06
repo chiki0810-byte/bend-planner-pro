@@ -184,10 +184,17 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   const avisos: RemateAviso[] = [];
 
   // --- A) FÍSICA -----------------------------------------------------------
-  // Un único pliegue en el modelo actual; el motor ya admite varios pliegues
-  // con ángulo/radio/espesor/K propios vía sumarBAPliegues().
-  const k = calcularKDinamico(espesor, angulo);
-  const ba = sumarBAPliegues([{ angulo, espesor, radio, k }]);
+  // Modo multi-pliegue: cada pliegue con su ángulo/radio/espesor/K propios.
+  // Modo legacy (sin lista): un único pliegue, comportamiento idéntico al previo.
+  const multi = Array.isArray(input.pliegues) && input.pliegues.length > 0;
+  const listaPliegues: PliegueFisico[] = multi
+    ? input.pliegues!
+    : [{ angulo, espesor, radio, k: calcularKDinamico(espesor, angulo) }];
+  const baPorPliegue = listaPliegues.map((p) => calcularBAPliegue(p));
+  const ba = sumarBAPliegues(listaPliegues);
+  const k = multi
+    ? (listaPliegues[0].k ?? calcularKDinamico(listaPliegues[0].espesor, listaPliegues[0].angulo))
+    : calcularKDinamico(espesor, angulo);
 
 
   // --- B) CORRECCIONES EMPÍRICAS ------------------------------------------
