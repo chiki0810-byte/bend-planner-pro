@@ -33,6 +33,13 @@ export interface RemateInput {
   material: string;
   tipo: TipoRemate;
   validacion?: ValidacionResultado;
+  /** NUEVO (opcional): lista de pliegues físicos individuales.
+   *  Si existe y tiene elementos, la BA se calcula pliegue a pliegue.
+   *  Si no existe, se mantiene EXACTAMENTE el comportamiento legacy. */
+  pliegues?: PliegueFisico[];
+  /** NUEVO (opcional): suma de las longitudes de los tramos rectos
+   *  introducidos en pantalla. Sólo se usa en modo multi-pliegue. */
+  sumaTramos?: number;
 }
 
 export interface RemateAviso {
@@ -62,6 +69,8 @@ export interface RemateResultado {
   avisos: RemateAviso[];
   /** Desglose informativo: rectos + BA + correcciones. */
   desglose?: RemateDesglose;
+  /** BA individual de cada pliegue (sólo en modo multi-pliegue). */
+  baPorPliegue?: number[];
 }
 
 
@@ -175,10 +184,17 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   const avisos: RemateAviso[] = [];
 
   // --- A) FÍSICA -----------------------------------------------------------
-  // Un único pliegue en el modelo actual; el motor ya admite varios pliegues
-  // con ángulo/radio/espesor/K propios vía sumarBAPliegues().
-  const k = calcularKDinamico(espesor, angulo);
-  const ba = sumarBAPliegues([{ angulo, espesor, radio, k }]);
+  // Modo multi-pliegue: cada pliegue con su ángulo/radio/espesor/K propios.
+  // Modo legacy (sin lista): un único pliegue, comportamiento idéntico al previo.
+  const multi = Array.isArray(input.pliegues) && input.pliegues.length > 0;
+  const listaPliegues: PliegueFisico[] = multi
+    ? input.pliegues!
+    : [{ angulo, espesor, radio, k: calcularKDinamico(espesor, angulo) }];
+  const baPorPliegue = listaPliegues.map((p) => calcularBAPliegue(p));
+  const ba = sumarBAPliegues(listaPliegues);
+  const k = multi
+    ? (listaPliegues[0].k ?? calcularKDinamico(listaPliegues[0].espesor, listaPliegues[0].angulo))
+    : calcularKDinamico(espesor, angulo);
 
 
   // --- B) CORRECCIONES EMPÍRICAS ------------------------------------------
@@ -226,10 +242,17 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   }
 
   // --- C) Desarrollo total: rectos + física (BA) + correcciones empíricas --
-  const tramosRectos = +(alaAFinal + alaBFinal).toFixed(3);
+  // En modo multi-pliegue los tramos rectos son la suma de TODOS los tramos
+  // introducidos, aplicando (si procede) la misma reducción por cejo.
+  const reduccionAplicada = (alaA - alaAFinal) + (alaB - alaBFinal);
+  const tramosRectos = +(
+    (multi && typeof input.sumaTramos === "number"
+      ? input.sumaTramos - reduccionAplicada
+      : alaAFinal + alaBFinal)
+  ).toFixed(3);
   const correccionesFabricacion = +(correccionAlas + correccionLongitud).toFixed(3);
   const desarrolloTotal = +(
-    alaAFinal + alaBFinal + ba + correccionAlas + correccionLongitud
+    tramosRectos + ba + correccionAlas + correccionLongitud
   ).toFixed(3);
 
 
@@ -250,6 +273,8 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
     alaAFinal,
     alaBFinal,
     desglose: { tramosRectos, sumaBA: ba, correccionesFabricacion },
+    baPorPliegue,
+
 
     avisos,
   };

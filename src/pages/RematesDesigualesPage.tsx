@@ -8,6 +8,8 @@ import {
   Sparkles,
   Loader2,
   Info,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,11 +29,27 @@ import {
   calcularRemateDesigual,
   type RemateInput,
   type TipoRemate,
+  type PliegueFisico,
 } from "@/lib/calcularRemateDesigual";
 
 const num = (v: unknown, d = 0) => {
   const n = typeof v === "number" ? v : parseFloat(String(v ?? ""));
   return Number.isFinite(n) ? n : d;
+};
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+type RemateSegmento = {
+  id: string;
+  longitud: number;
+  referencia: "inside" | "outside";
+};
+
+type RematePliegue = {
+  id: string;
+  angulo: number;
+  radio: number;
+  direccion: "up" | "down";
 };
 
 const RematesDesigualesPage = () => {
@@ -52,28 +70,74 @@ const RematesDesigualesPage = () => {
   const inferEspesor = num(state?.espesor ?? state?.pliegues?.[0]?.espesor, 1);
   const inferRadio = num(state?.radio ?? state?.pliegues?.[0]?.radio, 1);
 
-  const [alaA, setAlaA] = useState<number>(inferAlaA);
-  const [alaB, setAlaB] = useState<number>(inferAlaB);
   const [espesor, setEspesor] = useState<number>(inferEspesor);
-  const [radio, setRadio] = useState<number>(inferRadio);
-  const [angulo, setAngulo] = useState<number>(inferAngulo);
   const [material, setMaterial] = useState<string>(state?.material || "");
   const [tipo, setTipo] = useState<TipoRemate>("normal");
-  const longitudTotal = useMemo(() => alaA + alaB, [alaA, alaB]);
+
+  // Estado por tramos: arranca con 2 tramos y 1 pliegue
+  const [segmentos, setSegmentos] = useState<RemateSegmento[]>([
+    { id: uid(), longitud: inferAlaA, referencia: "outside" },
+    { id: uid(), longitud: inferAlaB, referencia: "outside" },
+  ]);
+  const [pliegues, setPliegues] = useState<RematePliegue[]>([
+    { id: uid(), angulo: inferAngulo, radio: inferRadio, direccion: "up" },
+  ]);
+
+  const addTramo = () => {
+    setSegmentos((s) => [...s, { id: uid(), longitud: 0, referencia: "outside" }]);
+    setPliegues((p) => [
+      ...p,
+      { id: uid(), angulo: 90, radio: inferRadio, direccion: "up" },
+    ]);
+  };
+
+  const removeTramo = (index: number) => {
+    if (segmentos.length <= 2) return; // n pliegues = n tramos - 1, mínimo 2 tramos
+    setSegmentos((s) => s.filter((_, i) => i !== index));
+    setPliegues((p) => {
+      const idx = Math.min(index, p.length - 1);
+      return p.filter((_, i) => i !== idx);
+    });
+  };
+
+  const updSegmento = (id: string, patch: Partial<RemateSegmento>) =>
+    setSegmentos((s) => s.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const updPliegue = (id: string, patch: Partial<RematePliegue>) =>
+    setPliegues((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+
+  const sumaTramos = useMemo(
+    () => +segmentos.reduce((a, s) => a + s.longitud, 0).toFixed(3),
+    [segmentos]
+  );
+
+  const alaA = segmentos[0]?.longitud ?? 0;
+  const alaB = segmentos[segmentos.length - 1]?.longitud ?? 0;
+
+  const plieguesFisicos: PliegueFisico[] = useMemo(
+    () =>
+      pliegues.map((p) => ({
+        angulo: p.angulo,
+        radio: p.radio,
+        espesor,
+      })),
+    [pliegues, espesor]
+  );
 
   const input: RemateInput = useMemo(
     () => ({
-      longitudTotal,
+      longitudTotal: sumaTramos,
       alaA,
       alaB,
       espesor,
-      radio,
-      angulo,
+      radio: pliegues[0]?.radio ?? inferRadio,
+      angulo: pliegues[0]?.angulo ?? inferAngulo,
       material,
       tipo,
+      pliegues: plieguesFisicos,
+      sumaTramos,
       validacion: state?.validacion,
     }),
-    [longitudTotal, alaA, alaB, espesor, radio, angulo, material, tipo, state?.validacion]
+    [sumaTramos, alaA, alaB, espesor, pliegues, plieguesFisicos, material, tipo, inferRadio, inferAngulo, state?.validacion]
   );
 
   const resultado = useMemo(() => calcularRemateDesigual(input), [input]);
@@ -93,11 +157,11 @@ const RematesDesigualesPage = () => {
           alaA,
           alaB,
           espesor,
-          radio,
-          angulo,
+          radio: input.radio,
+          angulo: input.angulo,
           material,
           tipo,
-          longitudTotal,
+          longitudTotal: sumaTramos,
         },
       });
       if (error) throw error;
@@ -118,7 +182,7 @@ const RematesDesigualesPage = () => {
           <div>
             <h1 className="text-2xl font-bold">Remates Desiguales</h1>
             <p className="text-sm text-muted-foreground">
-              Cálculo avanzado para alas A/B distintas y corte cejo
+              Tramos y pliegues individuales (cada pliegue con su ángulo y radio)
             </p>
           </div>
         </div>
@@ -127,31 +191,15 @@ const RematesDesigualesPage = () => {
         </Button>
       </header>
 
-      {/* Datos de entrada */}
+      {/* Datos globales */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Datos del remate</CardTitle>
+          <CardTitle className="text-base">Datos generales</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div>
-            <Label>Ala A (mm)</Label>
-            <Input type="number" value={alaA} onChange={(e) => setAlaA(num(e.target.value))} />
-          </div>
-          <div>
-            <Label>Ala B (mm)</Label>
-            <Input type="number" value={alaB} onChange={(e) => setAlaB(num(e.target.value))} />
-          </div>
-          <div>
             <Label>Espesor (mm)</Label>
             <Input type="number" step="0.1" value={espesor} onChange={(e) => setEspesor(num(e.target.value))} />
-          </div>
-          <div>
-            <Label>Radio (mm)</Label>
-            <Input type="number" step="0.1" value={radio} onChange={(e) => setRadio(num(e.target.value))} />
-          </div>
-          <div>
-            <Label>Ángulo (°)</Label>
-            <Input type="number" value={angulo} onChange={(e) => setAngulo(num(e.target.value))} />
           </div>
           <div>
             <Label>Material</Label>
@@ -169,10 +217,112 @@ const RematesDesigualesPage = () => {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>Longitud total (mm)</Label>
-            <Input type="number" value={longitudTotal} readOnly />
-          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tramos y pliegues */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-base">Tramos y pliegues</CardTitle>
+          <Button size="sm" onClick={addTramo}>
+            <Plus className="w-4 h-4 mr-1" /> Añadir tramo
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {segmentos.map((s, i) => (
+            <div key={s.id} className="space-y-3">
+              <div className="p-3 rounded-lg border bg-muted/20 grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                <div className="md:col-span-1">
+                  <Label>Tramo {i + 1} (mm)</Label>
+                  <Input
+                    type="number"
+                    value={s.longitud}
+                    onChange={(e) => updSegmento(s.id, { longitud: num(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label>Referencia</Label>
+                  <Select
+                    value={s.referencia}
+                    onValueChange={(v) => updSegmento(s.id, { referencia: v as "inside" | "outside" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="inside">Interior</SelectItem>
+                      <SelectItem value="outside">Exterior</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2 flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeTramo(i)}
+                    disabled={segmentos.length <= 2}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" /> Eliminar tramo
+                  </Button>
+                </div>
+              </div>
+
+              {i < pliegues.length && (
+                <div className="ml-4 p-3 rounded-lg border border-primary/30 bg-primary/5 grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                  <div className="text-sm font-medium md:col-span-1">
+                    Pliegue {i + 1}
+                    <div className="text-xs text-muted-foreground tabular-nums">
+                      BA: {resultado.baPorPliegue?.[i] ?? 0} mm
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Ángulo (°)</Label>
+                    <Input
+                      type="number"
+                      value={pliegues[i].angulo}
+                      onChange={(e) => updPliegue(pliegues[i].id, { angulo: num(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Radio (mm)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={pliegues[i].radio}
+                      onChange={(e) => updPliegue(pliegues[i].id, { radio: num(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Dirección</Label>
+                    <Select
+                      value={pliegues[i].direccion}
+                      onValueChange={(v) => updPliegue(pliegues[i].id, { direccion: v as "up" | "down" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="up">↑ Arriba</SelectItem>
+                        <SelectItem value="down">↓ Abajo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Resumen visual */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Resumen</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+          <Stat label="Número de tramos" value={`${segmentos.length}`} />
+          <Stat label="Número de pliegues" value={`${pliegues.length}`} />
+          <Stat label="Suma de tramos" value={`${sumaTramos} mm`} />
         </CardContent>
       </Card>
 
@@ -182,11 +332,12 @@ const RematesDesigualesPage = () => {
           <CardTitle className="text-base">Resultados</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-          <Stat label="BA" value={`${resultado.ba} mm`} />
+          <Stat label="BA total" value={`${resultado.ba} mm`} />
           <Stat label="BD" value={`${resultado.bd} mm`} />
           <Stat label="K dinámico" value={`${resultado.kDinamico}`} />
           <Stat label="Corrección longitud" value={`${resultado.correccionLongitud} mm`} />
           <Stat label="Reducción cejo" value={`${resultado.reduccionCejo} mm`} />
+          <Stat label="Tramos rectos" value={`${resultado.desglose?.tramosRectos ?? 0} mm`} />
           <Stat label="Ala A final" value={`${resultado.alaAFinal} mm`} />
           <Stat label="Ala B final" value={`${resultado.alaBFinal} mm`} />
           <Stat
@@ -196,6 +347,7 @@ const RematesDesigualesPage = () => {
           />
         </CardContent>
       </Card>
+
 
       {/* Avisos */}
       <Card>
