@@ -134,14 +134,16 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
       ),
     );
 
-    const totalBA = bendResults.reduce((s, r) => s + r.bendAllowance, 0);
+    // Motor único (bendCalc.ts): capas separadas cotas / teórico / taller / corte
+    const development = computeDevelopment(L, bendResults, 0);
     const totalDist = bendResults.reduce((s, r) => s + r.distanceFromPrevious, 0);
 
     const result: BendResult = {
       bends: bendResults,
-      totalDevelopedLength: Number((L + totalBA).toFixed(2)),
+      totalDevelopedLength: development.theoreticalDevelopedLength,
       pieceLength: L,
       totalDistance: Number(totalDist.toFixed(2)),
+      development,
     };
 
     onCalculate(result, {
