@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calculator, Plus } from "lucide-react";
 import { BendResult, CalculatorState } from "@/pages/Index";
 import BendItem, { BendItemValue } from "./BendItem";
-import { computeBend } from "@/lib/bendCalc";
+import { computeBend, computeDevelopment } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration, listMaterials } from "@/lib/storage";
 
 interface BendCalculatorProps {
