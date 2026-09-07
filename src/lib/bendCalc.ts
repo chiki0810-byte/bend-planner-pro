@@ -135,6 +135,67 @@ export function computeBend(
     dimensionReference: input.dimensionReference ?? DEFAULT_BEND_METADATA.dimensionReference,
   };
 }
+/* ────────────────────────────────────────────────────────────────────────────
+ * DESARROLLO — CAPAS SEPARADAS (motor único)
+ *
+ * SEMÁNTICA ACTUAL DE `pieceLength` (documentada, NO modificada):
+ *   `pieceLength` es la LONGITUD DE PIEZA introducida por el usuario en la
+ *   calculadora. Hoy NO está definido de forma inequívoca si corresponde a
+ *   cotas interiores, exteriores o a la suma de tramos rectos; por tanto
+ *   NO se cambia la fórmula de desarrollo. Se conserva exactamente:
+ *
+ *       desarrolloTeorico = pieceLength + Σ BA
+ *
+ * CAPAS PREVISTAS (estructura ya preparada, sin cambiar resultados):
+ *   1) cotas introducidas .......... inputLength
+ *   2) desarrollo teórico .......... theoreticalDevelopedLength
+ *   3) corrección de taller ........ workshopCorrection (HOY SIEMPRE 0 mm)
+ *   4) corte final ................. finalCutLength = 2 + 3
+ *
+ * La corrección de taller (−1, −4, −7 mm, etc.) se implementará más adelante
+ * como capa independiente; NO se mezcla con K, BA ni BD.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export interface DevelopmentBreakdown {
+  /** Cotas/longitud introducidas por el usuario (sin transformar). */
+  inputLength: number;
+  /** Suma de Bend Allowance de todos los plegados. */
+  totalBendAllowance: number;
+  /** Suma de Bend Deduction de todos los plegados (informativo). */
+  totalBendDeduction: number;
+  /** Suma de Outside Setback de todos los plegados (informativo). */
+  totalOutsideSetback: number;
+  /** Desarrollo teórico = inputLength + Σ BA. */
+  theoreticalDevelopedLength: number;
+  /** Corrección real de taller. Capa independiente; hoy siempre 0. */
+  workshopCorrection: number;
+  /** Corte final = desarrollo teórico + corrección de taller. */
+  finalCutLength: number;
+}
+
+/** Motor único de desarrollo. No introduce fórmulas nuevas: reutiliza las BA
+ *  ya calculadas por computeBend()/calculateBendMath(). */
+export function computeDevelopment(
+  pieceLength: number,
+  bends: BendOutput[],
+  workshopCorrection = 0,
+): DevelopmentBreakdown {
+  const totalBendAllowance = round(bends.reduce((s, b) => s + b.bendAllowance, 0));
+  const totalBendDeduction = round(bends.reduce((s, b) => s + b.bendDeduction, 0));
+  const totalOutsideSetback = round(bends.reduce((s, b) => s + b.outsideSetback, 0));
+  const theoreticalDevelopedLength = round(pieceLength + totalBendAllowance);
+  const finalCutLength = round(theoreticalDevelopedLength + workshopCorrection);
+
+  return {
+    inputLength: pieceLength,
+    totalBendAllowance,
+    totalBendDeduction,
+    totalOutsideSetback,
+    theoreticalDevelopedLength,
+    workshopCorrection,
+    finalCutLength,
+  };
+}
 
 function round(v: number, d = 2) {
   const f = Math.pow(10, d);
