@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calculator, Plus } from "lucide-react";
 import { BendResult, CalculatorState } from "@/pages/Index";
 import BendItem, { BendItemValue } from "./BendItem";
-import { computeBend } from "@/lib/bendCalc";
+import { computeBend, computeDevelopment } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration, listMaterials } from "@/lib/storage";
 
 interface BendCalculatorProps {
@@ -134,14 +134,16 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
       ),
     );
 
-    const totalBA = bendResults.reduce((s, r) => s + r.bendAllowance, 0);
+    // Motor único (bendCalc.ts): capas separadas cotas / teórico / taller / corte
+    const development = computeDevelopment(L, bendResults, 0);
     const totalDist = bendResults.reduce((s, r) => s + r.distanceFromPrevious, 0);
 
     const result: BendResult = {
       bends: bendResults,
-      totalDevelopedLength: Number((L + totalBA).toFixed(2)),
+      totalDevelopedLength: development.theoreticalDevelopedLength,
       pieceLength: L,
       totalDistance: Number(totalDist.toFixed(2)),
+      development,
     };
 
     onCalculate(result, {

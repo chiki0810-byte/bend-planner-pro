@@ -8,7 +8,7 @@ import MaterialsPanel from "@/components/MaterialsPanel";
 import TemplatesPanel from "@/components/TemplatesPanel";
 import MachineValidationPanel from "@/components/MachineValidationPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BendOutput } from "@/lib/bendCalc";
+import { BendOutput, DevelopmentBreakdown } from "@/lib/bendCalc";
 import { BendItemValue } from "@/components/BendItem";
 
 export type SingleBendResult = BendOutput;
@@ -18,6 +18,8 @@ export interface BendResult {
   totalDevelopedLength: number;
   pieceLength: number;
   totalDistance: number;
+  /** Desglose por capas: cotas / desarrollo teórico / corrección de taller / corte final. */
+  development?: DevelopmentBreakdown;
 }
 
 export interface CalculatorState {
