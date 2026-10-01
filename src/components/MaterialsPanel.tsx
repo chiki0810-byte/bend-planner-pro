@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Layers, Save, Trash2 } from "lucide-react";
-import { listMaterials, upsertMaterial, deleteMaterial, MaterialRow } from "@/lib/storage";
+import { listMaterials, upsertMaterial, insertMaterialIfMissing, deleteMaterial, MaterialRow } from "@/lib/storage";
+import { getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader,
@@ -27,18 +28,27 @@ const MaterialsPanel = () => {
   }, {});
 
   const updateField = async (r: MaterialRow, field: keyof MaterialRow, value: number) => {
-    await upsertMaterial({ ...r, [field]: value });
+    await upsertMaterial({ ...r, [field]: value, isCustom: true });
     refresh();
   };
 
   const addMaterial = async () => {
     const name = newName.trim();
     if (!name) return;
+    let created = 0;
     for (const t of THICKNESSES) {
-      await upsertMaterial({
+      const def = getMaterialDefaultsByThickness(name, t);
+      if (!def) continue; // sin valores aprobados: no se inventan K/R
+      await insertMaterialIfMissing({
         material: name, thickness: t,
-        bendAllowance90: t * 1.6, kFactor: 0.38, innerRadius: t * 1.5,
+        bendAllowance90: def.bendAllowance90, kFactor: def.kFactor, innerRadius: def.innerRadius,
+        isCustom: false,
       });
+      created++;
+    }
+    if (created === 0) {
+      toast.error(`No hay valores aprobados de K/R para "${name}"`);
+      return;
     }
     setNewName("");
     setOpen(false);

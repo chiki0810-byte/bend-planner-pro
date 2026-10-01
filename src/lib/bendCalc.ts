@@ -97,6 +97,36 @@ export function calculateBendMath(input: BendMathInput): BendMathOutput {
   };
 }
 
+/* Valores aprobados (FASE 1). Fuente central de defaults K/R por material+espesor. */
+const STEEL_FAMILY = ['Acero', 'Galvanizado', 'Corten', 'Duro 500', 'Duro 600'];
+const STEEL_K_BY_THICKNESS: Record<string, number> = {
+  '0.5': 0.33, '0.6': 0.33, '0.8': 0.35, '1.0': 0.38, '1.2': 0.40, '1.5': 0.42,
+};
+const OTHER_MATERIAL_K: Record<string, number> = {
+  Inox: 0.40, Aluminio: 0.50, 'Latón': 0.45, Cobre: 0.45,
+};
+const R_BY_THICKNESS: Record<string, number> = {
+  '0.5': 0.8, '0.6': 1.0, '0.8': 1.2, '1.0': 1.5, '1.2': 1.8, '1.5': 2.2,
+};
+
+/** Devuelve K/R aprobados para material+espesor, o undefined si no hay valores
+ *  aprobados (no se inventan). BA90 es derivado/informativo vía calculateBendMath(). */
+export function getMaterialDefaultsByThickness(
+  material: string,
+  thickness: number,
+): DefaultsByThickness | undefined {
+  const tKey = thickness.toFixed(1);
+  if (Math.abs(parseFloat(tKey) - thickness) > 1e-6) return undefined;
+  const innerRadius = R_BY_THICKNESS[tKey];
+  if (innerRadius === undefined) return undefined;
+  const kFactor = STEEL_FAMILY.includes(material)
+    ? STEEL_K_BY_THICKNESS[tKey]
+    : OTHER_MATERIAL_K[material];
+  if (kFactor === undefined) return undefined;
+  const ba = calculateBendMath({ angle: 90, thickness, innerRadius, kFactor }).bendAllowance;
+  return { kFactor, innerRadius, bendAllowance90: Math.round(ba * 100) / 100 };
+}
+
 export function computeBend(
   input: BendInput,
   thickness: number,

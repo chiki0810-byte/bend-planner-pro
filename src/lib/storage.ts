@@ -5,7 +5,7 @@ import {
   SQLiteConnection,
   SQLiteDBConnection,
 } from '@capacitor-community/sqlite';
-import { DEFAULT_THICKNESS_TABLE, DefaultsByThickness } from './bendCalc';
+import { DEFAULT_THICKNESS_TABLE, DefaultsByThickness, getMaterialDefaultsByThickness } from './bendCalc';
 
 export interface SavedPiece {
   id?: number;
@@ -24,6 +24,8 @@ export interface MaterialRow {
   bendAllowance90: number;
   kFactor: number;
   innerRadius: number;
+  /** true si el usuario editó K, R o BA90 manualmente. */
+  isCustom: boolean;
 }
 
 export interface Template {
@@ -44,6 +46,14 @@ class WebDB extends Dexie {
       materials: '++id, [material+thickness], material, thickness',
       templates: '++id, name, createdAt',
     });
+    // Migración aditiva: registros antiguos sin isCustom => false. No toca otros valores.
+    this.version(3).stores({
+      pieces: '++id, name, createdAt, material, thickness',
+      materials: '++id, [material+thickness], material, thickness',
+      templates: '++id, name, createdAt',
+    }).upgrade(tx => tx.table('materials').toCollection().modify((m: MaterialRow) => {
+      if (typeof m.isCustom !== 'boolean') m.isCustom = false;
+    }));
   }
 }
 const webDb = new WebDB();
@@ -84,6 +94,12 @@ async function getNativeDb(): Promise<SQLiteDBConnection> {
       name TEXT NOT NULL, createdAt INTEGER NOT NULL, payload TEXT NOT NULL
     );
   `);
+  // Migración aditiva: añade columna isCustom (0 por defecto) si falta.
+  const cols = await sqliteConn.query(`PRAGMA table_info(materials);`);
+  const hasCustom = (cols.values ?? []).some((c: { name?: string }) => c.name === 'isCustom');
+  if (!hasCustom) {
+    await sqliteConn.execute(`ALTER TABLE materials ADD COLUMN isCustom INTEGER NOT NULL DEFAULT 0;`);
+  }
   return sqliteConn;
 }
 
@@ -135,9 +151,9 @@ async function fetchMaterials(): Promise<MaterialRow[]> {
   if (isNative()) {
     const db = await getNativeDb();
     const res = await db.query(`SELECT * FROM materials ORDER BY material, thickness;`);
-    return (res.values ?? []) as MaterialRow[];
+    return (res.values ?? []).map((r: MaterialRow & { isCustom?: unknown }) => ({ ...r, isCustom: !!r.isCustom }));
   }
-  return await webDb.materials.toArray();
+  return (await webDb.materials.toArray()).map(r => ({ ...r, isCustom: r.isCustom === true }));
 }
 
 export async function listMaterials(): Promise<MaterialRow[]> {
@@ -153,13 +169,16 @@ async function ensureBaseMaterials(existing: MaterialRow[]): Promise<boolean> {
   const present = new Set(existing.map(r => key(r.material, r.thickness)));
   let inserted = false;
   for (const mat of BASE_MATERIALS) {
-    for (const [tStr, def] of Object.entries(DEFAULT_THICKNESS_TABLE)) {
+    for (const tStr of Object.keys(DEFAULT_THICKNESS_TABLE)) {
       const t = parseFloat(tStr);
       if (present.has(key(mat, t))) continue;
-      await upsertMaterial({
+      const def = getMaterialDefaultsByThickness(mat, t);
+      if (!def) continue;
+      await insertMaterialIfMissing({
         material: mat, thickness: t,
         bendAllowance90: def.bendAllowance90,
         kFactor: def.kFactor, innerRadius: def.innerRadius,
+        isCustom: false,
       });
       inserted = true;
     }
@@ -167,17 +186,34 @@ async function ensureBaseMaterials(existing: MaterialRow[]): Promise<boolean> {
   return inserted;
 }
 
+/** Inserta solo si la combinación material+espesor no existe. Nunca sobrescribe. */
+export async function insertMaterialIfMissing(m: Omit<MaterialRow, 'id'>): Promise<void> {
+  if (isNative()) {
+    const db = await getNativeDb();
+    await db.run(
+      `INSERT OR IGNORE INTO materials (material, thickness, bendAllowance90, kFactor, innerRadius, isCustom)
+       VALUES (?, ?, ?, ?, ?, ?);`,
+      [m.material, m.thickness, m.bendAllowance90, m.kFactor, m.innerRadius, m.isCustom ? 1 : 0],
+    );
+    return;
+  }
+  const existing = await webDb.materials
+    .where('[material+thickness]').equals([m.material, m.thickness]).first();
+  if (!existing) await webDb.materials.add(m);
+}
+
 export async function upsertMaterial(m: Omit<MaterialRow, 'id'>): Promise<void> {
   if (isNative()) {
     const db = await getNativeDb();
     await db.run(
-      `INSERT INTO materials (material, thickness, bendAllowance90, kFactor, innerRadius)
-       VALUES (?, ?, ?, ?, ?)
+      `INSERT INTO materials (material, thickness, bendAllowance90, kFactor, innerRadius, isCustom)
+       VALUES (?, ?, ?, ?, ?, ?)
        ON CONFLICT(material, thickness) DO UPDATE SET
          bendAllowance90 = excluded.bendAllowance90,
          kFactor = excluded.kFactor,
-         innerRadius = excluded.innerRadius;`,
-      [m.material, m.thickness, m.bendAllowance90, m.kFactor, m.innerRadius],
+         innerRadius = excluded.innerRadius,
+         isCustom = excluded.isCustom;`,
+      [m.material, m.thickness, m.bendAllowance90, m.kFactor, m.innerRadius, m.isCustom ? 1 : 0],
     );
     return;
   }
