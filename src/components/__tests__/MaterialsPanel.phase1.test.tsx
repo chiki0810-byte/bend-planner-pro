@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 
 const rows = [{ id: 1, material: "Acero", thickness: 1.0, bendAllowance90: 2.95, kFactor: 0.38, innerRadius: 1.5, isCustom: false }];
 const upsertMaterial = vi.fn(async () => {});
@@ -15,6 +15,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import MaterialsPanel from "@/components/MaterialsPanel";
 
+afterEach(() => cleanup());
 beforeEach(() => { upsertMaterial.mockClear(); insertMaterialIfMissing.mockClear(); });
 
 describe("MaterialsPanel Fase 1", () => {
