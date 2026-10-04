@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Calculator, Layers } from "lucide-react";
-import { calcularCanal, MATERIALES_K, solapeMinimo, type CanalResult } from "@/lib/plegadoPro";
+import { calcularCanal, MATERIALES, solapeMinimo, type CanalResult } from "@/lib/plegadoPro";
 import { Warnings } from "./PlegadoConico";
 
 interface PRow { id: string; longitud_mm: string; angulo_deg: string; radio_mm: string; }
@@ -28,7 +29,7 @@ const CanalAsimetrico = () => {
   const calcular = () => {
     let s = Number(solape);
     if (!s) { s = solapeMinimo(Number(espesor)); setSolape(String(s)); }
-    setRes(calcularCanal({
+    const r = calcularCanal({
       punta_a_mm: Number(puntaA),
       punta_b_mm: Number(puntaB),
       solape_mm: s,
@@ -39,7 +40,13 @@ const CanalAsimetrico = () => {
         angulo_deg: Number(p.angulo_deg) || 0,
         radio_mm: Number(p.radio_mm) || 0,
       })),
-    }));
+    });
+    if (!r) {
+      setRes(null);
+      toast.error(`No hay valores K/R aprobados para ${material} con espesor ${espesor || "0"} mm`);
+      return;
+    }
+    setRes(r);
   };
 
   const totalPreview = (Number(puntaA) || 0) + (Number(puntaB) || 0) + (Number(solape) || 0);
@@ -65,8 +72,8 @@ const CanalAsimetrico = () => {
             <Select value={material} onValueChange={setMaterial}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.entries(MATERIALES_K).map(([m, k]) => (
-                  <SelectItem key={m} value={m}>{m} (K={k})</SelectItem>
+                {MATERIALES.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

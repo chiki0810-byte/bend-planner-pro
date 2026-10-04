@@ -1,19 +1,10 @@
 // Cálculos del módulo profesional de plegado (offline)
-import { calculateBendMath } from "@/lib/bendCalc";
+import { calculateBendMath, getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 
-export const MATERIALES_K: Record<string, number> = {
-  Acero: 0.33,
-  Inox: 0.40,
-  Aluminio: 0.50,
-  Galvanizado: 0.33,
-  Corten: 0.33,
-  "Duro 500": 0.33,
-  "Duro 600": 0.33,
-  Latón: 0.45,
-  Cobre: 0.45,
-};
-
-export const getK = (mat: string): number => MATERIALES_K[mat] ?? 0.33;
+// Materiales disponibles. K se obtiene del motor central por material+espesor.
+export const MATERIALES: string[] = [
+  "Acero", "Inox", "Aluminio", "Galvanizado", "Corten", "Duro 500", "Duro 600", "Latón", "Cobre",
+];
 
 // ===== CÓNICO / ENCHUFABLE =====
 export interface ConicoInput {
@@ -38,9 +29,12 @@ export interface ConicoResult {
   requiere_rodillo: boolean;
 }
 
-export const calcularConico = (i: ConicoInput): ConicoResult => {
-  const K = getK(i.material);
+/** Devuelve null si no hay K aprobado para material+espesor (no se calcula). */
+export const calcularConico = (i: ConicoInput): ConicoResult | null => {
   const t = i.espesor_mm || 0;
+  const defaults = getMaterialDefaultsByThickness(i.material, t);
+  if (!defaults) return null;
+  const K = defaults.kFactor;
   const D = i.diametro_mm || 0;
   const h = i.altura_mm || 0;
 
@@ -128,9 +122,12 @@ export const solapeMinimo = (t: number): number => {
   return 25;
 };
 
-export const calcularCanal = (i: CanalInput): CanalResult => {
-  const K = getK(i.material);
+/** Devuelve null si no hay K aprobado para material+espesor (no se calcula). */
+export const calcularCanal = (i: CanalInput): CanalResult | null => {
   const t = i.espesor_mm || 0;
+  const defaults = getMaterialDefaultsByThickness(i.material, t);
+  if (!defaults) return null;
+  const K = defaults.kFactor;
 
   let desarrollo = 0;
   let ba_total = 0;
