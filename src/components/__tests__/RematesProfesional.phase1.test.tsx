@@ -38,8 +38,7 @@ describe("RematesProfesional — K vía motor central Fase 1", () => {
   });
 
   it("Acero 1.2 calcula con K=0.40 (BA a 90°, R=1.8)", async () => {
-    render(<RematesProfesional />);
-    await setMaterial("Acero");
+    render(<RematesProfesional />); // material por defecto: Acero
     setEspesor("1.2");
     setPliegue("100", "90", "1.8");
     fireEvent.click(screen.getByRole("button", { name: /calcular remate \(pro\)/i }));
@@ -52,8 +51,7 @@ describe("RematesProfesional — K vía motor central Fase 1", () => {
   });
 
   it("Acero con espesor no aprobado (1.05) NO calcula y muestra error", async () => {
-    render(<RematesProfesional />);
-    await setMaterial("Acero");
+    render(<RematesProfesional />); // material por defecto: Acero
     setEspesor("1.05");
     setPliegue("100", "90", "1.8");
     fireEvent.click(screen.getByRole("button", { name: /calcular remate \(pro\)/i }));
