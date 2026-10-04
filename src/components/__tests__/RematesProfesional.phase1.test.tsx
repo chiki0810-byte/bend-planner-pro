@@ -1,0 +1,64 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("@/lib/rematesProExport", () => ({ exportRemateProPdf: vi.fn(async () => {}) }));
+
+import { toast } from "sonner";
+import { getMaterialDefaultsByThickness } from "@/lib/bendCalc";
+import RematesProfesional from "@/components/RematesProfesional";
+
+beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+  vi.mocked(toast.success).mockClear();
+  vi.mocked(toast.error).mockClear();
+});
+
+afterEach(() => cleanup());
+
+const setEspesor = (v: string) => {
+  const inputs = screen.getAllByPlaceholderText("0");
+  fireEvent.change(inputs[0], { target: { value: v } });
+};
+
+const setPliegue = (longitud: string, angulo: string, radio: string) => {
+  const mmInputs = screen.getAllByPlaceholderText("mm"); // [Longitud, Radio]
+  fireEvent.change(mmInputs[0], { target: { value: longitud } });
+  fireEvent.change(screen.getByPlaceholderText("°"), { target: { value: angulo } });
+  fireEvent.change(mmInputs[1], { target: { value: radio } });
+};
+
+describe("RematesProfesional — K vía motor central Fase 1", () => {
+  it("regla central: Acero 1.2 => K=0.40 y Acero 1.5 => K=0.42 (motor bendCalc)", () => {
+    expect(getMaterialDefaultsByThickness("Acero", 1.2)!.kFactor).toBe(0.4);
+    expect(getMaterialDefaultsByThickness("Acero", 1.5)!.kFactor).toBe(0.42);
+  });
+
+  it("espesor no aprobado => undefined", () => {
+    expect(getMaterialDefaultsByThickness("Acero", 1.05)).toBeUndefined();
+  });
+
+  it("Acero 1.2 calcula con K=0.40 (BA a 90°, R=1.8)", async () => {
+    render(<RematesProfesional />); // material por defecto: Acero
+    setEspesor("1.2");
+    setPliegue("100", "90", "1.8");
+    fireEvent.click(screen.getByRole("button", { name: /calcular remate \(pro\)/i }));
+
+    // BA = (π/2)*(1.8 + 0.40*1.2) = 3.581 → punta = 100 + 3.58; total = 2*103.58 + solape 20 = 227.16
+    await waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(expect.stringContaining("227.16")),
+    );
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+
+  it("Acero con espesor no aprobado (1.05) NO calcula y muestra error", async () => {
+    render(<RematesProfesional />); // material por defecto: Acero
+    setEspesor("1.05");
+    setPliegue("100", "90", "1.8");
+    fireEvent.click(screen.getByRole("button", { name: /calcular remate \(pro\)/i }));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    expect(toast.success).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Exportar PDF profesional/i)).toBeNull();
+  });
+});
