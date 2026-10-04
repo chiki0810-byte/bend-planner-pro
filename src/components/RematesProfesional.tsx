@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Calculator, Layers, ImagePlus, X, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { exportRemateProPdf, PliegueExp } from "@/lib/rematesProExport";
-import { calculateBendMath } from "@/lib/bendCalc";
+import { calculateBendMath, getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 import logoEmpresa from "@/assets/logo_empresa.png";
 
 type TipoPro = "recto_simetrico" | "recto_asimetrico" | "conico_enchufable";
@@ -24,18 +24,6 @@ const MATERIALS = [
   "Duro 500", "Duro 600", "Latón", "Cobre",
 ];
 
-const getK = (m: string): number => {
-  if (m.includes("Acero")) return 0.33;
-  if (m.includes("Inox")) return 0.40;
-  if (m.includes("Aluminio")) return 0.50;
-  if (m.includes("Galvanizado")) return 0.33;
-  if (m.includes("Corten")) return 0.33;
-  if (m.includes("Duro 500")) return 0.33;
-  if (m.includes("Duro 600")) return 0.33;
-  if (m.includes("Latón")) return 0.45;
-  if (m.includes("Cobre")) return 0.45;
-  return 0.33;
-};
 
 const solapeAuto = (t: number): number => {
   if (t >= 0.5 && t <= 0.6) return 10;
@@ -145,8 +133,13 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
     setList((prev) => (prev.length > 1 ? prev.filter((p) => p.id !== id) : prev));
 
   const calcular = () => {
-    const K = getK(material);
     const t = Number(espesor) || 0;
+    const defaults = getMaterialDefaultsByThickness(material, t);
+    if (!defaults) {
+      toast.error(`No hay valores K/R aprobados para ${material} con espesor ${espesor || "0"} mm`);
+      return;
+    }
+    const K = defaults.kFactor;
 
     let S = Number(solape) || 0;
     if (!S || S <= 0) {
@@ -210,7 +203,7 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {MATERIALS.map((m) => (
-                  <SelectItem key={m} value={m}>{m} (K={getK(m).toFixed(2)})</SelectItem>
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
