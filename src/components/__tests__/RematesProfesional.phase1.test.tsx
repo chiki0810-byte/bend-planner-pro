@@ -32,7 +32,7 @@ describe("RematesProfesional — K vía motor central Fase 1", () => {
   it("regla central: Acero 1.2 => K=0.40 y Acero 1.5 => K=0.42 (motor bendCalc)", () => {
     expect(getMaterialDefaultsByThickness("Acero", 1.2)!.kFactor).toBe(0.4);
     expect(getMaterialDefaultsByThickness("Acero", 1.5)!.kFactor).toBe(0.42);
-et  });
+  });
 
   it("espesor no aprobado => undefined", () => {
     expect(getMaterialDefaultsByThickness("Acero", 1.05)).toBeUndefined();
