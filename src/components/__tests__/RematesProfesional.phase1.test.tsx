@@ -21,10 +21,10 @@ const setEspesor = (v: string) => {
 };
 
 const setPliegue = (longitud: string, angulo: string, radio: string) => {
-  const [l, , r] = screen.getAllByPlaceholderText("mm");
-  fireEvent.change(l, { target: { value: longitud } });
+  const mmInputs = screen.getAllByPlaceholderText("mm"); // [Longitud, Radio]
+  fireEvent.change(mmInputs[0], { target: { value: longitud } });
   fireEvent.change(screen.getByPlaceholderText("°"), { target: { value: angulo } });
-  fireEvent.change(r, { target: { value: radio } });
+  fireEvent.change(mmInputs[1], { target: { value: radio } });
 };
 
 describe("RematesProfesional — K vía motor central Fase 1", () => {
