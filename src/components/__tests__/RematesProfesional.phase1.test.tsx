@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, afterEach, cleanup } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/lib/rematesProExport", () => ({ exportRemateProPdf: vi.fn(async () => {}) }));
@@ -7,6 +7,11 @@ vi.mock("@/lib/rematesProExport", () => ({ exportRemateProPdf: vi.fn(async () =>
 import { toast } from "sonner";
 import { getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 import RematesProfesional from "@/components/RematesProfesional";
+
+// Radix Select necesita scrollIntoView en jsdom
+beforeEach(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
 
 afterEach(() => cleanup());
 
@@ -22,7 +27,7 @@ const setEspesor = (v: string) => {
 };
 
 const setPliegue = (longitud: string, angulo: string, radio: string) => {
-  const [l, a, r] = screen.getAllByPlaceholderText("mm");
+  const [l, , r] = screen.getAllByPlaceholderText("mm");
   fireEvent.change(l, { target: { value: longitud } });
   fireEvent.change(screen.getByPlaceholderText("°"), { target: { value: angulo } });
   fireEvent.change(r, { target: { value: radio } });
@@ -38,7 +43,7 @@ describe("RematesProfesional — K vía motor central Fase 1", () => {
     expect(getMaterialDefaultsByThickness("Acero", 1.05)).toBeUndefined();
   });
 
-  it("Acero 1.2 calcula con K=0.40 (BA90 = 2.953097 a 90°, R=1.5)", async () => {
+  it("Acero 1.2 calcula con K=0.40 (BA a 90°, R=1.8)", async () => {
     render(<RematesProfesional />);
     await setMaterial("Acero");
     setEspesor("1.2");
@@ -61,6 +66,6 @@ describe("RematesProfesional — K vía motor central Fase 1", () => {
 
     await waitFor(() => expect(toast.error).toHaveBeenCalled());
     expect(toast.success).not.toHaveBeenCalled();
-    expect(screen.queryByText(/Exportar PDF profesional/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Exportar PDF profesional/i)).toBeNull();
   });
 });
