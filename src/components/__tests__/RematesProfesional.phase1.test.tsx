@@ -8,9 +8,10 @@ import { toast } from "sonner";
 import { getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 import RematesProfesional from "@/components/RematesProfesional";
 
-// Radix Select necesita scrollIntoView en jsdom
 beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
+  vi.mocked(toast.success).mockClear();
+  vi.mocked(toast.error).mockClear();
 });
 
 afterEach(() => cleanup());
