@@ -15,12 +15,6 @@ beforeEach(() => {
 
 afterEach(() => cleanup());
 
-// Selector de material (primer combobox) y espesor (input junto a Solape)
-const setMaterial = async (m: string) => {
-  fireEvent.click(screen.getAllByRole("combobox")[0]);
-  fireEvent.click(await screen.findByRole("option", { name: m }));
-};
-
 const setEspesor = (v: string) => {
   const inputs = screen.getAllByPlaceholderText("0");
   fireEvent.change(inputs[0], { target: { value: v } });
