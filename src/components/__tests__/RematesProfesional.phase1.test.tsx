@@ -43,9 +43,9 @@ describe("RematesProfesional — K vía motor central Fase 1", () => {
     setPliegue("100", "90", "1.8");
     fireEvent.click(screen.getByRole("button", { name: /calcular remate \(pro\)/i }));
 
-    // BA esperado = (π/180)*90*(1.8 + 0.40*1.2) = 2.9531 → punta = 100 + 2.95
+    // BA = (π/2)*(1.8 + 0.40*1.2) = 3.581 → punta = 100 + 3.58; total = 2*103.58 + solape 20 = 227.16
     await waitFor(() =>
-      expect(toast.success).toHaveBeenCalledWith(expect.stringContaining("206.05")),
+      expect(toast.success).toHaveBeenCalledWith(expect.stringContaining("227.16")),
     );
     expect(toast.error).not.toHaveBeenCalled();
   });
