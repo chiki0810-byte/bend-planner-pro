@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Cone, AlertTriangle, Calculator } from "lucide-react";
-import { calcularConico, MATERIALES_K, type ConicoResult } from "@/lib/plegadoPro";
+import { calcularConico, MATERIALES, type ConicoResult } from "@/lib/plegadoPro";
 
 const PlegadoConico = () => {
   const [diametro, setDiametro] = useState("400");
@@ -20,8 +21,7 @@ const PlegadoConico = () => {
   const [res, setRes] = useState<ConicoResult | null>(null);
 
   const calcular = () => {
-    setRes(
-      calcularConico({
+    const r = calcularConico({
         diametro_mm: Number(diametro),
         altura_mm: Number(altura),
         boca_mayor_mm: Number(bocaMayor) || undefined,
@@ -30,8 +30,13 @@ const PlegadoConico = () => {
         material,
         plegado_en_prensa: enPrensa,
         angulo_pliegue_deg: Number(anguloPliegue) || undefined,
-      }),
-    );
+      });
+    if (!r) {
+      setRes(null);
+      toast.error(`No hay valores K/R aprobados para ${material} con espesor ${espesor || "0"} mm`);
+      return;
+    }
+    setRes(r);
   };
 
   return (
@@ -53,8 +58,8 @@ const PlegadoConico = () => {
             <Select value={material} onValueChange={setMaterial}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.entries(MATERIALES_K).map(([m, k]) => (
-                  <SelectItem key={m} value={m}>{m} (K={k})</SelectItem>
+                {MATERIALES.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
