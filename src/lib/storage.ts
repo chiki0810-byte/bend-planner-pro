@@ -232,27 +232,34 @@ export async function deleteMaterial(id: number): Promise<void> {
   await webDb.materials.delete(id);
 }
 
-export async function getMaterialDefaults(material: string, thickness: number): Promise<DefaultsByThickness> {
+export async function getMaterialDefaults(material: string, thickness: number): Promise<DefaultsByThickness | undefined> {
   const { defaults } = await getMaterialDefaultsWithCalibration(material, thickness);
   return defaults;
 }
 
+/** Resolución de valores de material (Fase 1):
+ *  - Fila isCustom=true  => calibración del usuario: se usan sus K/R/BA90 tal cual.
+ *  - Fila isCustom=false => NO es calibración: se resuelve con los valores centrales
+ *    aprobados de getMaterialDefaultsByThickness().
+ *  - Sin fila custom y sin combinación aprobada => calibrated:false y defaults
+ *    undefined (nunca se inventan fallbacks de K/R/BA90). */
 export async function getMaterialDefaultsWithCalibration(
   material: string,
   thickness: number,
-): Promise<{ defaults: DefaultsByThickness; calibrated: boolean }> {
+): Promise<{ defaults: DefaultsByThickness | undefined; calibrated: boolean }> {
   const all = await listMaterials();
   const found = all.find(m => m.material === material && Math.abs(m.thickness - thickness) < 1e-6);
-  if (found) {
+  if (found?.isCustom) {
     return {
       defaults: { bendAllowance90: found.bendAllowance90, kFactor: found.kFactor, innerRadius: found.innerRadius },
       calibrated: true,
     };
   }
-  return {
-    defaults: DEFAULT_THICKNESS_TABLE[thickness] ?? { bendAllowance90: 1.5, kFactor: 0.38, innerRadius: thickness * 1.5 },
-    calibrated: false,
-  };
+  const central = getMaterialDefaultsByThickness(material, thickness);
+  if (central) {
+    return { defaults: central, calibrated: true };
+  }
+  return { defaults: undefined, calibrated: false };
 }
 
 // ----- Templates -----
