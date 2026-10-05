@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calculator, Plus } from "lucide-react";
 import { BendResult, CalculatorState } from "@/pages/Index";
 import BendItem, { BendItemValue } from "./BendItem";
-import { computeBend, computeDevelopment } from "@/lib/bendCalc";
+import { computeBend, computeDevelopment, DefaultsByThickness } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration, listMaterials } from "@/lib/storage";
 
 interface BendCalculatorProps {
@@ -41,8 +41,8 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const [material, setMaterial] = useState<string>("");
   const [pieceLength, setPieceLength] = useState<string>("");
   const [materials, setMaterials] = useState<string[]>([]);
-  const [defaults, setDefaults] = useState({ kFactor: 0.38, innerRadius: 1.5, bendAllowance90: 1.6 });
-  const [isCalibrated, setIsCalibrated] = useState(true);
+  const [defaults, setDefaults] = useState<DefaultsByThickness | undefined>(undefined);
+  const [isCalibrated, setIsCalibrated] = useState(false);
   const [bends, setBends] = useState<BendRow[]>([newBend(1.5, 0.38)]);
 
   const availableThicknesses = useMemo(
@@ -75,7 +75,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
       if (cancelled) return;
       setIsCalibrated(calibrated);
       setDefaults(def);
-      if (calibrated) {
+      if (calibrated && def) {
         setBends(prev => prev.map(b => ({
           ...b,
           innerRadius: b.manualR ? b.innerRadius : def.innerRadius,
@@ -98,8 +98,8 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
 
   const addBend = () => {
     const last = bends[bends.length - 1];
-    const defRadius = isCalibrated ? defaults.innerRadius : (last?.innerRadius ?? 0);
-    const defK = isCalibrated ? defaults.kFactor : (last?.kFactor ?? 0);
+    const defRadius = isCalibrated && defaults ? defaults.innerRadius : (last?.innerRadius ?? 0);
+    const defK = isCalibrated && defaults ? defaults.kFactor : (last?.kFactor ?? 0);
     setBends([...bends, newBend(defRadius, defK)]);
   };
   const removeBend = (id: string) => setBends(bends.filter(b => b.id !== id));
@@ -116,6 +116,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     const L = parseFloat(pieceLength);
     if (!t || !L || !material || !isCalibrated) return;
     const { defaults: def } = await getMaterialDefaultsWithCalibration(material, t);
+    if (!def) return;
 
     const bendResults = bends.map((b, i) =>
       computeBend(
