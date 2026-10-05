@@ -202,7 +202,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
               </>
             ) : (
               <>
-                Espesor {thickness} mm de {material}: <b>pendiente de calibración</b>. Introduce R y K manualmente o añade valores en Materiales.
+                Espesor {thickness} mm de {material}: <b>no disponible</b>. Esta combinación requiere calibración en Materiales.
               </>
             )}
           </div>
