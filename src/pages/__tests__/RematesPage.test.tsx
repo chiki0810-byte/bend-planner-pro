@@ -53,6 +53,7 @@ describe("RematesPage — K vía motor central Fase 1", () => {
     const izquierda = 50 + corr; // 51.7593
     const total = derecha + izquierda + 5; // 158.5186
 
+    console.log("CALLS", JSON.stringify((toast.success as any).mock.calls), (toast.error as any).mock.calls);
     await waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith(
         `Desarrollo total: ${total.toFixed(2)} mm`,
@@ -75,6 +76,7 @@ describe("RematesPage — K vía motor central Fase 1", () => {
     const corr = 2 * Math.PI * 0.38 * 1.0; // 2.3876
     const total = (100 + corr) * 2; // 204.7752
 
+    console.log("CALLS", JSON.stringify((toast.success as any).mock.calls), (toast.error as any).mock.calls);
     await waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith(
         `Desarrollo total: ${total.toFixed(2)} mm`,
