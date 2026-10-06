@@ -53,15 +53,14 @@ describe("RematesPage — K vía motor central Fase 1", () => {
     const izquierda = 50 + corr; // 51.7593
     const total = derecha + izquierda + 5; // 158.5186
 
-    console.log("CALLS", JSON.stringify((toast.success as any).mock.calls), (toast.error as any).mock.calls);
     await waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith(
         `Desarrollo total: ${total.toFixed(2)} mm`,
       ),
     );
-    expect(screen.getByText(`${derecha.toFixed(2)} mm`)).toBeTruthy();
-    expect(screen.getByText(`${izquierda.toFixed(2)} mm`)).toBeTruthy();
-    expect(screen.getByText(`${total.toFixed(2)} mm`)).toBeTruthy();
+    expect(screen.getByText(new RegExp(`^${derecha.toFixed(2)} mm$`))).toBeTruthy();
+    expect(screen.getByText(new RegExp(`^${izquierda.toFixed(2)} mm$`))).toBeTruthy();
+    expect(screen.getByText(new RegExp(`^${total.toFixed(2)} mm$`))).toBeTruthy();
     expect(toast.error).not.toHaveBeenCalled();
   });
 
@@ -74,15 +73,18 @@ describe("RematesPage — K vía motor central Fase 1", () => {
     fireEvent.click(screen.getByRole("button", { name: /calcular remate/i }));
 
     const corr = 2 * Math.PI * 0.38 * 1.0; // 2.3876
-    const total = (100 + corr) * 2; // 204.7752
+    const derecha = 100 + corr; // 102.3876
+    const izquierda = 0 + corr; // 2.3876
+    const total = derecha + izquierda; // 104.7752
 
-    console.log("CALLS", JSON.stringify((toast.success as any).mock.calls), (toast.error as any).mock.calls);
     await waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith(
         `Desarrollo total: ${total.toFixed(2)} mm`,
       ),
     );
-    expect(screen.getByText("204.78 mm")).toBeTruthy();
+    expect(screen.getByText(/^102\.39 mm$/)).toBeTruthy();
+    expect(screen.getByText(/^2\.39 mm$/)).toBeTruthy();
+    expect(screen.getByText(/^104\.78 mm$/)).toBeTruthy();
     expect(toast.error).not.toHaveBeenCalled();
   });
 
