@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X, FileDown, Zap, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { useRemates } from "@/state/RematesContext";
+import { getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 import { exportRemateExcel, exportRematePdf, RemateExportData } from "@/lib/rematesExport";
 import logoEmpresa from "@/assets/logo_empresa.png";
 import RematesProfesional from "@/components/RematesProfesional";
@@ -26,18 +27,6 @@ const MATERIALS = [
   { name: "Cobre", k: 0.45 },
 ];
 
-const getK = (material: string): number => {
-  if (material.includes("Acero")) return 0.33;
-  if (material.includes("Inox")) return 0.40;
-  if (material.includes("Aluminio")) return 0.50;
-  if (material.includes("Galvanizado")) return 0.33;
-  if (material.includes("Corten")) return 0.33;
-  if (material.includes("Duro 500")) return 0.33;
-  if (material.includes("Duro 600")) return 0.33;
-  if (material.includes("Latón")) return 0.45;
-  if (material.includes("Cobre")) return 0.45;
-  return 0.33;
-};
 
 interface Resultados {
   derecha: number;
@@ -108,13 +97,18 @@ const RematesPage = () => {
   };
 
   const calcular = () => {
-    const K = getK(material);
+    const t = Number(espesor) || 0;
+    const defaults = getMaterialDefaultsByThickness(material, t);
+    if (!defaults) {
+      toast.error(`No hay valores K/R aprobados para ${material} con espesor ${espesor || "0"} mm`);
+      return;
+    }
+    const K = defaults.kFactor;
 
     const DR = modoRapido ? 0 : (Number(medidaDerecha) || 0);
     const IZ = modoRapido ? 0 : (Number(medidaIzquierda) || 0);
     const A = Number(puntaGrande) || 0;
     const B = Number(puntaPequena) || 0;
-    const t = Number(espesor) || 0;
     const S = modoRapido ? 0 : (Number(solape) || 0);
 
     const corr = 2 * Math.PI * K * t;
@@ -268,7 +262,7 @@ const RematesPage = () => {
                   <SelectContent>
                     {MATERIALS.map((m) => (
                       <SelectItem key={m.name} value={m.name}>
-                        {m.name} (K={m.k.toFixed(2)})
+                        {m.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
