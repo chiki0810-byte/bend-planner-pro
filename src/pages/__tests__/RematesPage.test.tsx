@@ -58,11 +58,9 @@ describe("RematesPage — K vía motor central Fase 1", () => {
         `Desarrollo total: ${total.toFixed(2)} mm`,
       ),
     );
-    const t = document.body.textContent || "";
-    console.log("TAIL", t.slice(t.indexOf("Resultados"), t.indexOf("Resultados") + 400));
     expect(screen.getByText(new RegExp(`^${derecha.toFixed(2)} mm$`))).toBeTruthy();
     expect(screen.getByText(new RegExp(`^${izquierda.toFixed(2)} mm$`))).toBeTruthy();
-    expect(screen.getByText(new RegExp(`^${total.toFixed(2)} mm$`))).toBeTruthy();
+    expect(screen.getByText(new RegExp(`^${total.toFixed(2)}$`))).toBeTruthy(); // "mm" va en un span anidado
     expect(toast.error).not.toHaveBeenCalled();
   });
 
@@ -86,7 +84,7 @@ describe("RematesPage — K vía motor central Fase 1", () => {
     );
     expect(screen.getByText(/^102\.39 mm$/)).toBeTruthy();
     expect(screen.getByText(/^2\.39 mm$/)).toBeTruthy();
-    expect(screen.getByText(/^104\.78 mm$/)).toBeTruthy();
+    expect(screen.getByText(/^104\.78$/)).toBeTruthy(); // "mm" va en un span anidado
     expect(toast.error).not.toHaveBeenCalled();
   });
 
