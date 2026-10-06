@@ -58,7 +58,8 @@ describe("RematesPage — K vía motor central Fase 1", () => {
         `Desarrollo total: ${total.toFixed(2)} mm`,
       ),
     );
-    console.log("CARD", screen.getByText("Resultados").parentElement?.textContent);
+    const t = document.body.textContent || "";
+    console.log("TAIL", t.slice(t.indexOf("Resultados"), t.indexOf("Resultados") + 400));
     expect(screen.getByText(new RegExp(`^${derecha.toFixed(2)} mm$`))).toBeTruthy();
     expect(screen.getByText(new RegExp(`^${izquierda.toFixed(2)} mm$`))).toBeTruthy();
     expect(screen.getByText(new RegExp(`^${total.toFixed(2)} mm$`))).toBeTruthy();
