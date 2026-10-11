@@ -7,11 +7,12 @@ import {
 
 const pieza = (over: Partial<PiezaAbierta> = {}): PiezaAbierta => ({
   id: "X",
+  dimensionReference: "inside",
   segmentos: [
-    { id: "S1", cota: 55, referencia: "inside" },
-    { id: "S2", cota: 45, referencia: "inside" },
-    { id: "S3", cota: 40, referencia: "outside" },
-    { id: "S4", cota: 460, referencia: "tangent" },
+    { id: "S1", cota: 55 },
+    { id: "S2", cota: 45 },
+    { id: "S3", cota: 40 },
+    { id: "S4", cota: 460 },
   ],
   pliegues: [
     { id: "P1", anguloGrados: 90, orientacion: "up", segmentoAnteriorId: "S1", segmentoSiguienteId: "S2" },
@@ -33,7 +34,7 @@ describe("piezaAbierta — contrato de estructura", () => {
   });
 
   it("un único segmento sin pliegues es válido", () => {
-    expect(codigos(pieza({ segmentos: [{ id: "S1", cota: 100, referencia: "inside" }], pliegues: [] }))).toEqual([]);
+    expect(codigos(pieza({ segmentos: [{ id: "S1", cota: 100 }], pliegues: [] }))).toEqual([]);
   });
 
   it("N segmentos con N pliegues (modelo fusionado) es inválido", () => {
@@ -55,13 +56,28 @@ describe("piezaAbierta — contrato de estructura", () => {
     expect([...DIMENSION_REFERENCES]).toEqual(["inside", "outside", "tangent"]);
   });
 
-  it("referencia ausente o no admitida es error y no se infiere", () => {
+  it("la pieza 55/45/40/460 lleva una única referencia dimensional explícita", () => {
     const p = pieza();
-    delete (p.segmentos[0] as any).referencia;
-    (p.segmentos[1] as any).referencia = "neutral";
-    const r = validarEstructuraPiezaAbierta(p);
-    expect(r.errores.map((e) => e.codigo)).toEqual(["REFERENCIA_AUSENTE", "REFERENCIA_INVALIDA"]);
-    expect("referencia" in p.segmentos[0]).toBe(false);
+    expect(p.dimensionReference).toBe("inside");
+    expect(p.segmentos.every((s) => !("referencia" in s))).toBe(true);
+    expect(validarEstructuraPiezaAbierta(p).valida).toBe(true);
+  });
+
+  it("referencia ausente a nivel de pieza es error y no se infiere", () => {
+    const p = pieza();
+    delete (p as { dimensionReference?: unknown }).dimensionReference;
+    expect(codigos(p as PiezaAbierta)).toEqual(["REFERENCIA_AUSENTE"]);
+  });
+
+  it("referencia no admitida a nivel de pieza es error", () => {
+    const p = pieza({ dimensionReference: "neutral" as any });
+    expect(codigos(p)).toEqual(["REFERENCIA_INVALIDA"]);
+  });
+
+  it("los segmentos ya no llevan referencia: una referencia residual por segmento no se valida ni se infiere", () => {
+    const p = pieza();
+    (p.segmentos[0] as any).referencia = "neutral";
+    expect(validarEstructuraPiezaAbierta(p)).toEqual({ valida: true, errores: [] });
   });
 
   it("enlaces de pliegue incorrectos se detectan", () => {
