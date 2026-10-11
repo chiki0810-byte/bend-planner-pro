@@ -1,71 +1,51 @@
-# Auditoría (solo lectura) — PlieguesPorPuntaPage.tsx
+# Auditoría (solo lectura): qué es `p.longitud` en Pliegues por Punta
 
-No se modificó ningún archivo del proyecto. Solo se escribió este informe del plan. Las conclusiones salen de leer el código y de aritmética directa; no se ejecutó nada en el navegador ni pruebas nuevas.
+No se ha modificado ningún archivo de código ni el roadmap. Solo se ha escrito este informe.
 
-## 1. La contradicción (CONFIRMADO)
+## Veredicto
 
-`src/pages/PlieguesPorPuntaPage.tsx`
-- L42-52 `calcPliegue`: `ba = θrad·(R + K·t)`, `comp = longitud + ba`, `desarrollo = comp` (**suma** BA).
-- L95-105 `desarrolloPuntaA/B = ΣL − ΣBA` (**resta** BA).
-- L107 `desarrolloTotal = A + B`.
-- L173-175: cada pliegue muestra "Desarrollo" = L + BA; L290-292: los totales muestran ΣL − BA. Con un solo pliegue, la misma pantalla muestra a la vez L+BA y L−BA.
+**Con lo que hay en el proyecto no se puede saber qué medida física representa `p.longitud`.** Nada en el código, la pantalla, la documentación, el historial de cambios ni las especificaciones del chat dice si es una cota interior, una cota exterior, un tramo entre tangencias o la longitud nominal del ala. Hasta ahora siempre se ha tratado como un número que se combina con BA, con signos que han ido cambiando.
 
-Ejemplo (valores iniciales R=1.0, K=0.5, t=1.0; L=50, 90°): BA = 2.356; pliegue "Desarrollo" 52.356; "Desarrollo Punta A" 47.644.
+## Evidencia
 
-Otro punto encontrado (CONTRADICCIÓN con Fase 1): L57-59, K=0.5 y R=1.0 están fijos en el código y no usan `getMaterialDefaultsByThickness`; L33-40, la lista de materiales ("Acero Dulce"...) no son los 9 materiales genéricos. Queda fuera de alcance; solo se deja anotado.
-
-## 2. Valores reales del formulario (L118-137, L214-242)
-
-| Campo | Atributos | Lo que hace el código | ¿Lo permite la interfaz? |
+| # | Fuente | Qué dice | Clasificación |
 |---|---|---|---|
-| Longitud | min=0, step=0.1 | `parseFloat(v) \|\| 0` | 0: sí (valor inicial al añadir, L64/L67). Negativos: se pueden escribir (`min` no bloquea lo que se teclea y no hay comprobación). |
-| Ángulo | min=0, max=180 | `parseFloat(v) \|\| 0` | 0..180 con las flechas; se pueden escribir valores >180 o negativos. Valor inicial: 90. |
-| Espesor / R | min=0 | `\|\| 0` | Se pueden escribir 0 y negativos. |
-| K | min=0, max=0.5 | `\|\| 0` | Se pueden escribir valores fuera de rango. |
-| Campo vacío o NaN | — | se convierte en 0 | Sí (al borrar el campo). |
+| 1 | `PlieguesPorPuntaPage.tsx` L19-24 (tipo `Pliegue`) | `longitud: number`, sin comentario ni unidad de referencia | CONFIRMADO: no define la referencia |
+| 2 | Misma página, L119-126 | Etiqueta "Longitud (mm)", sin placeholder ni ayuda, `min=0` | CONFIRMADO: no define la referencia |
+| 3 | Misma página, L64/L67 | Valor inicial al añadir un pliegue: 0 | CONFIRMADO |
+| 4 | Misma página, L197-243 | El radio solo aparece como "Radio Interior (mm)" global. No hay selector interior/exterior | CONFIRMADO |
+| 5 | Búsqueda de `dimensionReference` | Solo existe en `BendItem.tsx` L21/L116-119 (otra pantalla); esta página no lo usa | CONFIRMADO |
+| 6 | Cada fila de la lista es a la vez una longitud y un ángulo | N filas = N tramos y N pliegues; el último tramo recto no tiene sitio propio | CONFIRMADO por la forma de los datos |
+| 7 | Chat #67 (11-may): especificación que creó la pantalla | "Campo numérico Longitud (mm)" dentro de cada pliegue, sin definirla | CONFIRMADO: el origen no la define |
+| 8 | Chat #69 (12-may): especificación de los cálculos | `Comp = Longitud − BA`; desarrollo por punta = ΣL − ΣBA | CONFIRMADO: el diseño original restaba en los dos sitios (coherente) |
+| 9 | Adjunto "ETAPA 3H" (chat #249-250, 2-sep) | Cambia solo el cálculo por pliegue a `L + BA`. Su prueba de comprobación espera **Punta A ≈ 101.39 con L=100 a 60°**, es decir que la punta también sume BA | CONFIRMADO |
+| 10 | Código actual, L95-105 | La punta sigue con ΣL − ΣBA. Con el caso de 3H daría 98.61, no 101.39 | **CONTRADICCIÓN**: la intención de 3H no se aplicó a la punta, y el informe de entonces (chat #250) no comprobó ese caso en la pantalla |
+| 11 | Uso posterior: `validarPieza.ts` L60-74 y L96-101, `sugerirVueltas.ts` L39 y L83-84 | Comparan `longitud` con mínimos de **ala** (<10, <15, <20, ≥50 mm) y la llaman "ala" en los mensajes | PROBABLE que se haya pensado como longitud del ala (la reutilizan así), pero no dice si la cota es interior o exterior |
+| 12 | `ResultadoPiezaPage.tsx` L64-71 y L139 | Usa la longitud solo para el dibujo y para el texto "a {L} mm" | No aporta nada sobre la referencia |
+| 13 | `RematesDesigualesPage.tsx` L61-67 | Usa la primera o última `longitud` como "ala" solo si no llega el desarrollo de la punta | PROBABLE, igual que la fila 11 |
+| 14 | Historial de cambios (`git log`) | 8 commits llamados "Changes", sin mensajes descriptivos; la primera versión ya tenía "Longitud (mm)" sin explicación | NO DEMOSTRADO |
+| 15 | README, PACKAGING.md, funciones de IA | No mencionan la referencia de `longitud` | NO DEMOSTRADO |
+| 16 | Auditoría anterior (chat #258, 4-sep) | Llegó a la misma conclusión: NO DEMOSTRADO; incompatible con una cota exterior porque no usa OSSB ni BD | Lo confirma de forma independiente |
 
-No hay ninguna otra comprobación de rangos en la página. Los rangos que existen después (ala <10, ángulo >130/160) están en `validarPieza.ts` L60-92, no en esta página.
+## Qué indica cada signo (es lo que implica la fórmula, no prueba la intención)
 
-Cómo se comportan los cálculos (aritmética sobre L42-107):
-- Cero pliegues (por defecto en ambas puntas): A=B=Total=0.
-- Añadir un pliegue sin editar (L=0, 90°): Punta = −2.356, Total negativo → **CONFIRMADO: se puede mostrar un desarrollo negativo desde el estado inicial**.
-- Ángulo 0° (o R=K=0): BA=0, así que ΣL−BA = ΣL+BA y la contradicción desaparece.
-- Ángulo 180°: BA = π·(R+K·t) = 4.712 con los valores iniciales.
-- Varios pliegues: la diferencia entre los dos criterios es 2·ΣBA y crece con cada pliegue.
-- Una punta vacía: esa punta da 0 y el total es igual a la otra punta.
-- Valores negativos: dan BA o L negativos y se calculan sin ningún aviso.
+- **L + BA** (3H, cálculo por pliegue): solo es correcto si L son los tramos rectos **entre tangencias**, sin contar la zona curva.
+- **L − BA** (especificación original y desarrollo actual por punta): no corresponde a ninguna convención estándar. Si L fuera una cota exterior, lo correcto sería restar BD = 2·OSSB − BA, no BA.
+- Ninguno de los dos es correcto para una **cota interior** a la intersección teórica; en ese caso habría que restar 2·(OSSB_int) − BA.
 
-## 3. Impacto en las pantallas siguientes
+## Dato mínimo para decidir
 
-Recorrido (`App.tsx` L66-69): PlieguesPorPunta → `/resultado-pieza` (L296-313) → `/validacion-maquina` → `/sugeridor-vueltas` → `/remates-desiguales`.
+Una pieza real ya medida, con un solo pliegue a 90°, con estos datos:
+1. Material, espesor, radio interior real del útil (y K, si se conoce).
+2. Las dos alas **como se acotan en el plano del taller**, indicando dónde termina cada cota: cara interior, cara exterior o tangencia.
+3. El **desarrollo real** de esa pieza: lo que la Stefa programa o lo que se mide en chapa plana antes de plegar.
 
-- **ResultadoPiezaPage.tsx**: recibe `desarrolloPuntaA/B/Total` (L52-54) y `calc` de cada pliegue. Muestra los totales (L108-110) y el `calc.desarrollo` de cada pliegue (L143), así que repite la contradicción en esta pantalla (CONFIRMADO). Calcula `remateDesigual = |desA−desB| > 0.5` (L269) y lo pasa adelante. El dibujo usa solo las longitudes (L64), no le afecta.
-- **validarPieza.ts** (vía ValidacionMaquinaPage L35-37): L118 usa `remateDesigual` si viene, si no la diferencia; L123-125 muestra A/B en el aviso; L154 muestra D total. Como la diferencia A−B cambia en 2·(ΣBA_A − ΣBA_B), el aviso de remate desigual podría salir o no según el criterio cuando las puntas tienen distinto número de pliegues o ángulos. Es plausible, pero NO DEMOSTRADO con un caso concreto en la app. El signo negativo solo afectaría al texto.
-- **SugeridorVueltasPage.tsx** (L28-33) → `sugerirVueltas.ts` L51-55: `desigual` y `empezarPor = A >= B ? "A" : "B"`. El orden de los pliegues (L64-77) depende de `empezarPor`. Que cambie la punta por la que se empieza es plausible, pero NO DEMOSTRADO.
-- **RematesDesigualesPage.tsx** L61-67: toma `desarrolloPuntaA/B` como **ala** inicial (`inferAlaA/B`). Mezcla dos conceptos distintos (desarrollo frente a cota de ala): CONFIRMADO por el código. `num()` (L35-38) deja pasar números negativos, así que un desarrollo negativo se cargaría como ala negativa en el formulario (CONFIRMADO por el código; no probado en el navegador).
+Con eso, solo una convención (L+BA entre tangencias, L−BD exterior o interior con OSSB) cuadra con el desarrollo medido. Para mayor seguridad, conviene repetirlo con una segunda pieza de otro ángulo (por ejemplo 135°).
 
-## 4. Pruebas de caracterización: qué sirve de verdad
+## Resumen
 
-Una prueba que copia la fórmula en una función auxiliar del test **no sirve**: solo repite la fórmula y no prueba lo que hace la página. Las pruebas útiles deben mostrar `PlieguesPorPuntaPage` dentro de un router de prueba, escribir en los campos reales, leer lo que muestra la pantalla y capturar los datos que se pasan a `/resultado-pieza` mediante una ruta de prueba.
-
-Conjunto mínimo recomendado, que deja fijado el comportamiento actual sin corregirlo:
-1. Cero pliegues: Punta A, Punta B y Total = 0.00 (lo permite la interfaz).
-2. Un pliegue A, L=50, 90°: el pliegue muestra 52.36 y la Punta A muestra 47.64. Esta prueba documenta la contradicción (lo permite la interfaz).
-3. Pliegue añadido sin editar (L=0): la Punta muestra −2.36 (lo permite la interfaz).
-4. Ángulo 0°: el pliegue y la punta muestran lo mismo (lo permite la interfaz).
-5. Dos pliegues en A y ninguno en B: Total = Punta A, y la diferencia frente a sumar es 2·ΣBA (lo permite la interfaz).
-6. Los datos que se pasan al navegar llevan los mismos `desarrolloPuntaA/B/Total` que se ven en pantalla.
-7. Defensivo: longitud −10 y ángulo 200 escritos a mano se aceptan y se calculan sin aviso. Esto deja constancia de que no hay comprobación; no establece ningún rango.
-
-Opcional y fuera del mínimo: probar `validarPieza`/`sugerirVueltas` con valores A/B calculados con los dos criterios, para demostrar o descartar los efectos marcados como NO DEMOSTRADO.
-
-## 5. Resumen
-
-- CONFIRMADO: suma en un sitio y resta en otro en la misma página (L44-49 frente a L95-105); se puede mostrar un desarrollo negativo; ResultadoPieza repite la contradicción; RematesDesiguales toma un desarrollo como ala; no hay comprobación de valores negativos ni fuera de rango.
-- CONTRADICCIÓN: K y R fijos y lista de materiales distinta de la Fase 1 (L33-40, L57-59).
-- NO DEMOSTRADO: que cambie el aviso de remate desigual en validarPieza o la punta inicial en sugerirVueltas; cuál de los dos criterios es el correcto para el taller (hay que decidirlo antes de corregir).
-- Archivos modificados: ninguno (solo este informe).
-
-## Siguiente paso, si se aprueba
-
-Crear únicamente `src/pages/__tests__/PlieguesPorPuntaPage.test.tsx` con las pruebas 1 a 7, sin tocar nada del código de producción, y ejecutar todas las pruebas y la comprobación de tipos.
+- CONFIRMADO: ningún dato del proyecto define la referencia física; el diseño original restaba en los dos sitios; 3H cambió solo el cálculo por pliegue.
+- CONTRADICCIÓN: 3H esperaba que la punta sumara BA (101.39) y el código de la punta sigue restando.
+- PROBABLE: que se pensara como "longitud de ala" (por cómo la usan las comprobaciones posteriores), sin saber si la cota es interior o exterior.
+- NO DEMOSTRADO: que sea una cota interior, una cota exterior o un tramo entre tangencias.
+- Archivos modificados: ninguno.
