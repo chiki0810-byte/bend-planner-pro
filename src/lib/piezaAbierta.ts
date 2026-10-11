@@ -125,13 +125,13 @@ export function validarEstructuraPiezaAbierta(pieza: PiezaAbierta): ResultadoEst
     ids.add(x.id);
   }
 
+  if (pieza.dimensionReference === undefined || pieza.dimensionReference === null) {
+    errores.push({ codigo: "REFERENCIA_AUSENTE", mensaje: "La pieza necesita una única referencia dimensional obligatoria." });
+  } else if (!DIMENSION_REFERENCES.includes(pieza.dimensionReference as DimensionReference)) {
+    errores.push({ codigo: "REFERENCIA_INVALIDA", mensaje: `Referencia dimensional "${String(pieza.dimensionReference)}" no admitida.` });
+  }
+
   segs.forEach((s) => {
-    const ref = (s as { referencia?: unknown }).referencia;
-    if (ref === undefined || ref === null) {
-      errores.push({ codigo: "REFERENCIA_AUSENTE", mensaje: `Segmento ${s.id}: referencia dimensional obligatoria.`, id: s.id });
-    } else if (!DIMENSION_REFERENCES.includes(ref as DimensionReference)) {
-      errores.push({ codigo: "REFERENCIA_INVALIDA", mensaje: `Segmento ${s.id}: referencia "${String(ref)}" no admitida.`, id: s.id });
-    }
     if (!esNumeroFinito(s.cota)) {
       errores.push({ codigo: "COTA_INVALIDA", mensaje: `Segmento ${s.id}: cota no numérica.`, id: s.id });
     }
