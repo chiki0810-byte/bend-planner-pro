@@ -4,7 +4,8 @@
 // Cadena abierta: S1 → P1 → S2 → … → P(N-1) → SN
 // - Segmentos y pliegues son colecciones distintas.
 // - N segmentos ⇔ N-1 pliegues; el último segmento es explícito.
-// - La referencia dimensional es obligatoria y nunca se infiere.
+// - Una única referencia dimensional obligatoria para toda la pieza;
+//   nunca se infiere y no se define por segmento.
 // - No hay valores por defecto de material / K / radio.
 // - Cotas introducidas, desarrollo teórico y correcciones de taller
 //   se mantienen separados. Este módulo NO calcula nada.
@@ -24,7 +25,6 @@ export const DIMENSION_REFERENCES: readonly DimensionReference[] = [
 export interface SegmentoPieza {
   id: string;
   cota: number;
-  referencia: DimensionReference;
 }
 
 /** Pliegue entre dos segmentos consecutivos (ids explícitos). */
@@ -57,6 +57,8 @@ export interface CorreccionTallerPieza {
 
 export interface PiezaAbierta {
   id: string;
+  /** Única referencia dimensional de la pieza: obligatoria, nunca se infiere. */
+  dimensionReference: DimensionReference;
   segmentos: SegmentoPieza[];
   pliegues: PlieguePieza[];
   /** Ausente = no definido. Nunca se rellena automáticamente. */
@@ -123,13 +125,13 @@ export function validarEstructuraPiezaAbierta(pieza: PiezaAbierta): ResultadoEst
     ids.add(x.id);
   }
 
+  if (pieza.dimensionReference === undefined || pieza.dimensionReference === null) {
+    errores.push({ codigo: "REFERENCIA_AUSENTE", mensaje: "La pieza necesita una única referencia dimensional obligatoria." });
+  } else if (!DIMENSION_REFERENCES.includes(pieza.dimensionReference as DimensionReference)) {
+    errores.push({ codigo: "REFERENCIA_INVALIDA", mensaje: `Referencia dimensional "${String(pieza.dimensionReference)}" no admitida.` });
+  }
+
   segs.forEach((s) => {
-    const ref = (s as { referencia?: unknown }).referencia;
-    if (ref === undefined || ref === null) {
-      errores.push({ codigo: "REFERENCIA_AUSENTE", mensaje: `Segmento ${s.id}: referencia dimensional obligatoria.`, id: s.id });
-    } else if (!DIMENSION_REFERENCES.includes(ref as DimensionReference)) {
-      errores.push({ codigo: "REFERENCIA_INVALIDA", mensaje: `Segmento ${s.id}: referencia "${String(ref)}" no admitida.`, id: s.id });
-    }
     if (!esNumeroFinito(s.cota)) {
       errores.push({ codigo: "COTA_INVALIDA", mensaje: `Segmento ${s.id}: cota no numérica.`, id: s.id });
     }
