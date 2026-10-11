@@ -4,7 +4,8 @@
 // Cadena abierta: S1 → P1 → S2 → … → P(N-1) → SN
 // - Segmentos y pliegues son colecciones distintas.
 // - N segmentos ⇔ N-1 pliegues; el último segmento es explícito.
-// - La referencia dimensional es obligatoria y nunca se infiere.
+// - Una única referencia dimensional obligatoria para toda la pieza;
+//   nunca se infiere y no se define por segmento.
 // - No hay valores por defecto de material / K / radio.
 // - Cotas introducidas, desarrollo teórico y correcciones de taller
 //   se mantienen separados. Este módulo NO calcula nada.
@@ -24,7 +25,6 @@ export const DIMENSION_REFERENCES: readonly DimensionReference[] = [
 export interface SegmentoPieza {
   id: string;
   cota: number;
-  referencia: DimensionReference;
 }
 
 /** Pliegue entre dos segmentos consecutivos (ids explícitos). */
@@ -57,6 +57,8 @@ export interface CorreccionTallerPieza {
 
 export interface PiezaAbierta {
   id: string;
+  /** Única referencia dimensional de la pieza: obligatoria, nunca se infiere. */
+  dimensionReference: DimensionReference;
   segmentos: SegmentoPieza[];
   pliegues: PlieguePieza[];
   /** Ausente = no definido. Nunca se rellena automáticamente. */
