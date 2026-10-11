@@ -6,3 +6,4 @@
 
 ## Pruebas
 - [x] Caracterización PlieguesPorPuntaPage (sin tocar producción)
+- [x] Modelo de dominio PiezaAbierta (segmentos/pliegues separados) + pruebas de contrato
