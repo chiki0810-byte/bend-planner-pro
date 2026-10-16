@@ -5,6 +5,6 @@
 - [x] No introducir descuentos reales todavía
 
 ## Pruebas
-- [ ] Corregir y verificar cálculo manual por pliegue sin calibración, sin reutilizar valores antiguos ni sustituciones
+- [x] Corregir y verificar cálculo manual por pliegue sin calibración, sin reutilizar valores antiguos ni sustituciones
 - [x] Caracterización PlieguesPorPuntaPage (sin tocar producción)
 - [x] Modelo de dominio PiezaAbierta (segmentos/pliegues separados) + pruebas de contrato
