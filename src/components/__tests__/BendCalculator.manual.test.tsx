@@ -33,7 +33,7 @@ const k = (index = 1) => screen.getByRole("spinbutton", { name: `Factor K plegad
 const enter = (input: HTMLElement, value: string) => fireEvent.change(input, { target: { value } });
 async function select(name: string, option: string) {
   fireEvent.click(screen.getByRole("combobox", { name }));
-  fireEvent.click(await screen.findByRole("option", { name: option, exact: true }));
+  fireEvent.click(await screen.findByRole("option", { name: option }));
 }
 async function setup(thickness = "2 mm") {
   const calculate = vi.fn();
