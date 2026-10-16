@@ -14,13 +14,18 @@ vi.mock("sonner", () => ({ toast: { error: mocks.error } }));
 beforeEach(() => {
   vi.clearAllMocks();
   HTMLElement.prototype.scrollIntoView = vi.fn();
+  vi.stubGlobal("ResizeObserver", class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  });
   mocks.list.mockResolvedValue([{ material: "Acero" }, { material: "Galvanizado" }]);
   mocks.resolve.mockImplementation(async (material: string, thickness: number) => {
     const defaults = getMaterialDefaultsByThickness(material, thickness);
     return { defaults, calibrated: !!defaults };
   });
 });
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 const button = () => screen.getByRole("button", { name: "Calcular Plegado" }) as HTMLButtonElement;
 const radius = (index = 1) => screen.getByRole("spinbutton", { name: `Radio interior plegado ${index}` }) as HTMLInputElement;
@@ -149,7 +154,10 @@ describe("BendCalculator: procedencia manual de R/K", () => {
   });
   it("captura un error de lectura y no permite calcular con datos desconocidos", async () => {
     mocks.resolve.mockRejectedValue(new Error("lectura fallida"));
-    await setup();
+    const calculate = vi.fn();
+    render(<BendCalculator onCalculate={calculate} />);
+    await select("Material", "Galvanizado");
+    await select("Espesor", "2 mm");
     await waitFor(() => expect(mocks.error).toHaveBeenCalledWith("No se pudo comprobar la calibración del material. Inténtalo de nuevo."));
     expect(button().disabled).toBe(true);
   });
