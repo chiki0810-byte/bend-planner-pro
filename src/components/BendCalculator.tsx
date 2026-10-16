@@ -102,7 +102,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
       if (!cancelled) toast.error("No se pudo comprobar la calibración del material. Inténtalo de nuevo.");
     });
     return () => { cancelled = true; };
-  }, [material, thickness]);
+  }, [material, thickness, initialState]);
 
   useEffect(() => {
     if (!initialState) return;
