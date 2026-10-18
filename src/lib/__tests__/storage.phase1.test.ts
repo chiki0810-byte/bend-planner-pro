@@ -40,6 +40,39 @@ describe("storage Fase 1", () => {
     expect(rows.every(r => r.isCustom === false)).toBe(true);
   });
 
+  it("una fila heredada isCustom=false resuelve valores centrales, no sus valores guardados", async () => {
+    const { getMaterialDefaultsWithCalibration } = await import("@/lib/storage");
+    const { getMaterialDefaultsByThickness } = await import("@/lib/bendCalc");
+    const result = await getMaterialDefaultsWithCalibration("Acero", 1.0);
+
+    expect(result.calibrated).toBe(true);
+    expect(result.defaults).toEqual(getMaterialDefaultsByThickness("Acero", 1.0));
+    expect(result.defaults).toMatchObject({ kFactor: 0.38, innerRadius: 1.5 });
+    expect(result.defaults?.kFactor).not.toBe(legacy.kFactor);
+    expect(result.defaults?.innerRadius).not.toBe(legacy.innerRadius);
+  });
+
+  it("una fila isCustom=true conserva sus valores manuales", async () => {
+    const { upsertMaterial, getMaterialDefaultsWithCalibration } = await import("@/lib/storage");
+    const custom = {
+      material: "Titanio", thickness: 0.7,
+      bendAllowance90: 8.25, kFactor: 0.17, innerRadius: 4.6, isCustom: true,
+    };
+    await upsertMaterial(custom);
+
+    const result = await getMaterialDefaultsWithCalibration("Titanio", 0.7);
+    expect(result).toEqual({ defaults: {
+      bendAllowance90: 8.25, kFactor: 0.17, innerRadius: 4.6,
+    }, calibrated: true });
+  });
+
+  it("combinación no aprobada sin fila personalizada no devuelve fallback", async () => {
+    const { getMaterialDefaultsWithCalibration, getMaterialDefaults } = await import("@/lib/storage");
+    const result = await getMaterialDefaultsWithCalibration("Titanio", 0.9);
+
+    expect(result).toEqual({ defaults: undefined, calibrated: false });
+    await expect(getMaterialDefaults("Titanio", 0.9)).resolves.toBeUndefined();
+  });
   it("ensureBaseMaterials es idempotente y no sobrescribe", async () => {
     const { listMaterials } = await import("@/lib/storage");
     const a = await listMaterials();

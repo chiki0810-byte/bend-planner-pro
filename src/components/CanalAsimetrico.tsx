@@ -19,6 +19,7 @@ const CanalAsimetrico = () => {
   const [material, setMaterial] = useState("Acero");
   const [pliegues, setPliegues] = useState<PRow[]>([newRow()]);
   const [res, setRes] = useState<CanalResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const update = (id: string, k: keyof Omit<PRow,"id">, v: string) =>
     setPliegues((p) => p.map((r) => r.id === id ? { ...r, [k]: v } : r));
@@ -26,8 +27,14 @@ const CanalAsimetrico = () => {
   const remove = (id: string) => setPliegues((p) => p.length > 1 ? p.filter((r) => r.id !== id) : p);
 
   const calcular = () => {
-    let s = Number(solape);
-    if (!s) { s = solapeMinimo(Number(espesor)); setSolape(String(s)); }
+    setError(null);
+    try {
+let s = Number(solape);
+if (solape.trim() === "") {
+  s = solapeMinimo(Number(espesor));
+  setSolape(String(s));
+}
+
     setRes(calcularCanal({
       punta_a_mm: Number(puntaA),
       punta_b_mm: Number(puntaB),
@@ -40,6 +47,10 @@ const CanalAsimetrico = () => {
         radio_mm: Number(p.radio_mm) || 0,
       })),
     }));
+    } catch (error) {
+      setRes(null);
+      setError(error instanceof Error ? error.message : 'Error al calcular el canal.');
+    }
   };
 
   const totalPreview = (Number(puntaA) || 0) + (Number(puntaB) || 0) + (Number(solape) || 0);
@@ -66,7 +77,7 @@ const CanalAsimetrico = () => {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {Object.entries(MATERIALES_K).map(([m, k]) => (
-                  <SelectItem key={m} value={m}>{m} (K={k})</SelectItem>
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -95,6 +106,7 @@ const CanalAsimetrico = () => {
           <Calculator className="w-4 h-4 mr-2" /> Calcular desarrollo
         </Button>
 
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {res && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

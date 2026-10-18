@@ -292,7 +292,7 @@ const SemaphoreCard = ({ validation, machineShort }: { validation: MachineValida
     : c.color === "yellow" ? "bg-yellow-500/10" : "bg-red-500/10";
 
   return (
-    <Card className={`border-2 ${colorBorder} ${colorBg} shadow-[0_0_60px_${c.glow}]`}
+    <Card className={`border-2 ${colorBorder} ${colorBg}`}
       style={{ boxShadow: `0 0 50px ${c.glow}` }}>
       <CardContent className="p-6">
         <div className="flex items-center gap-5 flex-wrap sm:flex-nowrap">

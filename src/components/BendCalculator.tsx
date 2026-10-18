@@ -41,9 +41,9 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const [material, setMaterial] = useState<string>("");
   const [pieceLength, setPieceLength] = useState<string>("");
   const [materials, setMaterials] = useState<string[]>([]);
-  const [defaults, setDefaults] = useState({ kFactor: 0.38, innerRadius: 1.5, bendAllowance90: 1.6 });
+  const [defaults, setDefaults] = useState({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
   const [isCalibrated, setIsCalibrated] = useState(true);
-  const [bends, setBends] = useState<BendRow[]>([newBend(1.5, 0.38)]);
+  const [bends, setBends] = useState<BendRow[]>([newBend(0, 0)]);
 
   const availableThicknesses = useMemo(
     () => (material === "Galvanizado" ? [...BASE_THICKNESSES, 2.0] : BASE_THICKNESSES),
@@ -73,8 +73,19 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     let cancelled = false;
     getMaterialDefaultsWithCalibration(material, t).then(({ defaults: def, calibrated }) => {
       if (cancelled) return;
-      setIsCalibrated(calibrated);
-      setDefaults(def);
+      setIsCalibrated(calibrated && def !== undefined);
+
+if (!def) {
+  setDefaults({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
+  setBends(prev => prev.map(b => ({
+    ...b,
+    innerRadius: b.manualR ? b.innerRadius : 0,
+    kFactor: b.manualK ? b.kFactor : 0,
+  })));
+  return;
+}
+
+setDefaults(def);
       if (calibrated) {
         setBends(prev => prev.map(b => ({
           ...b,
@@ -114,8 +125,21 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const calculate = async () => {
     const t = parseFloat(thickness);
     const L = parseFloat(pieceLength);
-    if (!t || !L || !material || !isCalibrated) return;
-    const { defaults: def } = await getMaterialDefaultsWithCalibration(material, t);
+    if (!t || !L || !material) return;
+    const { defaults: def, calibrated } = await getMaterialDefaultsWithCalibration(material, t);
+
+if (!calibrated && bends.some(b =>
+  !b.manualR ||
+  !b.manualK ||
+  !Number.isFinite(b.innerRadius) ||
+  b.innerRadius <= 0 ||
+  !Number.isFinite(b.kFactor) ||
+  b.kFactor <= 0 ||
+  b.kFactor > 0.5
+)) {
+  setIsCalibrated(false);
+  return;
+}
 
     const bendResults = bends.map((b, i) =>
       computeBend(
@@ -230,14 +254,18 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
           </div>
         </div>
 
-        <Button onClick={calculate} className="w-full" size="lg"
-          disabled={!thickness || !material || !pieceLength || !isCalibrated}>
-          <Calculator className="w-4 h-4 mr-2" />
-          Calcular Plegado
-        </Button>
-      </CardContent>
-    </Card>
-  );
+        <Button
+  onClick={calculate}
+  className="w-full"
+  size="lg"
+  disabled={!thickness || !material || !pieceLength}
+>
+  <Calculator className="w-4 h-4 mr-2" />
+  Calcular Plegado
+</Button>
+</CardContent>
+</Card>
+);
 };
 
 export default BendCalculator;

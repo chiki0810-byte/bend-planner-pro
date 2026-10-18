@@ -18,8 +18,11 @@ const PlegadoConico = () => {
   const [enPrensa, setEnPrensa] = useState(false);
   const [anguloPliegue, setAnguloPliegue] = useState("90");
   const [res, setRes] = useState<ConicoResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const calcular = () => {
+    setError(null);
+    try {
     setRes(
       calcularConico({
         diametro_mm: Number(diametro),
@@ -32,6 +35,10 @@ const PlegadoConico = () => {
         angulo_pliegue_deg: Number(anguloPliegue) || undefined,
       }),
     );
+    } catch (error) {
+      setRes(null);
+      setError(error instanceof Error ? error.message : 'Error al calcular el cónico.');
+    }
   };
 
   return (
@@ -53,8 +60,8 @@ const PlegadoConico = () => {
             <Select value={material} onValueChange={setMaterial}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.entries(MATERIALES_K).map(([m, k]) => (
-                  <SelectItem key={m} value={m}>{m} (K={k})</SelectItem>
+                {Object.keys(MATERIALES_K).map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -75,6 +82,7 @@ const PlegadoConico = () => {
           <Calculator className="w-4 h-4 mr-2" /> Calcular
         </Button>
 
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         {res && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

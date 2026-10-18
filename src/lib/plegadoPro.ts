@@ -1,5 +1,5 @@
 // Cálculos del módulo profesional de plegado (offline)
-import { calculateBendMath } from "@/lib/bendCalc";
+import { calculateBendMath, getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 
 export const MATERIALES_K: Record<string, number> = {
   Acero: 0.33,
@@ -13,7 +13,11 @@ export const MATERIALES_K: Record<string, number> = {
   Cobre: 0.45,
 };
 
-export const getK = (mat: string): number => MATERIALES_K[mat] ?? 0.33;
+export const getK = (mat: string): number =>
+  MATERIALES_K[mat] ?? 0.33;
+
+const getKValidado = (mat: string, thickness: number): number | undefined =>
+  getMaterialDefaultsByThickness(mat, thickness)?.kFactor;
 
 // ===== CÓNICO / ENCHUFABLE =====
 export interface ConicoInput {
@@ -39,7 +43,9 @@ export interface ConicoResult {
 }
 
 export const calcularConico = (i: ConicoInput): ConicoResult => {
-  const K = getK(i.material);
+  const K = getKValidado(i.material, i.espesor_mm);
+
+  if (K === undefined) throw new Error('No hay valores K/R aprobados para el material ' + i.material + ' y espesor ' + i.espesor_mm + ' mm.');
   const t = i.espesor_mm || 0;
   const D = i.diametro_mm || 0;
   const h = i.altura_mm || 0;
@@ -129,11 +135,13 @@ export const solapeMinimo = (t: number): number => {
 };
 
 export const calcularCanal = (i: CanalInput): CanalResult => {
-  const K = getK(i.material);
+  const K = getKValidado(i.material, i.espesor_mm);
+  if (K === undefined) throw new Error('No hay valores K/R aprobados para el material ' + i.material + ' y espesor ' + i.espesor_mm + ' mm.');
   const t = i.espesor_mm || 0;
 
   let desarrollo = 0;
   let ba_total = 0;
+
   for (const p of i.pliegues) {
     const ba = calculateBendMath({
       angle: p.angulo_deg || 0,

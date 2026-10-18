@@ -127,15 +127,25 @@ export function getMaterialDefaultsByThickness(
   return { kFactor, innerRadius, bendAllowance90: Math.round(ba * 100) / 100 };
 }
 
+
 export function computeBend(
   input: BendInput,
   thickness: number,
-  defaults: DefaultsByThickness,
+  defaults: DefaultsByThickness | undefined,
   order: number,
 ): BendOutput {
   const t = thickness;
-  const R = input.innerRadius ?? defaults.innerRadius;
-  const K = input.kFactor ?? defaults.kFactor;
+  const R = input.innerRadius ?? defaults?.innerRadius;
+  const K = input.kFactor ?? defaults?.kFactor;
+
+  if (
+    !Number.isFinite(t) || t <= 0 ||
+    R === undefined || !Number.isFinite(R) || R <= 0 ||
+    K === undefined || !Number.isFinite(K) || K <= 0 || K > 0.5
+  ) {
+    throw new Error("Plegado no calculable: introduce un espesor, R y K válidos o selecciona una calibración aprobada.");
+  }
+
   const { bendAllowance, outsideSetback, bendDeduction } = calculateBendMath({
     angle: input.angle,
     thickness: t,

@@ -87,23 +87,41 @@ const BendItem = ({ index, value, onChange, onRemove, canRemove, defaultRadius, 
       <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/50">
         <div className="space-y-1">
           <Label className="text-[10px] text-muted-foreground">Radio int. (mm)</Label>
-          <Input type="number" step="0.1" min="0" value={value.innerRadius}
-            placeholder={String(defaultRadius)}
-            onChange={(e) => set('innerRadius', parseFloat(e.target.value) || 0)}
-            className="h-8 text-xs" />
+          <Input
+            type="number"
+            step="0.1"
+            min="0"
+            value={value.innerRadius || ""}
+            placeholder={defaultRadius > 0 ? String(defaultRadius) : ""}
+            onChange={(e) => set("innerRadius", parseFloat(e.target.value) || 0)}
+            className="h-8 text-xs"
+          />
         </div>
+
         <div className="space-y-1">
           <Label className="text-[10px] text-muted-foreground">Factor K</Label>
-          <Input type="number" step="0.01" min="0" max="0.5" value={value.kFactor}
-            placeholder={String(defaultK)}
-            onChange={(e) => set('kFactor', parseFloat(e.target.value) || 0)}
-            className="h-8 text-xs" />
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            max="0.5"
+            value={value.kFactor || ""}
+            placeholder={defaultK > 0 ? String(defaultK) : ""}
+            onChange={(e) => set("kFactor", parseFloat(e.target.value) || 0)}
+            className="h-8 text-xs"
+          />
         </div>
+
         <div className="space-y-1">
           <Label className="text-[10px] text-muted-foreground">Tol. ± (mm)</Label>
-          <Input type="number" step="0.05" min="0" value={value.tolerance}
-            onChange={(e) => set('tolerance', parseFloat(e.target.value) || 0)}
-            className="h-8 text-xs" />
+          <Input
+            type="number"
+            step="0.05"
+            min="0"
+            value={value.tolerance}
+            onChange={(e) => set("tolerance", parseFloat(e.target.value) || 0)}
+            className="h-8 text-xs"
+          />
         </div>
       </div>
 
