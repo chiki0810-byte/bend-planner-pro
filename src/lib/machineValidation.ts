@@ -4,6 +4,7 @@
 
 import { BendResult } from "@/pages/Index";
 import { BendItemValue } from "@/components/BendItem";
+import { areBendPositionsWithinLength } from "@/lib/bendCalc";
 
 export type MachineId = "stefa8" | "jordi6" | "prensa6";
 
@@ -153,6 +154,16 @@ export function validateOnMachine(input: ValidationInput): MachineValidation {
     issues.push({
       level: "error", code: "LENGTH",
       message: `Largo de pieza ${input.result.pieceLength} mm supera el máximo de ${m.maxLength} mm.`,
+    });
+  }
+
+  if (!areBendPositionsWithinLength(
+    input.result.pieceLength,
+    input.result.bends.map(bend => bend.distanceFromPrevious),
+  )) {
+    issues.push({
+      level: "error", code: "BEND_POSITION",
+      message: "Las posiciones acumuladas de los pliegues superan el largo de la pieza o contienen distancias inválidas.",
     });
   }
 

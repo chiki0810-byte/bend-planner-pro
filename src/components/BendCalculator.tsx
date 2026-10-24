@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calculator, Plus } from "lucide-react";
 import { BendResult, CalculatorState } from "@/pages/Index";
 import BendItem, { BendItemValue } from "./BendItem";
-import { computeBend, computeDevelopment } from "@/lib/bendCalc";
+import { areBendPositionsWithinLength, computeBend, computeDevelopment } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration, listMaterials } from "@/lib/storage";
 import { toast } from "sonner";
 
@@ -169,6 +169,10 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
       !Number.isFinite(b.tolerance) || b.tolerance < 0
     )) {
       toast.error("Revisa cada plegado: el ángulo debe estar entre 0° y 180°, y distancia y tolerancia no pueden ser negativas.");
+      return;
+    }
+    if (!areBendPositionsWithinLength(L, bends.map(b => b.distance))) {
+      toast.error("Las posiciones acumuladas de los pliegues superan el largo de la pieza.");
       return;
     }
     const requestedRevision = inputRevision.current;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  getMaterialDefaultsByThickness, calculateBendMath, computeBend, computeDevelopment,
+  areBendPositionsWithinLength, getMaterialDefaultsByThickness, calculateBendMath, computeBend, computeDevelopment,
 } from "@/lib/bendCalc";
 
 const STEEL = ["Acero", "Galvanizado", "Corten", "Duro 500", "Duro 600"];
@@ -41,6 +41,14 @@ describe("getMaterialDefaultsByThickness", () => {
 });
 
 describe("regresión matemática", () => {
+  it("comprueba que las posiciones acumuladas caben dentro de la pieza", () => {
+    expect(areBendPositionsWithinLength(100, [30, 40])).toBe(true);
+    expect(areBendPositionsWithinLength(100, [60, 41])).toBe(false);
+    expect(areBendPositionsWithinLength(100, [Number.NaN])).toBe(false);
+    expect(areBendPositionsWithinLength(100, [-1])).toBe(false);
+    expect(areBendPositionsWithinLength(100, [])).toBe(false);
+  });
+
   it("calculateBendMath 90° t=1 R=1.5 K=0.38", () => {
     const r = calculateBendMath({ angle: 90, thickness: 1, innerRadius: 1.5, kFactor: 0.38 });
     expect(r.bendAllowance).toBeCloseTo(2.953097, 5);

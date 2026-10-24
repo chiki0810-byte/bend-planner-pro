@@ -68,6 +68,18 @@ export function isValidMaterialDefaults(
     Number.isFinite(defaults.innerRadius) && defaults.innerRadius > 0;
 }
 
+/** Comprueba que las posiciones acumuladas de los pliegues caben en la pieza. */
+export function areBendPositionsWithinLength(pieceLength: number, distances: number[]): boolean {
+  if (!Number.isFinite(pieceLength) || pieceLength <= 0 || distances.length === 0) return false;
+  let position = 0;
+  for (const distance of distances) {
+    if (!Number.isFinite(distance) || distance < 0) return false;
+    position += distance;
+    if (position > pieceLength) return false;
+  }
+  return true;
+}
+
 // Defaults estándar por espesor (editables vía panel de materiales)
 export const DEFAULT_THICKNESS_TABLE: Record<number, DefaultsByThickness> = {
   0.5: { bendAllowance90: 0.8, kFactor: 0.33, innerRadius: 0.8 },
