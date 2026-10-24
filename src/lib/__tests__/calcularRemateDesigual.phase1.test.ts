@@ -109,4 +109,22 @@ describe("calcularRemateDesigual con valores aprobados", () => {
     expect(resultado.desarrolloTotal).toBe(0);
     expect(resultado.avisos[0].mensaje).toMatch(/un pliegue entre cada par de tramos/);
   });
+
+  it("rechaza ángulos mayores de 160 grados como fuera del rango plegable", () => {
+    const resultado = calcularRemateDesigual({ ...inputBase, angulo: 161 });
+
+    expect(resultado.valido).toBe(false);
+    expect(resultado.desarrolloTotal).toBe(0);
+    expect(resultado.avisos[0].mensaje).toMatch(/fuera del rango plegable/);
+  });
+
+  it("advierte para ángulos críticos permitidos sin invalidar su cálculo", () => {
+    const resultado = calcularRemateDesigual({ ...inputBase, angulo: 150 });
+
+    expect(resultado.valido).toBe(true);
+    expect(resultado.avisos).toContainEqual(expect.objectContaining({
+      nivel: "warn",
+      mensaje: expect.stringMatching(/ángulo 150° crítico/),
+    }));
+  });
 });

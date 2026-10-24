@@ -237,17 +237,29 @@ export function calcularRemateDesigual(
     ? input.pliegues!
     : [{ angulo, espesor, radio }];
   const listaPliegues: PliegueFisico[] = [];
-  for (const pliegue of plieguesSolicitados) {
+  for (const [index, pliegue] of plieguesSolicitados.entries()) {
     const defaults = getDefaults(input.material, pliegue.espesor);
-    const geometriaValida = Number.isFinite(pliegue.espesor) && pliegue.espesor > 0 &&
-      Number.isFinite(pliegue.angulo) && pliegue.angulo > 0 && pliegue.angulo < 180;
-    if (!isValidMaterialDefaults(defaults) || !geometriaValida) {
+    const espesorValido = Number.isFinite(pliegue.espesor) && pliegue.espesor > 0;
+    const anguloValido = Number.isFinite(pliegue.angulo) && pliegue.angulo > 0 && pliegue.angulo < 180;
+    if (!espesorValido || !anguloValido) {
       return resultadoInvalido(
         alaA,
         alaB,
-        !geometriaValida
-          ? "El ángulo o el espesor del pliegue no son válidos. No se calcula un desarrollo válido."
-          : `No hay K y radio aprobados válidos para ${input.material || "el material seleccionado"} con espesor ${pliegue.espesor} mm. No se calcula un desarrollo válido.`,
+        "El ángulo o el espesor del pliegue no son válidos. No se calcula un desarrollo válido.",
+      );
+    }
+    if (pliegue.angulo > 160) {
+      return resultadoInvalido(
+        alaA,
+        alaB,
+        `Pliegue ${index + 1}: ángulo ${pliegue.angulo}° fuera del rango plegable (>160°). No se calcula un desarrollo válido.`,
+      );
+    }
+    if (!isValidMaterialDefaults(defaults)) {
+      return resultadoInvalido(
+        alaA,
+        alaB,
+        `No hay K y radio aprobados válidos para ${input.material || "el material seleccionado"} con espesor ${pliegue.espesor} mm. No se calcula un desarrollo válido.`,
       );
     }
     listaPliegues.push({ ...pliegue, k: defaults.kFactor, radio: defaults.innerRadius });
@@ -255,6 +267,15 @@ export function calcularRemateDesigual(
   const baPorPliegue = listaPliegues.map((p) => calcularBAPliegue(p));
   const ba = sumarBAPliegues(listaPliegues);
   const k = listaPliegues[0].k!;
+
+  listaPliegues.forEach((pliegue, index) => {
+    if (pliegue.angulo > 130) {
+      avisos.push({
+        nivel: "warn",
+        mensaje: `Pliegue ${index + 1}: ángulo ${pliegue.angulo}° crítico, puede requerir dos pasadas.`,
+      });
+    }
+  });
 
 
   // --- B) CORRECCIONES EMPÍRICAS ------------------------------------------
