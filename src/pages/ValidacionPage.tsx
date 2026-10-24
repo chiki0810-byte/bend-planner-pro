@@ -1,6 +1,6 @@
 import { Factory } from "lucide-react";
 import MachineValidationPanel from "@/components/MachineValidationPanel";
-import { useAppState } from "@/state/AppStateContext";
+import { useAppState } from "@/state/useAppState";
 
 const ValidacionPage = () => {
   const { result, currentBends, currentMaterial, currentThickness } = useAppState();

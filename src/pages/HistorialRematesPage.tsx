@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { useRemates } from "@/state/RematesContext";
+import { useRemates } from "@/state/useRemates";
 import { History, ChevronRight, Scissors } from "lucide-react";
 
 const HistorialRematesPage = () => {

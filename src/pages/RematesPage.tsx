@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Scissors, Calculator, FileSpreadsheet, ImagePlus, X, FileDown, Zap, Layers } from "lucide-react";
 import { toast } from "sonner";
-import { useRemates } from "@/state/RematesContext";
+import { useRemates } from "@/state/useRemates";
 import { exportRemateExcel, exportRematePdf, RemateExportData } from "@/lib/rematesExport";
 import logoEmpresa from "@/assets/logo_empresa.png";
 import RematesProfesional from "@/components/RematesProfesional";

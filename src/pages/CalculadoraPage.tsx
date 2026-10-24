@@ -2,7 +2,7 @@ import { Calculator } from "lucide-react";
 import BendCalculator from "@/components/BendCalculator";
 import ResultsPanel from "@/components/ResultsPanel";
 import DevelopedView2D from "@/components/DevelopedView2D";
-import { useAppState } from "@/state/AppStateContext";
+import { useAppState } from "@/state/useAppState";
 
 const CalculadoraPage = () => {
   const {

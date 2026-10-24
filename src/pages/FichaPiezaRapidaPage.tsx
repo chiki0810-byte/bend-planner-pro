@@ -87,6 +87,17 @@ const FichaPiezaRapidaPage = () => {
 
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const invalidarCalculos = () => {
+    setDesarrolloMm(0);
+    setValidacion(null);
+    setSecuencia([]);
+  };
+
+  const obtenerDefaultsMaterial = (materialKey: MaterialKey, thickness: number) => {
+    const label = MATERIALS.find((item) => item.key === materialKey)?.label ?? "";
+    return getMaterialDefaultsByThickness(label, thickness);
+  };
+
   // ── Acciones ───────────────────────────────────────────────────────────
   const onPickImage = (file: File | null) => {
     if (!file) return;
@@ -95,13 +106,21 @@ const FichaPiezaRapidaPage = () => {
     reader.readAsDataURL(file);
   };
 
-  const updatePliegue = (id: string, patch: Partial<Pliegue>) =>
+  const updatePliegue = (id: string, patch: Partial<Pliegue>) => {
+    invalidarCalculos();
     setPliegues(ps => ps.map(p => (p.id === id ? { ...p, ...patch } : p)));
+  };
 
-  const addPliegue = () => setPliegues(ps => [...ps, newPliegue()]);
-  const removePliegue = (id: string) =>
+  const addPliegue = () => {
+    invalidarCalculos();
+    setPliegues(ps => [...ps, newPliegue()]);
+  };
+  const removePliegue = (id: string) => {
+    invalidarCalculos();
     setPliegues(ps => (ps.length > 1 ? ps.filter(p => p.id !== id) : ps));
+  };
   const movePliegue = (id: string, dir: -1 | 1) => {
+    invalidarCalculos();
     setPliegues(ps => {
       const i = ps.findIndex(p => p.id === id);
       const j = i + dir;
@@ -114,12 +133,10 @@ const FichaPiezaRapidaPage = () => {
 
   // 🟦 Calcular desarrollo
   const calcularDesarrollo = () => {
-            const defaults = getMaterialDefaultsByThickness(
-      MATERIALS.find((m) => m.key === material)?.label ?? "",
-      espesor
-    );
+    const defaults = obtenerDefaultsMaterial(material, espesor);
 
     if (!defaults) {
+      invalidarCalculos();
       toast({
         title: "Material y espesor sin valores aprobados",
         variant: "destructive",
@@ -145,7 +162,7 @@ const FichaPiezaRapidaPage = () => {
 
   // 🟩 Validar por máquina
   const validarPorMaquina = () => {
-    if (desarrolloMm <= 0) {
+    if (!Number.isFinite(desarrolloMm) || desarrolloMm <= 0) {
       toast({ title: "Calcula primero el desarrollo", variant: "destructive" });
       return;
     }
@@ -195,6 +212,10 @@ const FichaPiezaRapidaPage = () => {
   const guardar = async () => {
     if (!nombrePieza.trim()) {
       toast({ title: "Falta nombre", description: "Indica un nombre para la pieza.", variant: "destructive" });
+      return;
+    }
+    if (!Number.isFinite(desarrolloMm) || desarrolloMm <= 0) {
+      toast({ title: "Calcula el desarrollo vigente antes de guardar", variant: "destructive" });
       return;
     }
     try {
@@ -341,22 +362,33 @@ const FichaPiezaRapidaPage = () => {
                   step="0.1"
                   min="0"
                   value={espesor}
-                  onChange={(e) => setEspesor(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    setEspesor(parseFloat(e.target.value) || 0);
+                    invalidarCalculos();
+                  }}
                   className={inputCls}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs uppercase tracking-wider text-sky-300/80">Material</Label>
-                <Select value={material} onValueChange={(v) => setMaterial(v as MaterialKey)}>
+                <Select value={material} onValueChange={(v) => {
+                  setMaterial(v as MaterialKey);
+                  invalidarCalculos();
+                }}>
                   <SelectTrigger className={inputCls}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {MATERIALS.map(m => (
-                      <SelectItem key={m.key} value={m.key}>
-                        {m.label} (K={m.k.toFixed(2)})
-                      </SelectItem>
-                    ))}
+                    {MATERIALS.map((m) => {
+                      const defaults = obtenerDefaultsMaterial(m.key, espesor);
+                      return (
+                        <SelectItem key={m.key} value={m.key}>
+                          {defaults
+                            ? `${m.label} (K=${defaults.kFactor.toFixed(2)})`
+                            : `${m.label} (sin K aprobada para ${espesor.toFixed(1)} mm)`}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

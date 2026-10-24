@@ -4,7 +4,7 @@
 // cuando se llama a renderAll(changes).
 // ============================================================
 import { useEffect, useState } from "react";
-import { defaultSheetState, type SheetState } from "@/components/SheetSVG";
+import { defaultSheetState, type SheetState } from "@/lib/sheetSvgModel";
 
 let currentState: SheetState = defaultSheetState;
 const listeners = new Set<(s: SheetState) => void>();

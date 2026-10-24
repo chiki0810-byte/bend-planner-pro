@@ -1,6 +1,6 @@
 import { LayoutTemplate } from "lucide-react";
 import TemplatesPanel from "@/components/TemplatesPanel";
-import { useAppState } from "@/state/AppStateContext";
+import { useAppState } from "@/state/useAppState";
 
 const PlantillasPage = () => {
   const { currentState, handleLoadTemplate } = useAppState();

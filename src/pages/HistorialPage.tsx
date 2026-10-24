@@ -1,7 +1,7 @@
 import { FolderOpen } from "lucide-react";
 import HistoryPanel from "@/components/HistoryPanel";
 import TemplatesPanel from "@/components/TemplatesPanel";
-import { useAppState } from "@/state/AppStateContext";
+import { useAppState } from "@/state/useAppState";
 
 const HistorialPage = () => {
   const { historyKey, handleLoad, currentState, handleLoadTemplate } = useAppState();

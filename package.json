@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test": "vitest run",
+    "typecheck": "tsc -b --pretty false",
     "preview": "vite preview",
     "cap:sync": "vite build && cap sync",
     "android:open": "vite build && cap sync android && cap open android",

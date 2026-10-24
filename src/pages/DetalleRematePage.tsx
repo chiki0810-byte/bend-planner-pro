@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useRemates } from "@/state/RematesContext";
+import { useRemates } from "@/state/useRemates";
 import { ArrowLeft, FileSpreadsheet, FileDown, Trash2 } from "lucide-react";
 import { exportRemateExcel, exportRematePdf, itemToExportData } from "@/lib/rematesExport";
 import logoEmpresa from "@/assets/logo_empresa.png";

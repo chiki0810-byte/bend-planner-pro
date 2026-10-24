@@ -1,6 +1,7 @@
 import { Layers3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import SheetSVG, { defaultSheetState } from "@/components/SheetSVG";
+import SheetSVG from "@/components/SheetSVG";
+import { defaultSheetState } from "@/lib/sheetSvgModel";
 
 const ChapaSVGPage = () => {
   return (

@@ -1,32 +1,7 @@
-import { createContext, ReactNode, useContext, useState } from "react";
-import { BendItemValue } from "@/components/BendItem";
-import { BendResult, CalculatorState } from "@/pages/Index";
-
-interface AppStateValue {
-  result: BendResult | null;
-  currentMaterial: string;
-  currentThickness: number;
-  currentLength: number;
-  currentBends: BendItemValue[];
-  currentName: string;
-  initialState: CalculatorState | null;
-  historyKey: number;
-  currentState: CalculatorState | null;
-  setCurrentName: (n: string) => void;
-  invalidateResult: () => void;
-  bumpHistory: () => void;
-  handleCalculate: (
-    res: BendResult,
-    meta: { material: string; thickness: number; bends: BendItemValue[]; pieceLength: number },
-  ) => void;
-  handleLoad: (data: {
-    material: string; thickness: number; pieceLength: number;
-    bends: BendItemValue[]; result: BendResult; name: string;
-  }) => void;
-  handleLoadTemplate: (s: CalculatorState) => void;
-}
-
-const Ctx = createContext<AppStateValue | null>(null);
+import { useState, type ReactNode } from "react";
+import { AppStateValueContext as Ctx, type AppStateValue } from "@/state/AppStateValueContext";
+import type { BendItemValue } from "@/components/BendItem";
+import type { BendResult, CalculatorState } from "@/pages/Index";
 
 export const AppStateProvider = ({ children }: { children: ReactNode }) => {
   const [result, setResult] = useState<BendResult | null>(null);
@@ -80,10 +55,4 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </Ctx.Provider>
   );
-};
-
-export const useAppState = () => {
-  const v = useContext(Ctx);
-  if (!v) throw new Error("useAppState must be used within AppStateProvider");
-  return v;
 };

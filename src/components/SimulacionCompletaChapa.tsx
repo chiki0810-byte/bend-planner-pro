@@ -15,6 +15,7 @@ export const SimulacionCompletaChapa: React.FC = () => {
 
   const [anguloAnimado, setAnguloAnimado] = useState(0);
   const [simulando, setSimulando] = useState(false);
+  const pliegue = plieguesProcesados[pasoActual - 1];
 
   useEffect(() => {
     if (!simulando) return;
@@ -23,8 +24,6 @@ export const SimulacionCompletaChapa: React.FC = () => {
       setSimulando(false);
       return;
     }
-
-    const pliegue = plieguesProcesados[pasoActual - 1];
 
     if (
       !pliegue ||
@@ -79,8 +78,6 @@ export const SimulacionCompletaChapa: React.FC = () => {
     setSimulando(false);
     setAnguloAnimado(0);
   };
-
-  const pliegue = plieguesProcesados[pasoActual - 1];
 
   if (!simulando || !pliegue) {
     return (
