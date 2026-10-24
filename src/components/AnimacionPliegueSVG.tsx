@@ -48,7 +48,17 @@ export const AnimacionPliegueSVG: React.FC = () => {
 
   }, [pasoActual, pliegue]);
 
-  if (!pliegue || !pliegue.x1 || !pliegue.y1 || !pliegue.x2 || !pliegue.y2) {
+  if (
+    !pliegue ||
+    typeof pliegue.x1 !== "number" ||
+    !Number.isFinite(pliegue.x1) ||
+    typeof pliegue.y1 !== "number" ||
+    !Number.isFinite(pliegue.y1) ||
+    typeof pliegue.x2 !== "number" ||
+    !Number.isFinite(pliegue.x2) ||
+    typeof pliegue.y2 !== "number" ||
+    !Number.isFinite(pliegue.y2)
+  ) {
 
     return null;
 

@@ -26,7 +26,17 @@ export const SimulacionCompletaChapa: React.FC = () => {
 
     const pliegue = plieguesProcesados[pasoActual - 1];
 
-    if (!pliegue || !pliegue.x1 || !pliegue.y1 || !pliegue.x2 || !pliegue.y2) {
+    if (
+      !pliegue ||
+      typeof pliegue.x1 !== "number" ||
+      !Number.isFinite(pliegue.x1) ||
+      typeof pliegue.y1 !== "number" ||
+      !Number.isFinite(pliegue.y1) ||
+      typeof pliegue.x2 !== "number" ||
+      !Number.isFinite(pliegue.x2) ||
+      typeof pliegue.y2 !== "number" ||
+      !Number.isFinite(pliegue.y2)
+    ) {
       // Saltar pliegues incompletos
       setPasoActual(pasoActual + 1);
       return;
@@ -80,8 +90,28 @@ export const SimulacionCompletaChapa: React.FC = () => {
     );
   }
 
-  const cx = pliegue.x1 ?? 0;
-  const cy = pliegue.y1 ?? 0;
+  if (
+    typeof pliegue.x1 !== "number" ||
+    !Number.isFinite(pliegue.x1) ||
+    typeof pliegue.y1 !== "number" ||
+    !Number.isFinite(pliegue.y1) ||
+    typeof pliegue.x2 !== "number" ||
+    !Number.isFinite(pliegue.x2) ||
+    typeof pliegue.y2 !== "number" ||
+    !Number.isFinite(pliegue.y2)
+  ) {
+    return (
+      <div style={panel}>
+        <button style={btnStop} onClick={detener}>Detener</button>
+        <div style={{ marginTop: "8px", fontWeight: 600 }}>
+          Pliegue {pasoActual}/{plieguesProcesados.length} sin coordenadas válidas; se omitirá.
+        </div>
+      </div>
+    );
+  }
+
+  const cx = pliegue.x1;
+  const cy = pliegue.y1;
   const linea = `M ${pliegue.x1} ${pliegue.y1} L ${pliegue.x2} ${pliegue.y2}`;
 
   return (
