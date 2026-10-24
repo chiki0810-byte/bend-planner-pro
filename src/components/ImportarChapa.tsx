@@ -3,6 +3,7 @@
 import React from "react";
 import { useSheetStore, PliegueProcesado } from "../stores/sheetStore";
 import { parseDxfLines } from "../lib/dxfImport";
+import { parseJsonPliegues } from "../lib/jsonPlieguesImport";
 
 export const ImportarChapa: React.FC = () => {
   const { setPlieguesProcesados, setUltimoSVG } = useSheetStore();
@@ -31,19 +32,7 @@ export const ImportarChapa: React.FC = () => {
     const texto = await archivo.text();
     try {
       const data = JSON.parse(texto);
-      if (!Array.isArray(data)) {
-        alert("El JSON no contiene una lista de pliegues.");
-        return;
-      }
-      const pliegues: PliegueProcesado[] = data.map((p, i) => ({
-        id: String(p.id ?? `p${i + 1}`),
-        paso: Number(p.paso ?? i + 1),
-        angulo: Number(p.angulo ?? 90),
-        longitud: Number(p.longitud ?? 100),
-        colision: Boolean(p.colision ?? false),
-        fuerza: Number(p.fuerza ?? 0),
-        tiempo: p.tiempo != null ? Number(p.tiempo) : undefined,
-      }));
+      const pliegues = parseJsonPliegues(data);
       setPlieguesProcesados(pliegues);
     } catch (err) {
       console.error(err);
