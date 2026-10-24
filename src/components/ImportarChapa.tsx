@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useSheetStore, PliegueProcesado } from "../stores/sheetStore";
+import { parseDxfLines } from "../lib/dxfImport";
 
 export const ImportarChapa: React.FC = () => {
   const { setPlieguesProcesados, setUltimoSVG } = useSheetStore();
@@ -58,36 +59,20 @@ export const ImportarChapa: React.FC = () => {
   const importarDXF = async (archivo: File) => {
     const texto = await archivo.text();
     try {
-      const lineas = texto.split(/\r?\n/).map((l) => l.trim());
-      const pliegues: PliegueProcesado[] = [];
-      let paso = 1;
-
-      for (let i = 0; i < lineas.length; i++) {
-        if (lineas[i] === "LINE") {
-          let x1: number | null = null;
-          let x2: number | null = null;
-          for (let j = i; j < Math.min(i + 40, lineas.length - 1); j++) {
-            const code = lineas[j];
-            const val = lineas[j + 1];
-            if (code === "10") x1 = parseFloat(val);
-            if (code === "11") x2 = parseFloat(val);
-          }
-          if (x1 != null && x2 != null) {
-            const longitud = Math.abs(x2 - x1);
-            if (longitud > 0.01) {
-              pliegues.push({
-                id: `p${paso}`,
-                paso,
-                angulo: 90,
-                longitud,
-                colision: false,
-                fuerza: 0,
-              });
-              paso++;
-            }
-          }
-        }
-      }
+      const pliegues: PliegueProcesado[] = parseDxfLines(texto)
+        .filter((line) => line.layer?.toUpperCase() !== "CUT")
+        .map((line, index) => ({
+          id: `p${index + 1}`,
+          paso: index + 1,
+          angulo: 90,
+          longitud: line.length,
+          colision: false,
+          fuerza: 0,
+          x1: line.x1,
+          y1: line.y1,
+          x2: line.x2,
+          y2: line.y2,
+        }));
 
       if (pliegues.length === 0) {
         alert("No se detectaron entidades LINE en el DXF.");
