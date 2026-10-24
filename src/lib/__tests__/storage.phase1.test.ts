@@ -66,6 +66,30 @@ describe("storage Fase 1", () => {
     }, calibrated: true });
   });
 
+  it("rechaza guardar calibraciones inválidas y no entrega filas heredadas inválidas", async () => {
+    const { upsertMaterial, getMaterialDefaultsWithCalibration } = await import("@/lib/storage");
+    const invalidCalibration = {
+      material: "Titanio",
+      thickness: 0.7,
+      bendAllowance90: 1,
+      kFactor: 0.8,
+      innerRadius: 1,
+      isCustom: true,
+    };
+    await expect(upsertMaterial(invalidCalibration)).rejects.toThrow(/K debe estar entre/);
+
+    // Simula un registro corrupto o antiguo que ya estuviera guardado antes de validar escrituras.
+    const raw = new Dexie("plegado-db");
+    await raw.open();
+    await raw.table("materials").add({ ...invalidCalibration, material: "Níquel inválido" });
+    raw.close();
+
+    await expect(getMaterialDefaultsWithCalibration("Níquel inválido", 0.7)).resolves.toEqual({
+      defaults: undefined,
+      calibrated: false,
+    });
+  });
+
   it("combinación no aprobada sin fila personalizada no devuelve fallback", async () => {
     const { getMaterialDefaultsWithCalibration, getMaterialDefaults } = await import("@/lib/storage");
     const result = await getMaterialDefaultsWithCalibration("Titanio", 0.9);

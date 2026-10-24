@@ -1,11 +1,11 @@
 // BLOQUE 2.5 — Remates Desiguales
 // Cálculo industrial avanzado para alas A/B distintas y corte cejo.
-// No sustituye a software profesional; ofrece BA, BD, K dinámico
+// No sustituye a software profesional; ofrece BA, BD y desarrollo calculados
 // y corrección por longitud antes de programar la pieza.
 //
 // ORGANIZACIÓN DEL ARCHIVO (etapa de separación conceptual):
 //   SECCIÓN A — MATEMÁTICA FÍSICA DEL PLEGADO
-//     · K dinámico (estimación de fibra neutra)
+//     · K aprobado por material y espesor
 //     · BA calculado con calculateBendMath() de bendCalc.ts
 //   SECCIÓN B — CORRECCIONES EMPÍRICAS EXISTENTES (fabricación)
 //     · corrección por alas desiguales (5 %)
@@ -15,11 +15,15 @@
 //
 // NOTA: los porcentajes de la SECCIÓN B NO son fórmulas físicas universales;
 // son ajustes empíricos heredados. Se mantienen aquí exactamente igual que
-// antes para no alterar resultados, pero aislados para poder sustituirlos
-// más adelante por valores calibrados con casos reales de taller.
+// antes para no alterar los ajustes de fabricación.
 
 import type { ValidacionResultado } from "./validarPieza";
-import { calculateBendMath } from "./bendCalc";
+import {
+  calculateBendMath,
+  getMaterialDefaultsByThickness,
+  isValidMaterialDefaults,
+  type DefaultsByThickness,
+} from "./bendCalc";
 
 export type TipoRemate = "normal" | "cejo";
 
@@ -33,13 +37,14 @@ export interface RemateInput {
   material: string;
   tipo: TipoRemate;
   validacion?: ValidacionResultado;
-  /** NUEVO (opcional): lista de pliegues físicos individuales.
-   *  Si existe y tiene elementos, la BA se calcula pliegue a pliegue.
-   *  Si no existe, se mantiene EXACTAMENTE el comportamiento legacy. */
+  /** Lista opcional de pliegues físicos individuales.
+   *  Si existe y tiene elementos, la BA se calcula pliegue a pliegue. */
   pliegues?: PliegueFisico[];
   /** NUEVO (opcional): suma de las longitudes de los tramos rectos
    *  introducidos en pantalla. Sólo se usa en modo multi-pliegue. */
   sumaTramos?: number;
+  /** Longitudes individuales para validar que no haya tramos vacíos. */
+  tramos?: number[];
 }
 
 export interface RemateAviso {
@@ -58,9 +63,10 @@ export interface RemateDesglose {
 }
 
 export interface RemateResultado {
+  valido: boolean;
   ba: number;              // Bend Allowance
   bd: number;              // Bend Deduction (BA + corrección por alas desiguales)
-  kDinamico: number;
+  kFactor: number;
   correccionLongitud: number;
   reduccionCejo: number;   // mm restados al lado más corto si tipo=cejo
   desarrolloTotal: number;
@@ -78,42 +84,50 @@ export interface RemateResultado {
  * SECCIÓN A — MATEMÁTICA FÍSICA DEL PLEGADO
  * ──────────────────────────────────────────────────────────────────────────── */
 
-/** FÍSICA (aproximada): K dinámico en función de espesor y ángulo.
- *  Tabla heredada; no se modifica en esta etapa. */
-function calcularKDinamico(espesor: number, angulo: number): number {
-  // base K según espesor (rangos típicos chapa fina)
-  let k = 0.33;
-  if (espesor <= 0.6) k = 0.38;
-  else if (espesor <= 1.0) k = 0.36;
-  else if (espesor <= 1.5) k = 0.33;
-  else if (espesor <= 2.5) k = 0.31;
-  else k = 0.29;
-  // ajuste por ángulo: ángulos pequeños tiran hacia menor K
-  if (angulo < 60) k -= 0.02;
-  else if (angulo > 120) k += 0.02;
-  return Math.max(0.2, Math.min(0.5, +k.toFixed(3)));
-}
-
 /** Parámetros físicos de UN pliegue individual. Cada pliegue puede tener
  *  su propio ángulo, radio, espesor y K. */
 export interface PliegueFisico {
   angulo: number;
   espesor: number;
   radio: number;
-  /** Si se omite, se estima con calcularKDinamico(espesor, ángulo). */
+  /** K aprobado para el material y espesor del pliegue. */
   k?: number;
 }
+
+export type RemateDefaultsLookup = (
+  material: string,
+  espesor: number,
+) => DefaultsByThickness | undefined;
+
+const resultadoInvalido = (
+  alaA: number,
+  alaB: number,
+  mensaje: string,
+): RemateResultado => ({
+  valido: false,
+  ba: 0,
+  bd: 0,
+  kFactor: 0,
+  correccionLongitud: 0,
+  reduccionCejo: 0,
+  desarrolloTotal: 0,
+  alaAFinal: alaA,
+  alaBFinal: alaB,
+  avisos: [{ nivel: "error", mensaje }],
+});
 
 /** FÍSICA: BA = (π/180)·θ·(R + K·t) — delegado íntegramente en
  *  calculateBendMath() (src/lib/bendCalc.ts). Redondeo interno a 3 decimales,
  *  idéntico al comportamiento previo. */
 export function calcularBAPliegue(p: PliegueFisico): number {
-  const k = p.k ?? calcularKDinamico(p.espesor, p.angulo);
+  if (p.k === undefined || !Number.isFinite(p.k)) {
+    throw new Error("El pliegue requiere un factor K aprobado.");
+  }
   return +calculateBendMath({
     angle: p.angulo,
     thickness: p.espesor,
     innerRadius: p.radio,
-    kFactor: k,
+    kFactor: p.k,
   }).bendAllowance.toFixed(3);
 }
 
@@ -179,22 +193,62 @@ function reduccionCejoEmpirica(alaA: number, alaB: number): number {
  * ──────────────────────────────────────────────────────────────────────────── */
 
 
-export function calcularRemateDesigual(input: RemateInput): RemateResultado {
+export function calcularRemateDesigual(
+  input: RemateInput,
+  getDefaults: RemateDefaultsLookup = getMaterialDefaultsByThickness,
+): RemateResultado {
   const { alaA, alaB, espesor, radio, angulo, tipo } = input;
   const avisos: RemateAviso[] = [];
 
+  const sumaCoherente = input.sumaTramos === undefined ||
+    Math.abs(input.sumaTramos - input.longitudTotal) < 0.001;
+  const tramosCoherentes = input.tramos === undefined || (
+    input.tramos.length >= 2 &&
+    input.tramos.every((longitud) => Number.isFinite(longitud) && longitud > 0) &&
+    Math.abs(input.tramos[0] - alaA) < 0.001 &&
+    Math.abs(input.tramos[input.tramos.length - 1] - alaB) < 0.001 &&
+    (input.sumaTramos === undefined ||
+      Math.abs(input.tramos.reduce((suma, longitud) => suma + longitud, 0) - input.sumaTramos) < 0.001)
+  );
+  if (!Number.isFinite(input.longitudTotal) || input.longitudTotal <= 0 ||
+      !Number.isFinite(alaA) || alaA <= 0 ||
+      !Number.isFinite(alaB) || alaB <= 0 ||
+      (input.sumaTramos !== undefined && (!Number.isFinite(input.sumaTramos) || input.sumaTramos <= 0)) ||
+      !sumaCoherente ||
+      !tramosCoherentes) {
+    return resultadoInvalido(
+      alaA,
+      alaB,
+      "Las longitudes de los tramos y las alas deben ser positivas y coherentes. No se calcula un desarrollo válido.",
+    );
+  }
+
   // --- A) FÍSICA -----------------------------------------------------------
   // Modo multi-pliegue: cada pliegue con su ángulo/radio/espesor/K propios.
-  // Modo legacy (sin lista): un único pliegue, comportamiento idéntico al previo.
+  // Modo sin lista: un único pliegue.
   const multi = Array.isArray(input.pliegues) && input.pliegues.length > 0;
-  const listaPliegues: PliegueFisico[] = multi
+  const plieguesSolicitados: PliegueFisico[] = multi
     ? input.pliegues!
-    : [{ angulo, espesor, radio, k: calcularKDinamico(espesor, angulo) }];
+    : [{ angulo, espesor, radio }];
+  const listaPliegues: PliegueFisico[] = [];
+  for (const pliegue of plieguesSolicitados) {
+    const defaults = getDefaults(input.material, pliegue.espesor);
+    const geometriaValida = Number.isFinite(pliegue.espesor) && pliegue.espesor > 0 &&
+      Number.isFinite(pliegue.angulo) && pliegue.angulo > 0 && pliegue.angulo < 180;
+    if (!isValidMaterialDefaults(defaults) || !geometriaValida) {
+      return resultadoInvalido(
+        alaA,
+        alaB,
+        !geometriaValida
+          ? "El ángulo o el espesor del pliegue no son válidos. No se calcula un desarrollo válido."
+          : `No hay K y radio aprobados válidos para ${input.material || "el material seleccionado"} con espesor ${pliegue.espesor} mm. No se calcula un desarrollo válido.`,
+      );
+    }
+    listaPliegues.push({ ...pliegue, k: defaults.kFactor, radio: defaults.innerRadius });
+  }
   const baPorPliegue = listaPliegues.map((p) => calcularBAPliegue(p));
   const ba = sumarBAPliegues(listaPliegues);
-  const k = multi
-    ? (listaPliegues[0].k ?? calcularKDinamico(listaPliegues[0].espesor, listaPliegues[0].angulo))
-    : calcularKDinamico(espesor, angulo);
+  const k = listaPliegues[0].k!;
 
 
   // --- B) CORRECCIONES EMPÍRICAS ------------------------------------------
@@ -264,9 +318,10 @@ export function calcularRemateDesigual(input: RemateInput): RemateResultado {
   }
 
   return {
+    valido: true,
     ba,
     bd,
-    kDinamico: k,
+    kFactor: k,
     correccionLongitud,
     reduccionCejo,
     desarrolloTotal,

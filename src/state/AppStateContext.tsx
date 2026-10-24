@@ -13,6 +13,7 @@ interface AppStateValue {
   historyKey: number;
   currentState: CalculatorState | null;
   setCurrentName: (n: string) => void;
+  invalidateResult: () => void;
   bumpHistory: () => void;
   handleCalculate: (
     res: BendResult,
@@ -72,7 +73,8 @@ export const AppStateProvider = ({ children }: { children: ReactNode }) => {
     <Ctx.Provider value={{
       result, currentMaterial, currentThickness, currentLength,
       currentBends, currentName, initialState, historyKey, currentState,
-      setCurrentName, bumpHistory: () => setHistoryKey(k => k + 1),
+      setCurrentName, invalidateResult: () => setResult(null),
+      bumpHistory: () => setHistoryKey(k => k + 1),
       handleCalculate, handleLoad, handleLoadTemplate,
     }}>
       {children}

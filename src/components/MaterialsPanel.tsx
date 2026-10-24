@@ -27,9 +27,19 @@ const MaterialsPanel = () => {
     return acc;
   }, {});
 
-  const updateField = async (r: MaterialRow, field: keyof MaterialRow, value: number) => {
-    await upsertMaterial({ ...r, [field]: value, isCustom: true });
-    refresh();
+  const updateField = async (
+    r: MaterialRow,
+    field: "bendAllowance90" | "kFactor" | "innerRadius",
+    value: number,
+  ) => {
+    try {
+      await upsertMaterial({ ...r, [field]: value, isCustom: true });
+      await refresh();
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar la calibración.");
+      return false;
+    }
   };
 
   const addMaterial = async () => {
@@ -108,13 +118,28 @@ const MaterialsPanel = () => {
                 <div key={r.id} className="grid grid-cols-[60px_1fr_1fr_1fr] gap-1 mb-1 items-center">
                   <span className="text-xs font-medium">{r.thickness} mm</span>
                   <Input type="number" step="0.01" defaultValue={r.bendAllowance90}
-                    onBlur={(e) => updateField(r, 'bendAllowance90', parseFloat(e.target.value))}
+                    onBlur={async (e) => {
+                      const input = e.currentTarget;
+                      if (!await updateField(r, 'bendAllowance90', parseFloat(input.value))) {
+                        input.value = String(r.bendAllowance90);
+                      }
+                    }}
                     className="h-7 text-xs" />
                   <Input type="number" step="0.01" defaultValue={r.kFactor}
-                    onBlur={(e) => updateField(r, 'kFactor', parseFloat(e.target.value))}
+                    onBlur={async (e) => {
+                      const input = e.currentTarget;
+                      if (!await updateField(r, 'kFactor', parseFloat(input.value))) {
+                        input.value = String(r.kFactor);
+                      }
+                    }}
                     className="h-7 text-xs" />
                   <Input type="number" step="0.1" defaultValue={r.innerRadius}
-                    onBlur={(e) => updateField(r, 'innerRadius', parseFloat(e.target.value))}
+                    onBlur={async (e) => {
+                      const input = e.currentTarget;
+                      if (!await updateField(r, 'innerRadius', parseFloat(input.value))) {
+                        input.value = String(r.innerRadius);
+                      }
+                    }}
                     className="h-7 text-xs" />
                 </div>
               ))}

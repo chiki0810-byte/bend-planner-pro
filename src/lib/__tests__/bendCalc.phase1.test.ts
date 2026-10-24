@@ -53,6 +53,13 @@ describe("regresión matemática", () => {
     expect(r.outsideSetback).toBeCloseTo(Math.tan(67.5 * Math.PI / 180) * 3.7, 6);
     expect(r.bendDeduction).toBeCloseTo(2 * Math.tan(67.5 * Math.PI / 180) * 3.7 - (3 * Math.PI / 4) * 2.83, 6);
   });
+  it("calculateBendMath no devuelve resultados para entradas fuera de dominio", () => {
+    const base = { angle: 90, thickness: 1, innerRadius: 1.5, kFactor: 0.38 };
+    expect(() => calculateBendMath({ ...base, angle: 180 })).toThrow(/Cálculo de pliegue inválido/);
+    expect(() => calculateBendMath({ ...base, thickness: 0 })).toThrow(/Cálculo de pliegue inválido/);
+    expect(() => calculateBendMath({ ...base, innerRadius: Number.NaN })).toThrow(/Cálculo de pliegue inválido/);
+    expect(() => calculateBendMath({ ...base, kFactor: 0.8 })).toThrow(/Cálculo de pliegue inválido/);
+  });
   it("computeBend redondea y aplica defaults", () => {
     const b = computeBend({ angle: 90, distance: 50 }, 1, { bendAllowance90: 1.6, kFactor: 0.38, innerRadius: 1.5 }, 1);
     expect(b.bendAllowance).toBe(2.95);
@@ -62,6 +69,13 @@ describe("regresión matemática", () => {
     expect(b.directionLabel).toBe("up");
     expect(b.tolerance).toBe(0.1);
     expect(b.dimensionReference).toBeNull();
+  });
+  it("computeBend rechaza geometrías no calculables", () => {
+    const defaults = { bendAllowance90: 1.6, kFactor: 0.38, innerRadius: 1.5 };
+    expect(() => computeBend({ angle: 180, distance: 50 }, 1, defaults, 1)).toThrow(/ángulo/);
+    expect(() => computeBend({ angle: 0, distance: 50 }, 1, defaults, 1)).toThrow(/ángulo/);
+    expect(() => computeBend({ angle: 90, distance: -1 }, 1, defaults, 1)).toThrow(/ángulo/);
+    expect(() => computeBend({ angle: 90, distance: 1, tolerance: -0.1 }, 1, defaults, 1)).toThrow(/ángulo/);
   });
   it("computeDevelopment = longitud + ΣBA, corrección 0", () => {
     const d0 = { bendAllowance90: 1.6, kFactor: 0.38, innerRadius: 1.5 };

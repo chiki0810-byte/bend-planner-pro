@@ -78,9 +78,9 @@ const BendItem = ({ index, value, onChange, onRemove, canRemove, defaultRadius, 
           <span className="text-lg font-semibold text-primary">{value.angle}°</span>
         </div>
         <Slider value={[value.angle]} onValueChange={(v) => set('angle', v[0])}
-          min={5} max={180} step={1} />
+          min={5} max={179} step={1} />
         <div className="flex justify-between text-xs text-muted-foreground">
-          <span>5°</span><span>90°</span><span>180°</span>
+          <span>5°</span><span>90°</span><span>179°</span>
         </div>
       </div>
 

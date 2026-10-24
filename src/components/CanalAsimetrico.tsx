@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Calculator, Layers } from "lucide-react";
-import { calcularCanal, MATERIALES_K, solapeMinimo, type CanalResult } from "@/lib/plegadoPro";
+import { calcularCanal, MATERIALES_PLEGADO, solapeMinimo, type CanalResult } from "@/lib/plegadoPro";
 import { Warnings } from "./PlegadoConico";
+import type { DefaultsByThickness } from "@/lib/bendCalc";
+import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
 
 interface PRow { id: string; longitud_mm: string; angulo_deg: string; radio_mm: string; }
 const newRow = (): PRow => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, longitud_mm: "", angulo_deg: "90", radio_mm: "1" });
@@ -17,9 +19,40 @@ const CanalAsimetrico = () => {
   const [solape, setSolape] = useState("");
   const [espesor, setEspesor] = useState("1");
   const [material, setMaterial] = useState("Acero");
+  const defaultsKey = `${material}|${espesor}`;
+  const [calibracion, setCalibracion] = useState<{
+    key: string;
+    defaults?: DefaultsByThickness;
+    cargada: boolean;
+  }>({ key: "", cargada: false });
   const [pliegues, setPliegues] = useState<PRow[]>([newRow()]);
   const [res, setRes] = useState<CanalResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let activa = true;
+    const thickness = Number(espesor);
+    if (!Number.isFinite(thickness) || thickness <= 0) {
+      setCalibracion({ key: defaultsKey, cargada: true });
+      return () => { activa = false; };
+    }
+    setCalibracion({ key: defaultsKey, cargada: false });
+    getMaterialDefaultsWithCalibration(material, thickness)
+      .then(({ defaults }) => {
+        if (activa) setCalibracion({ key: defaultsKey, defaults, cargada: true });
+      })
+      .catch(() => {
+        if (activa) setCalibracion({ key: defaultsKey, cargada: true });
+      });
+    return () => { activa = false; };
+  }, [material, espesor, defaultsKey]);
+  const calibracionCargada = calibracion.key === defaultsKey && calibracion.cargada;
+  const defaultsAprobados = calibracionCargada ? calibracion.defaults : undefined;
+
+  useEffect(() => {
+    setRes(null);
+    setError(null);
+  }, [puntaA, puntaB, espesor, material, pliegues, defaultsAprobados]);
 
   const update = (id: string, k: keyof Omit<PRow,"id">, v: string) =>
     setPliegues((p) => p.map((r) => r.id === id ? { ...r, [k]: v } : r));
@@ -28,25 +61,32 @@ const CanalAsimetrico = () => {
 
   const calcular = () => {
     setError(null);
+    if (!defaultsAprobados) {
+      setRes(null);
+      setError(calibracionCargada
+        ? `No hay K aprobado válido para ${material} con espesor ${espesor} mm.`
+        : "Cargando K aprobado para material y espesor.");
+      return;
+    }
     try {
-let s = Number(solape);
-if (solape.trim() === "") {
-  s = solapeMinimo(Number(espesor));
-  setSolape(String(s));
-}
+      let s = Number(solape);
+      if (solape.trim() === "") {
+        s = solapeMinimo(Number(espesor));
+        setSolape(String(s));
+      }
 
-    setRes(calcularCanal({
-      punta_a_mm: Number(puntaA),
-      punta_b_mm: Number(puntaB),
-      solape_mm: s,
-      espesor_mm: Number(espesor),
-      material,
-      pliegues: pliegues.map((p) => ({
-        longitud_mm: Number(p.longitud_mm) || 0,
-        angulo_deg: Number(p.angulo_deg) || 0,
-        radio_mm: Number(p.radio_mm) || 0,
-      })),
-    }));
+      setRes(calcularCanal({
+        punta_a_mm: Number(puntaA),
+        punta_b_mm: Number(puntaB),
+        solape_mm: s,
+        espesor_mm: Number(espesor),
+        material,
+        pliegues: pliegues.map((p) => ({
+          longitud_mm: Number(p.longitud_mm),
+          angulo_deg: Number(p.angulo_deg),
+          radio_mm: Number(p.radio_mm),
+        })),
+      }, () => defaultsAprobados));
     } catch (error) {
       setRes(null);
       setError(error instanceof Error ? error.message : 'Error al calcular el canal.');
@@ -69,14 +109,19 @@ if (solape.trim() === "") {
         <div className="grid md:grid-cols-3 gap-3">
           <Field label="Punta A (mm)" value={puntaA} onChange={setPuntaA} />
           <Field label="Punta B (mm)" value={puntaB} onChange={setPuntaB} />
-          <Field label="Solape (mm)" value={solape} onChange={setSolape} placeholder="auto" />
+          <Field
+            label="Solape (mm)"
+            value={solape}
+            onChange={(value) => { setRes(null); setError(null); setSolape(value); }}
+            placeholder="auto"
+          />
           <Field label="Espesor (mm)" value={espesor} onChange={setEspesor} step="0.1" />
           <div className="space-y-2 md:col-span-2">
             <Label>Material</Label>
             <Select value={material} onValueChange={setMaterial}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.entries(MATERIALES_K).map(([m, k]) => (
+                {MATERIALES_PLEGADO.map((m) => (
                   <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
@@ -94,7 +139,7 @@ if (solape.trim() === "") {
               <span className="text-xs text-muted-foreground pb-2">#{i+1}</span>
               <SmallField label="Long." value={p.longitud_mm} onChange={(v) => update(p.id, "longitud_mm", v)} />
               <SmallField label="Áng." value={p.angulo_deg} onChange={(v) => update(p.id, "angulo_deg", v)} />
-              <SmallField label="Radio" value={p.radio_mm} onChange={(v) => update(p.id, "radio_mm", v)} />
+              <SmallField label="Radio de utillaje" value={p.radio_mm} onChange={(v) => update(p.id, "radio_mm", v)} />
               <Button size="icon" variant="ghost" onClick={() => remove(p.id)} disabled={pliegues.length <= 1}>
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -102,7 +147,19 @@ if (solape.trim() === "") {
           ))}
         </div>
 
-        <Button onClick={calcular} className="w-full" size="lg">
+        {!defaultsAprobados && (
+          <p role="status" className="text-sm text-destructive">
+            {calibracionCargada
+              ? `No hay K aprobado válido para ${material} con espesor ${espesor} mm.`
+              : "Cargando K aprobado para material y espesor…"}
+          </p>
+        )}
+        {defaultsAprobados && (
+          <p className="text-xs text-muted-foreground">
+            K aprobado: {defaultsAprobados.kFactor} · R de referencia: {defaultsAprobados.innerRadius} mm
+          </p>
+        )}
+        <Button onClick={calcular} disabled={!defaultsAprobados} className="w-full" size="lg">
           <Calculator className="w-4 h-4 mr-2" /> Calcular desarrollo
         </Button>
 

@@ -32,6 +32,17 @@ describe("MaterialsPanel Fase 1", () => {
     expect(upsertMaterial).toHaveBeenCalledWith(expect.objectContaining({ [field]: 3.33, isCustom: true }));
   });
 
+  it("revierte el campo si storage rechaza una calibración inválida", async () => {
+    upsertMaterial.mockRejectedValueOnce(new Error("K fuera de rango"));
+    render(<MaterialsPanel />);
+    const input = await screen.findByDisplayValue("0.38");
+
+    fireEvent.change(input, { target: { value: "0.8" } });
+    fireEvent.blur(input);
+
+    await waitFor(() => expect((input as HTMLInputElement).value).toBe("0.38"));
+  });
+
   it("nuevas filas desde defaults con isCustom=false", async () => {
     render(<MaterialsPanel />);
     fireEvent.click(await screen.findByRole("button", { name: "+ Material" }));

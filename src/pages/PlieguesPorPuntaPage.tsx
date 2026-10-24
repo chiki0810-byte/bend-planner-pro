@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GitBranch, Plus, Trash2, ArrowUp, ArrowDown, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toggle } from "@/components/ui/toggle";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { DefaultsByThickness } from "@/lib/bendCalc";
+import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
 import {
   Select,
   SelectContent,
@@ -30,9 +33,13 @@ interface PliegueCalc {
   anguloMaquina: number;
 }
 
+const pliegueValido = (p: Pliegue): boolean =>
+  Number.isFinite(p.longitud) && p.longitud > 0 &&
+  Number.isFinite(p.angulo) && p.angulo > 0 && p.angulo < 180;
+
 const materiales = [
-  "Acero Dulce",
-  "Acero Inoxidable",
+  "Acero",
+  "Inox",
   "Aluminio",
   "Cobre",
   "Latón",
@@ -53,10 +60,28 @@ const calcPliegue = (p: Pliegue, radio: number, k: number, espesor: number): Pli
 
 const PlieguesPorPuntaPage = () => {
   const navigate = useNavigate();
-  const [material, setMaterial] = useState("Acero Dulce");
+  const [material, setMaterial] = useState("Acero");
   const [espesor, setEspesor] = useState(1.0);
-  const [kFactor, setKFactor] = useState(0.5);
-  const [radioInterior, setRadioInterior] = useState(1.0);
+  const defaultsKey = `${material}|${espesor}`;
+  const [calibracion, setCalibracion] = useState<{
+    key: string;
+    defaults?: DefaultsByThickness;
+    cargada: boolean;
+  }>({ key: "", cargada: false });
+  useEffect(() => {
+    let activa = true;
+    setCalibracion({ key: defaultsKey, cargada: false });
+    getMaterialDefaultsWithCalibration(material, espesor)
+      .then(({ defaults }) => {
+        if (activa) setCalibracion({ key: defaultsKey, defaults, cargada: true });
+      })
+      .catch(() => {
+        if (activa) setCalibracion({ key: defaultsKey, cargada: true });
+      });
+    return () => { activa = false; };
+  }, [material, espesor, defaultsKey]);
+  const calibracionCargada = calibracion.key === defaultsKey && calibracion.cargada;
+  const defaultsAprobados = calibracionCargada ? calibracion.defaults : undefined;
   const [plieguesA, setPlieguesA] = useState<Pliegue[]>([]);
   const [plieguesB, setPlieguesB] = useState<Pliegue[]>([]);
 
@@ -84,32 +109,44 @@ const PlieguesPorPuntaPage = () => {
     setPlieguesB(plieguesB.filter((_, i) => i !== index));
 
   const calcsA = useMemo(
-    () => plieguesA.map((p) => calcPliegue(p, radioInterior, kFactor, espesor)),
-    [plieguesA, radioInterior, kFactor, espesor]
+    () => defaultsAprobados
+      ? plieguesA.map((p) => pliegueValido(p)
+        ? calcPliegue(p, defaultsAprobados.innerRadius, defaultsAprobados.kFactor, espesor)
+        : undefined)
+      : [],
+    [plieguesA, defaultsAprobados, espesor]
   );
   const calcsB = useMemo(
-    () => plieguesB.map((p) => calcPliegue(p, radioInterior, kFactor, espesor)),
-    [plieguesB, radioInterior, kFactor, espesor]
+    () => defaultsAprobados
+      ? plieguesB.map((p) => pliegueValido(p)
+        ? calcPliegue(p, defaultsAprobados.innerRadius, defaultsAprobados.kFactor, espesor)
+        : undefined)
+      : [],
+    [plieguesB, defaultsAprobados, espesor]
   );
 
   const desarrolloPuntaA = useMemo(() => {
+    if (!defaultsAprobados || !plieguesA.every(pliegueValido)) return undefined;
     const sumL = plieguesA.reduce((s, p) => s + (p.longitud || 0), 0);
-    const sumBA = calcsA.reduce((s, c) => s + c.ba, 0);
+    const sumBA = calcsA.reduce((s, c) => s + (c?.ba ?? 0), 0);
     return sumL - sumBA;
-  }, [plieguesA, calcsA]);
+  }, [plieguesA, calcsA, defaultsAprobados]);
 
   const desarrolloPuntaB = useMemo(() => {
+    if (!defaultsAprobados || !plieguesB.every(pliegueValido)) return undefined;
     const sumL = plieguesB.reduce((s, p) => s + (p.longitud || 0), 0);
-    const sumBA = calcsB.reduce((s, c) => s + c.ba, 0);
+    const sumBA = calcsB.reduce((s, c) => s + (c?.ba ?? 0), 0);
     return sumL - sumBA;
-  }, [plieguesB, calcsB]);
+  }, [plieguesB, calcsB, defaultsAprobados]);
 
-  const desarrolloTotal = desarrolloPuntaA + desarrolloPuntaB;
+  const desarrolloTotal = desarrolloPuntaA === undefined || desarrolloPuntaB === undefined
+    ? undefined
+    : desarrolloPuntaA + desarrolloPuntaB;
 
   const renderPliegueRow = (
     p: Pliegue,
     i: number,
-    c: PliegueCalc,
+    c: PliegueCalc | undefined,
     update: (index: number, field: keyof Pliegue, value: number | boolean | Orientacion) => void,
     remove: (index: number) => void
   ) => (
@@ -169,12 +206,22 @@ const PlieguesPorPuntaPage = () => {
           <Trash2 className="w-4 h-4 mr-1" /> Eliminar
         </Button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-2 border-t border-border/40">
-        <CalcBox label="Ganancia (BA)" value={c.ba} />
-        <CalcBox label="Compensación" value={c.comp} />
-        <CalcBox label="Desarrollo" value={c.desarrollo} />
-        <CalcBox label="Áng. máquina" value={c.anguloMaquina} unit="°" />
-      </div>
+      {c ? (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-2 border-t border-border/40">
+          <CalcBox label="Ganancia (BA)" value={c.ba} />
+          <CalcBox label="Compensación" value={c.comp} />
+          <CalcBox label="Desarrollo" value={c.desarrollo} />
+          <CalcBox label="Áng. máquina" value={c.anguloMaquina} unit="°" />
+        </div>
+      ) : (
+        <p className="text-sm text-destructive">
+          {!calibracionCargada
+            ? "Cargando K y radio aprobados…"
+            : !defaultsAprobados
+              ? "Sin K y radio aprobados; cálculo no disponible."
+              : "Completa una longitud positiva y un ángulo entre 0° y 180° para calcular."}
+        </p>
+      )}
     </div>
   );
 
@@ -221,24 +268,19 @@ const PlieguesPorPuntaPage = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label>K-Factor</Label>
+            <Label>K aprobado</Label>
             <Input
               type="number"
-              step="0.01"
-              min="0"
-              max="0.5"
-              value={kFactor}
-              onChange={(e) => setKFactor(parseFloat(e.target.value) || 0)}
+              value={defaultsAprobados?.kFactor ?? ""}
+              readOnly
             />
           </div>
           <div className="space-y-2">
-            <Label>Radio Interior (mm)</Label>
+            <Label>Radio aprobado (mm)</Label>
             <Input
               type="number"
-              step="0.1"
-              min="0"
-              value={radioInterior}
-              onChange={(e) => setRadioInterior(parseFloat(e.target.value) || 0)}
+              value={defaultsAprobados?.innerRadius ?? ""}
+              readOnly
             />
           </div>
         </CardContent>
@@ -287,15 +329,29 @@ const PlieguesPorPuntaPage = () => {
           <CardTitle className="text-base">Resultados</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <ResultBox label="Desarrollo Punta A" value={desarrolloPuntaA} />
-          <ResultBox label="Desarrollo Punta B" value={desarrolloPuntaB} />
-          <ResultBox label={`D:${desarrolloTotal.toFixed(0)}`} value={desarrolloTotal} highlight />
+          {desarrolloPuntaA !== undefined && desarrolloPuntaB !== undefined && desarrolloTotal !== undefined ? (
+            <>
+              <ResultBox label="Desarrollo Punta A" value={desarrolloPuntaA} />
+              <ResultBox label="Desarrollo Punta B" value={desarrolloPuntaB} />
+              <ResultBox label={`D:${desarrolloTotal.toFixed(0)}`} value={desarrolloTotal} highlight />
+            </>
+          ) : (
+            <Alert className="col-span-full border-destructive/50 text-destructive">
+              <AlertDescription>
+                {calibracionCargada
+                  ? `No hay K y radio aprobados para ${material || "el material seleccionado"} con espesor ${espesor} mm. No se muestra un desarrollo válido.`
+                  : "Cargando K y radio aprobados para material y espesor…"}
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
       <Button
         className="w-full"
-        onClick={() =>
+        disabled={desarrolloPuntaA === undefined || desarrolloPuntaB === undefined || desarrolloTotal === undefined}
+        onClick={() => {
+          if (desarrolloPuntaA === undefined || desarrolloPuntaB === undefined || desarrolloTotal === undefined) return;
           navigate("/resultado-pieza", {
             state: {
               pliegues: [
@@ -307,10 +363,10 @@ const PlieguesPorPuntaPage = () => {
               desarrolloTotal,
               espesor,
               material,
-              radioInterior,
+              radioInterior: defaultsAprobados.innerRadius,
             },
-          })
-        }
+          });
+        }}
       >
         <FileText className="w-4 h-4 mr-2" /> Ver Resultado de Pieza
       </Button>

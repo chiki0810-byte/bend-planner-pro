@@ -21,11 +21,10 @@ Longitud total: ${longitudTotal} mm
 Tipo de remate: ${tipo}
 
 Devuelve:
-- BA y BD ajustados
-- K dinámico
-- Corrección por longitud
-- Avisos industriales si hay corte cejo o alas críticas.
-Responde en JSON.`;
+- Solo avisos cualitativos sobre riesgos geométricos o de fabricación.
+- No calcules ni propongas K, BA, BD, corrección de longitud ni desarrollo; esos valores los calcula el motor industrial.
+- No incluyas cifras ni unidades en los avisos.
+Responde en JSON con la propiedad "avisos" como una lista de textos.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -39,7 +38,7 @@ Responde en JSON.`;
           {
             role: 'system',
             content:
-              'Eres un experto plegador de chapa. Devuelves SIEMPRE JSON válido (sin texto fuera del JSON) con: {"ba":number,"bd":number,"kDinamico":number,"correccionLongitud":number,"avisos":[string]}. Strings en español.',
+              'Eres un experto plegador de chapa. Devuelve SIEMPRE JSON válido (sin texto fuera del JSON) con esta forma: {"avisos":[string]}. Los avisos deben ser cualitativos y en español. No incluyas cálculos, K, BA, BD, desarrollos, cantidades ni unidades.',
           },
           { role: 'user', content: userPrompt },
         ],
@@ -70,14 +69,25 @@ Responde en JSON.`;
 
     const data = await response.json();
     const text = data?.choices?.[0]?.message?.content || '{}';
-    let parsed: any = {};
+    let parsed: unknown = {};
     try {
       parsed = JSON.parse(text);
     } catch {
-      parsed = { avisos: [text] };
+      parsed = { avisos: ['No se pudo interpretar un análisis cualitativo válido.'] };
     }
 
-    return new Response(JSON.stringify({ ok: true, ai: parsed }), {
+    const avisosRaw = parsed && typeof parsed === 'object' && 'avisos' in parsed
+      ? parsed.avisos
+      : undefined;
+    const avisos = Array.isArray(avisosRaw)
+      ? avisosRaw.filter((aviso: unknown): aviso is string =>
+          typeof aviso === 'string' &&
+          aviso.trim().length > 0 &&
+          !/\d|\b(?:k(?:[\s-]?factor)?|ba|bd|desarrollo|radio|corrección(?:\s+por)?\s+longitud)\b/i.test(aviso)
+        ).map((aviso: string) => aviso.trim())
+      : [];
+
+    return new Response(JSON.stringify({ ok: true, ai: { avisos } }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Cone, AlertTriangle, Calculator } from "lucide-react";
-import { calcularConico, MATERIALES_K, type ConicoResult } from "@/lib/plegadoPro";
+import { calcularConico, MATERIALES_PLEGADO, type ConicoResult } from "@/lib/plegadoPro";
+import type { DefaultsByThickness } from "@/lib/bendCalc";
+import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
 
 const PlegadoConico = () => {
   const [diametro, setDiametro] = useState("400");
@@ -15,13 +17,51 @@ const PlegadoConico = () => {
   const [bocaMenor, setBocaMenor] = useState("300");
   const [espesor, setEspesor] = useState("1");
   const [material, setMaterial] = useState("Acero");
+  const defaultsKey = `${material}|${espesor}`;
+  const [calibracion, setCalibracion] = useState<{
+    key: string;
+    defaults?: DefaultsByThickness;
+    cargada: boolean;
+  }>({ key: "", cargada: false });
   const [enPrensa, setEnPrensa] = useState(false);
   const [anguloPliegue, setAnguloPliegue] = useState("90");
   const [res, setRes] = useState<ConicoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    let activa = true;
+    const thickness = Number(espesor);
+    if (!Number.isFinite(thickness) || thickness <= 0) {
+      setCalibracion({ key: defaultsKey, cargada: true });
+      return () => { activa = false; };
+    }
+    setCalibracion({ key: defaultsKey, cargada: false });
+    getMaterialDefaultsWithCalibration(material, thickness)
+      .then(({ defaults }) => {
+        if (activa) setCalibracion({ key: defaultsKey, defaults, cargada: true });
+      })
+      .catch(() => {
+        if (activa) setCalibracion({ key: defaultsKey, cargada: true });
+      });
+    return () => { activa = false; };
+  }, [material, espesor, defaultsKey]);
+  const calibracionCargada = calibracion.key === defaultsKey && calibracion.cargada;
+  const defaultsAprobados = calibracionCargada ? calibracion.defaults : undefined;
+
+  useEffect(() => {
+    setRes(null);
+    setError(null);
+  }, [diametro, altura, bocaMayor, bocaMenor, espesor, material, enPrensa, anguloPliegue, defaultsAprobados]);
+
   const calcular = () => {
     setError(null);
+    if (!defaultsAprobados) {
+      setRes(null);
+      setError(calibracionCargada
+        ? `No hay K aprobado válido para ${material} con espesor ${espesor} mm.`
+        : "Cargando K aprobado para material y espesor.");
+      return;
+    }
     try {
     setRes(
       calcularConico({
@@ -33,7 +73,7 @@ const PlegadoConico = () => {
         material,
         plegado_en_prensa: enPrensa,
         angulo_pliegue_deg: Number(anguloPliegue) || undefined,
-      }),
+      }, () => defaultsAprobados),
     );
     } catch (error) {
       setRes(null);
@@ -60,7 +100,7 @@ const PlegadoConico = () => {
             <Select value={material} onValueChange={setMaterial}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.keys(MATERIALES_K).map((m) => (
+                {MATERIALES_PLEGADO.map((m) => (
                   <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
@@ -78,7 +118,16 @@ const PlegadoConico = () => {
           )}
         </div>
 
-        <Button onClick={calcular} className="w-full" size="lg">
+        {defaultsAprobados ? (
+          <p className="text-xs text-muted-foreground">K aprobado: {defaultsAprobados.kFactor}</p>
+        ) : (
+          <p role="status" className="text-sm text-destructive">
+            {calibracionCargada
+              ? `No hay K aprobado válido para ${material} con espesor ${espesor} mm.`
+              : "Cargando K aprobado para material y espesor…"}
+          </p>
+        )}
+        <Button onClick={calcular} disabled={!defaultsAprobados} className="w-full" size="lg">
           <Calculator className="w-4 h-4 mr-2" /> Calcular
         </Button>
 

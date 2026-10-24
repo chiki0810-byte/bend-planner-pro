@@ -5,7 +5,12 @@ import {
   SQLiteConnection,
   SQLiteDBConnection,
 } from '@capacitor-community/sqlite';
-import { DEFAULT_THICKNESS_TABLE, DefaultsByThickness, getMaterialDefaultsByThickness } from './bendCalc';
+import {
+  DEFAULT_THICKNESS_TABLE,
+  DefaultsByThickness,
+  getMaterialDefaultsByThickness,
+  isValidMaterialDefaults,
+} from './bendCalc';
 
 export interface SavedPiece {
   id?: number;
@@ -203,6 +208,15 @@ export async function insertMaterialIfMissing(m: Omit<MaterialRow, 'id'>): Promi
 }
 
 export async function upsertMaterial(m: Omit<MaterialRow, 'id'>): Promise<void> {
+  if (!Number.isFinite(m.thickness) || m.thickness <= 0) {
+    throw new Error('El espesor debe ser un número positivo.');
+  }
+  if (!Number.isFinite(m.bendAllowance90) || m.bendAllowance90 <= 0) {
+    throw new Error('La ganancia a 90° debe ser un número positivo.');
+  }
+  if (!isValidMaterialDefaults(m)) {
+    throw new Error('K debe estar entre 0 y 0,5 y el radio interior debe ser positivo.');
+  }
   if (isNative()) {
     const db = await getNativeDb();
     await db.run(
@@ -248,8 +262,16 @@ export async function getMaterialDefaultsWithCalibration(
   const found = all.find(m => m.material === material && Math.abs(m.thickness - thickness) < 1e-6);
 
   if (found?.isCustom) {
+    const defaults = {
+      bendAllowance90: found.bendAllowance90,
+      kFactor: found.kFactor,
+      innerRadius: found.innerRadius,
+    };
+    if (!isValidMaterialDefaults(defaults)) {
+      return { defaults: undefined, calibrated: false };
+    }
     return {
-      defaults: { bendAllowance90: found.bendAllowance90, kFactor: found.kFactor, innerRadius: found.innerRadius },
+      defaults,
       calibrated: true,
     };
   }

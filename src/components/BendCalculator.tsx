@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,12 +9,14 @@ import { BendResult, CalculatorState } from "@/pages/Index";
 import BendItem, { BendItemValue } from "./BendItem";
 import { computeBend, computeDevelopment } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration, listMaterials } from "@/lib/storage";
+import { toast } from "sonner";
 
 interface BendCalculatorProps {
   onCalculate: (
     result: BendResult,
     meta: { material: string; thickness: number; bends: BendItemValue[]; pieceLength: number },
   ) => void;
+  onInputsChange?: () => void;
   initialState?: CalculatorState | null;
 }
 
@@ -36,7 +38,8 @@ const newBend = (defRadius: number, defK: number): BendRow => ({
   tolerance: 0.1,
 });
 
-const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
+const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalculatorProps) => {
+  const inputRevision = useRef(0);
   const [thickness, setThickness] = useState<string>("");
   const [material, setMaterial] = useState<string>("");
   const [pieceLength, setPieceLength] = useState<string>("");
@@ -44,6 +47,10 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const [defaults, setDefaults] = useState({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
   const [isCalibrated, setIsCalibrated] = useState(true);
   const [bends, setBends] = useState<BendRow[]>([newBend(0, 0)]);
+  const invalidateResults = () => {
+    inputRevision.current += 1;
+    onInputsChange?.();
+  };
 
   const availableThicknesses = useMemo(
     () => (material === "Galvanizado" ? [...BASE_THICKNESSES, 2.0] : BASE_THICKNESSES),
@@ -99,6 +106,7 @@ setDefaults(def);
 
   useEffect(() => {
     if (!initialState) return;
+    inputRevision.current += 1;
     setThickness(String(initialState.thickness));
     setMaterial(initialState.material);
     setPieceLength(String(initialState.pieceLength));
@@ -108,45 +116,69 @@ setDefaults(def);
   }, [initialState]);
 
   const addBend = () => {
+    invalidateResults();
     const last = bends[bends.length - 1];
     const defRadius = isCalibrated ? defaults.innerRadius : (last?.innerRadius ?? 0);
     const defK = isCalibrated ? defaults.kFactor : (last?.kFactor ?? 0);
     setBends([...bends, newBend(defRadius, defK)]);
   };
-  const removeBend = (id: string) => setBends(bends.filter(b => b.id !== id));
-  const updateBend = (id: string, v: BendItemValue) =>
+  const removeBend = (id: string) => {
+    invalidateResults();
+    setBends(bends.filter(b => b.id !== id));
+  };
+  const updateBend = (id: string, v: BendItemValue) => {
+    invalidateResults();
     setBends(bends.map(b => b.id === id ? {
       ...b, ...v,
       manualR: b.manualR || v.innerRadius !== b.innerRadius,
       manualK: b.manualK || v.kFactor !== b.kFactor,
     } : b));
+  };
 
 
   const calculate = async () => {
     const t = parseFloat(thickness);
     const L = parseFloat(pieceLength);
-    if (!t || !L || !material) return;
+    if (!Number.isFinite(t) || t <= 0 || !Number.isFinite(L) || L <= 0 || !material) {
+      toast.error("Introduce un material, un espesor y una longitud de pieza válidos.");
+      return;
+    }
+    if (bends.some(b =>
+      !Number.isFinite(b.angle) || b.angle <= 0 || b.angle >= 180 ||
+      !Number.isFinite(b.distance) || b.distance < 0 ||
+      !Number.isFinite(b.tolerance) || b.tolerance < 0
+    )) {
+      toast.error("Revisa cada plegado: el ángulo debe estar entre 0° y 180°, y distancia y tolerancia no pueden ser negativas.");
+      return;
+    }
+    const requestedRevision = inputRevision.current;
     const { defaults: def, calibrated } = await getMaterialDefaultsWithCalibration(material, t);
+    if (requestedRevision !== inputRevision.current) return;
 
-if (!calibrated && bends.some(b =>
-  !b.manualR ||
-  !b.manualK ||
-  !Number.isFinite(b.innerRadius) ||
-  b.innerRadius <= 0 ||
-  !Number.isFinite(b.kFactor) ||
-  b.kFactor <= 0 ||
-  b.kFactor > 0.5
-)) {
-  setIsCalibrated(false);
-  return;
-}
+    const hasApprovedDefaults = calibrated && def !== undefined;
+    if (!hasApprovedDefaults && bends.some(b => !b.manualR || !b.manualK)) {
+      setIsCalibrated(false);
+      toast.error("No hay K/R aprobados para esta combinación. Introduce K y R válidos en cada pliegue.");
+      return;
+    }
+
+    const hasInvalidBendCalibration = bends.some(b => {
+      const radius = b.manualR ? b.innerRadius : def?.innerRadius;
+      const kFactor = b.manualK ? b.kFactor : def?.kFactor;
+      return !Number.isFinite(radius) || radius === undefined || radius <= 0 ||
+        !Number.isFinite(kFactor) || kFactor === undefined || kFactor <= 0 || kFactor > 0.5;
+    });
+    if (hasInvalidBendCalibration) {
+      toast.error("Cada pliegue necesita un radio interior positivo y un factor K entre 0 y 0,5.");
+      return;
+    }
 
     const bendResults = bends.map((b, i) =>
       computeBend(
         {
           angle: b.angle, distance: b.distance,
-          innerRadius: b.innerRadius || undefined,
-          kFactor: b.kFactor || undefined,
+          innerRadius: b.manualR ? b.innerRadius : undefined,
+          kFactor: b.manualK ? b.kFactor : undefined,
           direction: b.direction, tolerance: b.tolerance,
           associatedDimension: b.associatedDimension,
           criticalDimension: b.criticalDimension,
@@ -172,7 +204,11 @@ if (!calibrated && bends.some(b =>
 
     onCalculate(result, {
       material, thickness: t, pieceLength: L,
-      bends: bends.map(({ id, manualR, manualK, ...rest }) => rest),
+      bends: bends.map(({ id, manualR, manualK, ...rest }) => ({
+        ...rest,
+        innerRadius: manualR ? rest.innerRadius : def!.innerRadius,
+        kFactor: manualK ? rest.kFactor : def!.kFactor,
+      })),
 
     });
   };
@@ -190,7 +226,10 @@ if (!calibrated && bends.some(b =>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label>Espesor (mm)</Label>
-            <Select value={thickness} onValueChange={setThickness}>
+            <Select value={thickness} onValueChange={(value) => {
+              invalidateResults();
+              setThickness(value);
+            }}>
               <SelectTrigger><SelectValue placeholder="Espesor" /></SelectTrigger>
               <SelectContent>
                 {availableThicknesses.map(t => (
@@ -201,7 +240,10 @@ if (!calibrated && bends.some(b =>
           </div>
           <div className="space-y-2">
             <Label>Material</Label>
-            <Select value={material} onValueChange={setMaterial}>
+            <Select value={material} onValueChange={(value) => {
+              invalidateResults();
+              setMaterial(value);
+            }}>
               <SelectTrigger><SelectValue placeholder="Material" /></SelectTrigger>
               <SelectContent>
                 {materials.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
@@ -213,7 +255,10 @@ if (!calibrated && bends.some(b =>
         <div className="space-y-2">
           <Label>Longitud de Pieza (mm)</Label>
           <Input type="number" placeholder="Ej: 500" value={pieceLength}
-            onChange={(e) => setPieceLength(e.target.value)} min="0" step="0.1" />
+            onChange={(e) => {
+              invalidateResults();
+              setPieceLength(e.target.value);
+            }} min="0" step="0.1" />
         </div>
 
         {material && thickness && (

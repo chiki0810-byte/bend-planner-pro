@@ -8,7 +8,7 @@ const CalculadoraPage = () => {
   const {
     result, currentMaterial, currentThickness, currentLength,
     currentBends, currentName, initialState,
-    handleCalculate, setCurrentName, bumpHistory,
+    handleCalculate, invalidateResult, setCurrentName, bumpHistory,
   } = useAppState();
 
   return (
@@ -24,7 +24,7 @@ const CalculadoraPage = () => {
       </header>
 
       <div className="grid lg:grid-cols-2 gap-4 mb-4">
-        <BendCalculator onCalculate={handleCalculate} initialState={initialState} />
+        <BendCalculator onCalculate={handleCalculate} onInputsChange={invalidateResult} initialState={initialState} />
         <ResultsPanel
           result={result}
           material={currentMaterial}

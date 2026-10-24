@@ -99,7 +99,7 @@ const Index = () => {
 
           <TabsContent value="calc" className="space-y-4">
             <div className="grid lg:grid-cols-2 gap-4">
-              <BendCalculator onCalculate={handleCalculate} initialState={initialState} />
+              <BendCalculator onCalculate={handleCalculate} onInputsChange={() => setResult(null)} initialState={initialState} />
               <ResultsPanel
                 result={result}
                 material={currentMaterial}

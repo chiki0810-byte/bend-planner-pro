@@ -45,4 +45,32 @@ describe("validación del plegado Pro por espesor", () => {
 
     expect(resultado.ba_total_mm).toBeCloseTo(baEsperado, 6);
   });
+
+  it("cónico usa K de la calibración cargada", () => {
+    const resultado = calcularConico(conico(0.8), () => ({
+      bendAllowance90: 1,
+      kFactor: 0.2,
+      innerRadius: 1,
+    }));
+
+    expect(resultado.radio_efectivo).toBeCloseTo(200.16, 6);
+  });
+
+  it("canal usa K de la calibración cargada y conserva el radio de utillaje", () => {
+    const resultado = calcularCanal(canal(0.8), () => ({
+      bendAllowance90: 1,
+      kFactor: 0.2,
+      innerRadius: 0.9,
+    }));
+    const baEsperado = (Math.PI / 2) * (1.2 + 0.2 * 0.8);
+
+    expect(resultado.ba_total_mm).toBeCloseTo(baEsperado, 6);
+  });
+
+  it("canal rechaza los datos vacíos del pliegue", () => {
+    expect(() => calcularCanal({
+      ...canal(0.8),
+      pliegues: [{ longitud_mm: 0, angulo_deg: 0, radio_mm: 0 }],
+    })).toThrow(/datos válidos para cada pliegue/);
+  });
 });

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -31,6 +31,13 @@ import {
   type TipoRemate,
   type PliegueFisico,
 } from "@/lib/calcularRemateDesigual";
+import type { DefaultsByThickness } from "@/lib/bendCalc";
+import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
+
+const MATERIALES_APROBADOS = [
+  "Acero", "Galvanizado", "Corten", "Duro 500", "Duro 600",
+  "Inox", "Aluminio", "Latón", "Cobre",
+];
 
 const num = (v: unknown, d = 0) => {
   const n = typeof v === "number" ? v : parseFloat(String(v ?? ""));
@@ -52,10 +59,27 @@ type RematePliegue = {
   direccion: "up" | "down";
 };
 
+type RemateNavigationState = {
+  desarrolloPuntaA?: number;
+  desarrolloPuntaB?: number;
+  pliegues?: Array<{
+    longitud?: number;
+    angulo?: number;
+    espesor?: number;
+    radio?: number;
+  }>;
+  espesor?: number;
+  radio?: number;
+  material?: string;
+  validacion?: RemateInput["validacion"];
+};
+
+type RemateAiResponse = { avisos?: string[] };
+
 const RematesDesigualesPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state || {}) as any;
+  const state = (location.state || {}) as RemateNavigationState;
 
   // Inferencia desde BLOQUE 5
   const inferAlaA = num(
@@ -73,6 +97,26 @@ const RematesDesigualesPage = () => {
   const [espesor, setEspesor] = useState<number>(inferEspesor);
   const [material, setMaterial] = useState<string>(state?.material || "");
   const [tipo, setTipo] = useState<TipoRemate>("normal");
+  const defaultsKey = `${material}|${espesor}`;
+  const [calibracion, setCalibracion] = useState<{
+    key: string;
+    defaults?: DefaultsByThickness;
+    cargada: boolean;
+  }>({ key: "", cargada: false });
+  useEffect(() => {
+    let activa = true;
+    setCalibracion({ key: defaultsKey, cargada: false });
+    getMaterialDefaultsWithCalibration(material, espesor)
+      .then(({ defaults }) => {
+        if (activa) setCalibracion({ key: defaultsKey, defaults, cargada: true });
+      })
+      .catch(() => {
+        if (activa) setCalibracion({ key: defaultsKey, cargada: true });
+      });
+    return () => { activa = false; };
+  }, [material, espesor, defaultsKey]);
+  const calibracionCargada = calibracion.key === defaultsKey && calibracion.cargada;
+  const defaultsAprobados = calibracionCargada ? calibracion.defaults : undefined;
 
   // Estado por tramos: arranca con 2 tramos y 1 pliegue
   const [segmentos, setSegmentos] = useState<RemateSegmento[]>([
@@ -119,8 +163,9 @@ const RematesDesigualesPage = () => {
         angulo: p.angulo,
         radio: p.radio,
         espesor,
+        k: defaultsAprobados?.kFactor,
       })),
-    [pliegues, espesor]
+    [pliegues, espesor, defaultsAprobados]
   );
 
   const input: RemateInput = useMemo(
@@ -135,19 +180,37 @@ const RematesDesigualesPage = () => {
       tipo,
       pliegues: plieguesFisicos,
       sumaTramos,
+      tramos: segmentos.map((segmento) => segmento.longitud),
       validacion: state?.validacion,
     }),
-    [sumaTramos, alaA, alaB, espesor, pliegues, plieguesFisicos, material, tipo, inferRadio, inferAngulo, state?.validacion]
+    [sumaTramos, segmentos, alaA, alaB, espesor, pliegues, plieguesFisicos, material, tipo, inferRadio, inferAngulo, state?.validacion]
   );
 
-  const resultado = useMemo(() => calcularRemateDesigual(input), [input]);
+  const resultado = useMemo(
+    () => calcularRemateDesigual(input, (materialPliegue, espesorPliegue) =>
+      materialPliegue === material && Math.abs(espesorPliegue - espesor) < 1e-6
+        ? defaultsAprobados
+        : undefined
+    ),
+    [input, material, espesor, defaultsAprobados]
+  );
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<RemateAiResponse | null>(null);
+  const aiRequestId = useRef(0);
+
+  useEffect(() => {
+    aiRequestId.current += 1;
+    setAiLoading(false);
+    setAiError(null);
+    setAiResult(null);
+  }, [input]);
+
   const online = typeof navigator !== "undefined" ? navigator.onLine : false;
 
   const callAI = async () => {
+    const requestId = ++aiRequestId.current;
     setAiLoading(true);
     setAiError(null);
     setAiResult(null);
@@ -157,7 +220,7 @@ const RematesDesigualesPage = () => {
           alaA,
           alaB,
           espesor,
-          radio: input.radio,
+          radio: defaultsAprobados?.innerRadius,
           angulo: input.angulo,
           material,
           tipo,
@@ -165,12 +228,17 @@ const RematesDesigualesPage = () => {
         },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      setAiResult((data as any)?.ai || null);
+      if (requestId !== aiRequestId.current) return;
+      const payload = data as { error?: unknown; ai?: RemateAiResponse } | null;
+      if (payload?.error) {
+        throw new Error(typeof payload.error === "string" ? payload.error : "Error al analizar el remate.");
+      }
+      setAiResult(payload?.ai ?? null);
     } catch (e) {
+      if (requestId !== aiRequestId.current) return;
       setAiError(e instanceof Error ? e.message : "Error inesperado");
     } finally {
-      setAiLoading(false);
+      if (requestId === aiRequestId.current) setAiLoading(false);
     }
   };
 
@@ -203,7 +271,12 @@ const RematesDesigualesPage = () => {
           </div>
           <div>
             <Label>Material</Label>
-            <Input value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="Ej. Acero galv." />
+            <Select value={material} onValueChange={setMaterial}>
+              <SelectTrigger><SelectValue placeholder="Selecciona material" /></SelectTrigger>
+              <SelectContent>
+                {MATERIALES_APROBADOS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Tipo de remate</Label>
@@ -272,7 +345,7 @@ const RematesDesigualesPage = () => {
                   <div className="text-sm font-medium md:col-span-1">
                     Pliegue {i + 1}
                     <div className="text-xs text-muted-foreground tabular-nums">
-                      BA: {resultado.baPorPliegue?.[i] ?? 0} mm
+                      BA: {resultado.valido ? `${resultado.baPorPliegue?.[i] ?? 0} mm` : "—"}
                     </div>
                   </div>
                   <div>
@@ -284,12 +357,12 @@ const RematesDesigualesPage = () => {
                     />
                   </div>
                   <div>
-                    <Label>Radio (mm)</Label>
+                    <Label>Radio aprobado (mm)</Label>
                     <Input
                       type="number"
                       step="0.1"
-                      value={pliegues[i].radio}
-                      onChange={(e) => updPliegue(pliegues[i].id, { radio: num(e.target.value) })}
+                      value={defaultsAprobados?.innerRadius ?? ""}
+                      readOnly
                     />
                   </div>
                   <div>
@@ -332,19 +405,27 @@ const RematesDesigualesPage = () => {
           <CardTitle className="text-base">Resultados</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-          <Stat label="BA total" value={`${resultado.ba} mm`} />
-          <Stat label="BD" value={`${resultado.bd} mm`} />
-          <Stat label="K dinámico" value={`${resultado.kDinamico}`} />
-          <Stat label="Corrección longitud" value={`${resultado.correccionLongitud} mm`} />
-          <Stat label="Reducción cejo" value={`${resultado.reduccionCejo} mm`} />
-          <Stat label="Tramos rectos" value={`${resultado.desglose?.tramosRectos ?? 0} mm`} />
-          <Stat label="Ala A final" value={`${resultado.alaAFinal} mm`} />
-          <Stat label="Ala B final" value={`${resultado.alaBFinal} mm`} />
-          <Stat
-            label="Desarrollo total"
-            value={`D:${resultado.desarrolloTotal}`}
-            highlight
-          />
+          {resultado.valido ? (
+            <>
+              <Stat label="BA total" value={`${resultado.ba} mm`} />
+              <Stat label="BD" value={`${resultado.bd} mm`} />
+              <Stat label="K aprobado" value={`${resultado.kFactor}`} />
+              <Stat label="Corrección longitud" value={`${resultado.correccionLongitud} mm`} />
+              <Stat label="Reducción cejo" value={`${resultado.reduccionCejo} mm`} />
+              <Stat label="Tramos rectos" value={`${resultado.desglose?.tramosRectos ?? 0} mm`} />
+              <Stat label="Ala A final" value={`${resultado.alaAFinal} mm`} />
+              <Stat label="Ala B final" value={`${resultado.alaBFinal} mm`} />
+              <Stat label="Desarrollo total" value={`D:${resultado.desarrolloTotal}`} highlight />
+            </>
+          ) : (
+            <Alert className="col-span-full border-destructive/50 text-destructive">
+              <AlertDescription>
+                {calibracionCargada
+                  ? resultado.avisos[0]?.mensaje
+                  : "Cargando K y radio aprobados para material y espesor…"}
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
@@ -396,7 +477,7 @@ const RematesDesigualesPage = () => {
               </AlertDescription>
             </Alert>
           )}
-          <Button onClick={callAI} disabled={!online || aiLoading}>
+          <Button onClick={callAI} disabled={!online || aiLoading || !resultado.valido}>
             {aiLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Analizando…
@@ -412,23 +493,16 @@ const RematesDesigualesPage = () => {
               <AlertDescription>{aiError}</AlertDescription>
             </Alert>
           )}
-          {aiResult && (
+          {aiResult && resultado.valido && (
             <div className="text-sm space-y-2">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {["ba", "bd", "kDinamico", "correccionLongitud"].map((k) =>
-                  aiResult[k] !== undefined ? (
-                    <Stat key={k} label={`IA · ${k}`} value={String(aiResult[k])} />
-                  ) : null
-                )}
-              </div>
-              {Array.isArray(aiResult.avisos) && aiResult.avisos.length > 0 && (
+              {aiResult.avisos && aiResult.avisos.length > 0 && (
                 <div>
                   <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
                     <Info className="w-3 h-3" /> Avisos IA
                   </div>
                   <ul className="list-disc pl-5 space-y-1">
-                    {aiResult.avisos.map((s: any, i: number) => (
-                      <li key={i}>{typeof s === "string" ? s : JSON.stringify(s)}</li>
+                    {aiResult.avisos.map((aviso, i) => (
+                      <li key={i}>{aviso}</li>
                     ))}
                   </ul>
                 </div>

@@ -60,6 +60,14 @@ export interface DefaultsByThickness {
   innerRadius: number;
 }
 
+export function isValidMaterialDefaults(
+  defaults: DefaultsByThickness | undefined,
+): defaults is DefaultsByThickness {
+  return defaults !== undefined &&
+    Number.isFinite(defaults.kFactor) && defaults.kFactor > 0 && defaults.kFactor <= 0.5 &&
+    Number.isFinite(defaults.innerRadius) && defaults.innerRadius > 0;
+}
+
 // Defaults estándar por espesor (editables vía panel de materiales)
 export const DEFAULT_THICKNESS_TABLE: Record<number, DefaultsByThickness> = {
   0.5: { bendAllowance90: 0.8, kFactor: 0.33, innerRadius: 0.8 },
@@ -84,6 +92,15 @@ export interface BendMathOutput {
 }
 
 export function calculateBendMath(input: BendMathInput): BendMathOutput {
+  if (
+    !Number.isFinite(input.angle) || input.angle <= 0 || input.angle >= 180 ||
+    !Number.isFinite(input.thickness) || input.thickness <= 0 ||
+    !Number.isFinite(input.innerRadius) || input.innerRadius <= 0 ||
+    !Number.isFinite(input.kFactor) || input.kFactor <= 0 || input.kFactor > 0.5
+  ) {
+    throw new Error("Cálculo de pliegue inválido: se requieren ángulo entre 0° y 180°, espesor, radio y K válidos.");
+  }
+
   const angleRad = (Math.PI / 180) * input.angle;
   const bendAllowance = angleRad * (input.innerRadius + input.kFactor * input.thickness);
   // Outside setback: OSSB = tan(angle/2) * (R + t)
@@ -137,17 +154,23 @@ export function computeBend(
   const t = thickness;
   const R = input.innerRadius ?? defaults?.innerRadius;
   const K = input.kFactor ?? defaults?.kFactor;
+  const angle = input.angle;
+  const distance = input.distance;
+  const tolerance = input.tolerance ?? 0.1;
 
   if (
     !Number.isFinite(t) || t <= 0 ||
+    !Number.isFinite(angle) || angle <= 0 || angle >= 180 ||
+    !Number.isFinite(distance) || distance < 0 ||
+    !Number.isFinite(tolerance) || tolerance < 0 ||
     R === undefined || !Number.isFinite(R) || R <= 0 ||
     K === undefined || !Number.isFinite(K) || K <= 0 || K > 0.5
   ) {
-    throw new Error("Plegado no calculable: introduce un espesor, R y K válidos o selecciona una calibración aprobada.");
+    throw new Error("Plegado no calculable: revisa ángulo (entre 0° y 180°), distancia, tolerancia, espesor, R y K.");
   }
 
   const { bendAllowance, outsideSetback, bendDeduction } = calculateBendMath({
-    angle: input.angle,
+    angle,
     thickness: t,
     innerRadius: R,
     kFactor: K,
@@ -157,14 +180,14 @@ export function computeBend(
 
   return {
     order,
-    angle: input.angle,
-    distanceFromPrevious: input.distance,
+    angle,
+    distanceFromPrevious: distance,
     innerRadius: round(R),
     thickness: t,
     kFactor: round(K, 3),
     direction,
     directionLabel: directionLabel(direction),
-    tolerance: input.tolerance ?? 0.1,
+    tolerance,
     bendAllowance: round(bendAllowance),
     bendDeduction: round(bendDeduction),
     outsideSetback: round(outsideSetback),

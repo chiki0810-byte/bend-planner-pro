@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Calculator, Layers, ImagePlus, X, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { exportRemateProPdf, PliegueExp } from "@/lib/rematesProExport";
-import { calculateBendMath, getMaterialDefaultsByThickness } from "@/lib/bendCalc";
+import { calculateBendMath, type DefaultsByThickness } from "@/lib/bendCalc";
+import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
 import logoEmpresa from "@/assets/logo_empresa.png";
 
 type TipoPro = "recto_simetrico" | "recto_asimetrico" | "conico_enchufable";
@@ -23,10 +24,6 @@ const MATERIALS = [
   "Acero", "Inox", "Aluminio", "Galvanizado", "Corten",
   "Duro 500", "Duro 600", "Latón", "Cobre",
 ];
-
-const getK = (m: string, t: number): number | undefined =>
-  getMaterialDefaultsByThickness(m, t)?.kFactor;
-
 
 const solapeAuto = (t: number): number => {
   if (t >= 0.5 && t <= 0.6) return 10;
@@ -69,6 +66,12 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
   const [material, setMaterial] = useState("Acero");
   const [espesor, setEspesor] = useState("");
   const [solape, setSolape] = useState("");
+  const defaultsKey = `${material}|${espesor}`;
+  const [calibracion, setCalibracion] = useState<{
+    key: string;
+    defaults?: DefaultsByThickness;
+    cargada: boolean;
+  }>({ key: "", cargada: false });
 
   const [pliegues_base, setBase] = useState<Pliegue[]>([newPliegue()]);
   const [pliegues_puntaA, setA] = useState<Pliegue[]>([newPliegue()]);
@@ -122,6 +125,30 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
     return tipo;
   }, [tipo, tipoTouched, puntaGrandeRef, puntaPequenaRef]);
 
+  useEffect(() => {
+    let activa = true;
+    const thickness = Number(espesor);
+    if (!Number.isFinite(thickness) || thickness <= 0) {
+      setCalibracion({ key: defaultsKey, cargada: true });
+      return () => { activa = false; };
+    }
+    setCalibracion({ key: defaultsKey, cargada: false });
+    getMaterialDefaultsWithCalibration(material, thickness)
+      .then(({ defaults }) => {
+        if (activa) setCalibracion({ key: defaultsKey, defaults, cargada: true });
+      })
+      .catch(() => {
+        if (activa) setCalibracion({ key: defaultsKey, cargada: true });
+      });
+    return () => { activa = false; };
+  }, [material, espesor, defaultsKey]);
+  const calibracionCargada = calibracion.key === defaultsKey && calibracion.cargada;
+  const defaultsAprobados = calibracionCargada ? calibracion.defaults : undefined;
+
+  useEffect(() => {
+    setRes(null);
+  }, [tipoEfectivo, material, espesor, solape, pliegues_base, pliegues_puntaA, pliegues_puntaB]);
+
   const updatePliegue = (
     setList: React.Dispatch<React.SetStateAction<Pliegue[]>>,
     id: string,
@@ -136,13 +163,32 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
     setList((prev) => (prev.length > 1 ? prev.filter((p) => p.id !== id) : prev));
 
   const calcular = () => {
+    setRes(null);
     const t = Number(espesor);
-const K = getK(material, t);
+    const K = defaultsAprobados?.kFactor;
 
-if (K === undefined) {
-  toast.error("Material y espesor sin valores aprobados.");
-  return;
-}
+    if (K === undefined) {
+      toast.error(calibracionCargada
+        ? "Material y espesor sin K aprobado válido."
+        : "Cargando K aprobado para material y espesor.");
+      return;
+    }
+
+    const plieguesActivos = tipoEfectivo === "recto_simetrico"
+      ? pliegues_base
+      : [...pliegues_puntaA, ...pliegues_puntaB];
+    const geometriaValida = plieguesActivos.every((p) => {
+      const longitud = Number(p.longitud_mm);
+      const angulo = Number(p.angulo_deg);
+      const radio = Number(p.radio_mm);
+      return Number.isFinite(longitud) && longitud > 0 &&
+        Number.isFinite(angulo) && angulo > 0 && angulo < 180 &&
+        Number.isFinite(radio) && radio > 0;
+    });
+    if (!geometriaValida) {
+      toast.error("Completa una longitud, un ángulo entre 0° y 180° y un radio interior positivo en cada pliegue.");
+      return;
+    }
 
     let S = Number(solape) || 0;
     if (!S || S <= 0) {
@@ -281,7 +327,17 @@ if (K === undefined) {
           </div>
         )}
 
-        <Button onClick={calcular} size="lg" className="w-full">
+        {!defaultsAprobados && (
+          <p role="status" className="text-sm text-destructive">
+            {calibracionCargada
+              ? `No hay K aprobado válido para ${material} con espesor ${espesor || "sin definir"} mm.`
+              : "Cargando K aprobado para material y espesor…"}
+          </p>
+        )}
+        {defaultsAprobados && (
+          <p className="text-xs text-muted-foreground">K aprobado: {defaultsAprobados.kFactor}</p>
+        )}
+        <Button onClick={calcular} disabled={!defaultsAprobados} size="lg" className="w-full">
           <Calculator className="w-4 h-4 mr-2" />
           Calcular remate (pro)
         </Button>
