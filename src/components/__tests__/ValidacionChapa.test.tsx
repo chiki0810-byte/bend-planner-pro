@@ -37,4 +37,35 @@ describe("ValidacionChapa", () => {
 
     expect(screen.getByText(/Pliegue 1 y 2 no están conectados\./)).toBeTruthy();
   });
+
+  it("rechaza longitudes y ángulos no finitos, y coordenadas parciales", () => {
+    sheetStore.setState({
+      plieguesProcesados: [
+        {
+          id: "p1", paso: 1, angulo: Number.NaN, longitud: Number.POSITIVE_INFINITY,
+          colision: false, fuerza: 0, x1: 0,
+        },
+      ],
+    });
+    render(<ValidacionChapa />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Validar dibujo" }));
+
+    expect(screen.getByText(/longitud inválida/)).toBeTruthy();
+    expect(screen.getByText(/coordenadas incompletas o no finitas/)).toBeTruthy();
+    expect(screen.getByText(/ángulo fuera de rango/)).toBeTruthy();
+  });
+
+  it("sigue permitiendo registros heredados sin coordenadas opcionales", () => {
+    sheetStore.setState({
+      plieguesProcesados: [
+        { id: "p1", paso: 1, angulo: 90, longitud: 10, colision: false, fuerza: 0 },
+      ],
+    });
+    render(<ValidacionChapa />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Validar dibujo" }));
+
+    expect(screen.getByText("✔ Validación correcta. No se encontraron errores.")).toBeTruthy();
+  });
 });

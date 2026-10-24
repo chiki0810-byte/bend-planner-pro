@@ -11,6 +11,22 @@ const puntosCoinciden = (
   y2: number,
 ) => Math.hypot(x1 - x2, y1 - y2) <= TOLERANCIA_CONTINUIDAD_MM;
 
+const coordenadasDelPliegue = (pliegue: {
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
+}) => [pliegue.x1, pliegue.y1, pliegue.x2, pliegue.y2];
+
+const tieneCoordenadasValidas = (pliegue: {
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
+}) => coordenadasDelPliegue(pliegue).every(
+  (coordenada) => typeof coordenada === "number" && Number.isFinite(coordenada),
+);
+
 export const ValidacionChapa: React.FC = () => {
   const { plieguesProcesados } = useSheetStore();
 
@@ -25,8 +41,14 @@ export const ValidacionChapa: React.FC = () => {
 
     // 1) Validación de longitud
     plieguesProcesados.forEach((p, idx) => {
-      if (p.longitud <= 0 || isNaN(p.longitud)) {
+      if (!Number.isFinite(p.longitud) || p.longitud <= 0) {
         errores.push(`Pliegue ${idx + 1}: longitud inválida.`);
+      }
+
+      const coordenadas = coordenadasDelPliegue(p);
+      const tieneAlgunaCoordenada = coordenadas.some((coordenada) => coordenada !== undefined);
+      if (tieneAlgunaCoordenada && !tieneCoordenadasValidas(p)) {
+        errores.push(`Pliegue ${idx + 1}: coordenadas incompletas o no finitas.`);
       }
     });
 
@@ -34,12 +56,8 @@ export const ValidacionChapa: React.FC = () => {
     for (let i = 0; i < plieguesProcesados.length - 1; i++) {
       const a = plieguesProcesados[i];
       const b = plieguesProcesados[i + 1];
-      const aTieneCoords = [a.x1, a.y1, a.x2, a.y2].every(
-        (coordenada) => typeof coordenada === "number" && Number.isFinite(coordenada),
-      );
-      const bTieneCoords = [b.x1, b.y1, b.x2, b.y2].every(
-        (coordenada) => typeof coordenada === "number" && Number.isFinite(coordenada),
-      );
+      const aTieneCoords = tieneCoordenadasValidas(a);
+      const bTieneCoords = tieneCoordenadasValidas(b);
       if (!aTieneCoords || !bTieneCoords) {
         continue;
       }
@@ -53,7 +71,7 @@ export const ValidacionChapa: React.FC = () => {
 
     // 3) Validación de ángulos
     plieguesProcesados.forEach((p, idx) => {
-      if (p.angulo < 0 || p.angulo > 180) {
+      if (!Number.isFinite(p.angulo) || p.angulo < 0 || p.angulo > 180) {
         errores.push(`Pliegue ${idx + 1}: ángulo fuera de rango (0–180).`);
       }
     });
