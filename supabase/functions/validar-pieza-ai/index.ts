@@ -64,7 +64,7 @@ Devuelve avisos de alas cortas, ángulos imposibles, choques evidentes, orden re
 
     const data = await response.json();
     const text = data?.choices?.[0]?.message?.content || '{}';
-    let parsed: any = {};
+    let parsed: unknown = {};
     try {
       parsed = JSON.parse(text);
     } catch {

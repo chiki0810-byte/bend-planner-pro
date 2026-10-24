@@ -19,10 +19,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { sugerirVueltas, type SugerirInput } from "@/lib/sugerirVueltas";
 
+const EMPTY_SUGERIR_STATE: Partial<SugerirInput> & { espesor?: number } = {};
+type AiResult = Record<string, unknown>;
+type AiInvokeResponse = { error?: unknown; ai?: unknown };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const formatAiValue = (value: unknown): string =>
+  typeof value === "string" ? value : JSON.stringify(value) ?? String(value);
+
 const SugeridorVueltasPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state || {}) as Partial<SugerirInput> & { espesor?: number };
+  const state = (location.state || EMPTY_SUGERIR_STATE) as Partial<SugerirInput> & { espesor?: number };
 
   const input: SugerirInput = useMemo(
     () => ({
@@ -41,7 +51,7 @@ const SugeridorVueltasPage = () => {
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<AiResult | null>(null);
   const online = typeof navigator !== "undefined" ? navigator.onLine : false;
 
   // Si la IA devuelve ordenRecomendado, reordenamos los pasos por ordenOriginal
@@ -50,8 +60,9 @@ const SugeridorVueltasPage = () => {
     if (!Array.isArray(ai) || ai.length === 0) return resultado.pasos;
     const byOrig = new Map(resultado.pasos.map((p) => [p.ordenOriginal, p]));
     const reordenados: typeof resultado.pasos = [];
-    ai.forEach((it: any) => {
-      const orig = Number(it?.ordenOriginal ?? it?.orig ?? it?.paso);
+    ai.forEach((item) => {
+      const it = isRecord(item) ? item : {};
+      const orig = Number(it.ordenOriginal ?? it.orig ?? it.paso);
       const found = byOrig.get(orig);
       if (found) {
         reordenados.push(found);
@@ -68,7 +79,7 @@ const SugeridorVueltasPage = () => {
       paso: i + 1,
       requiereGiro: i > 0 && reordenados[i - 1].punta !== p.punta,
     }));
-  }, [aiResult, resultado.pasos]);
+  }, [aiResult, resultado]);
 
   const ordenIAAplicado = pasosVisibles !== resultado.pasos;
 
@@ -89,8 +100,9 @@ const SugeridorVueltasPage = () => {
         },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      setAiResult((data as any)?.ai || null);
+      const response = data as AiInvokeResponse | null;
+      if (response?.error) throw new Error(String(response.error));
+      setAiResult(isRecord(response?.ai) ? response.ai : null);
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "Error inesperado");
     } finally {
@@ -247,8 +259,9 @@ const SugeridorVueltasPage = () => {
           {aiResult && (
             <div className="space-y-3 text-sm">
               {(["ordenRecomendado", "giros", "avisosChoque", "observaciones"] as const).map((k) => {
-                const arr = (aiResult?.[k] as any[]) || [];
-                if (!arr || arr.length === 0) return null;
+                const value = aiResult[k];
+                if (!Array.isArray(value) || value.length === 0) return null;
+                const arr: unknown[] = value;
                 return (
                   <div key={k}>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
@@ -256,7 +269,7 @@ const SugeridorVueltasPage = () => {
                     </div>
                     <ul className="list-disc pl-5 space-y-1">
                       {arr.map((s, i) => (
-                        <li key={i}>{typeof s === "string" ? s : JSON.stringify(s)}</li>
+                        <li key={i}>{formatAiValue(s)}</li>
                       ))}
                     </ul>
                   </div>

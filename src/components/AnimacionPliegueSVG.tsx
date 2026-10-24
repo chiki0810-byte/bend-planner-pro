@@ -46,7 +46,7 @@ export const AnimacionPliegueSVG: React.FC = () => {
 
     return () => clearInterval(id);
 
-  }, [pasoActual]);
+  }, [pasoActual, pliegue]);
 
   if (!pliegue || !pliegue.x1 || !pliegue.y1 || !pliegue.x2 || !pliegue.y2) {
 

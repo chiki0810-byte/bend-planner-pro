@@ -52,7 +52,7 @@ export const SimulacionCompletaChapa: React.FC = () => {
     }, 33);
 
     return () => clearInterval(id);
-  }, [simulando, pasoActual, plieguesProcesados.length, setPasoActual]);
+  }, [simulando, pasoActual, pliegue, plieguesProcesados, setPasoActual]);
 
   const iniciar = () => {
     if (plieguesProcesados.length === 0) {

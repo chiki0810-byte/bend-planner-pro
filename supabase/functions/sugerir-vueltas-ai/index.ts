@@ -64,7 +64,7 @@ Devuelve lista ordenada de pliegues, giros necesarios, avisos de choque y observ
 
     const data = await response.json();
     const text = data?.choices?.[0]?.message?.content || '{}';
-    let parsed: any = {};
+    let parsed: unknown = {};
     try {
       parsed = JSON.parse(text);
     } catch {

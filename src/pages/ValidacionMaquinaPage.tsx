@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ShieldCheck, AlertTriangle, Info, Sparkles, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,10 +24,20 @@ const nivelStyle = (n: Aviso["nivel"]) =>
     ? "border-amber-500/50 text-amber-600 dark:text-amber-400"
     : "border-sky-500/40 text-sky-600 dark:text-sky-300";
 
+const EMPTY_NAV_STATE: NavState = {};
+type AiResult = Record<string, unknown>;
+type AiInvokeResponse = { error?: unknown; ai?: unknown };
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const formatAiValue = (value: unknown): string =>
+  typeof value === "string" ? value : JSON.stringify(value) ?? String(value);
+
 const ValidacionMaquinaPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state || {}) as NavState;
+  const state = (location.state || EMPTY_NAV_STATE) as NavState;
 
   const input: ValidacionInput = useMemo(
     () => ({
@@ -45,7 +55,7 @@ const ValidacionMaquinaPage = () => {
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiResult, setAiResult] = useState<any>(null);
+  const [aiResult, setAiResult] = useState<AiResult | null>(null);
   const online = typeof navigator !== "undefined" ? navigator.onLine : false;
 
   const callAI = async () => {
@@ -64,18 +74,15 @@ const ValidacionMaquinaPage = () => {
         },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      setAiResult((data as any)?.ai || null);
+      const response = data as AiInvokeResponse | null;
+      if (response?.error) throw new Error(String(response.error));
+      setAiResult(isRecord(response?.ai) ? response.ai : null);
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "Error inesperado");
     } finally {
       setAiLoading(false);
     }
   };
-
-  useEffect(() => {
-    // No auto-llamar a IA — el usuario decide y solo si está online.
-  }, []);
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
@@ -200,14 +207,15 @@ const ValidacionMaquinaPage = () => {
             <div className="space-y-3 text-sm">
               {(["avisosAlasCortas", "angulosImposibles", "choquesEvidentes", "ordenRecomendado", "observaciones"] as const).map(
                 (k) => {
-                  const arr = (aiResult?.[k] as string[]) || [];
-                  if (arr.length === 0) return null;
+                  const value = aiResult[k];
+                  if (!Array.isArray(value) || value.length === 0) return null;
+                  const arr: unknown[] = value;
                   return (
                     <div key={k}>
                       <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">{k}</div>
                       <ul className="list-disc pl-5 space-y-1">
                         {arr.map((s, i) => (
-                          <li key={i}>{s}</li>
+                          <li key={i}>{formatAiValue(s)}</li>
                         ))}
                       </ul>
                     </div>

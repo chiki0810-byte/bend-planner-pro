@@ -31,7 +31,7 @@ const loadPrefs = (): StoredPrefs => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch { /* Preferences are optional when local storage is unavailable. */ }
   return { machineId: "stefa8", width: "" };
 };
 
@@ -92,7 +92,7 @@ const MachineValidationPanel = ({ result, bends, material, thickness }: Props) =
   const [recalcKey, setRecalcKey] = useState(0);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ machineId, width })); } catch {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ machineId, width })); } catch { /* Keep validation usable when storage is unavailable. */ }
   }, [machineId, width]);
 
   const validation = useMemo(() => {

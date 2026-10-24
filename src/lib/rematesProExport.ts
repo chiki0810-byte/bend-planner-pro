@@ -63,7 +63,7 @@ export const exportRemateProPdf = async (
     try {
       const dataUrl = await urlToDataUrl(logoUrl);
       doc.addImage(dataUrl, "PNG", 14, y, 26, 26);
-    } catch {}
+    } catch { /* The logo/photo is optional in the exported document. */ }
   }
 
   doc.setFontSize(17);
@@ -86,7 +86,7 @@ export const exportRemateProPdf = async (
     headStyles: { fillColor: [14, 116, 144] },
     margin: { left: 14, right: 14 },
   });
-  y = (doc as any).lastAutoTable.finalY + 6;
+  y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 
   const renderPliegues = (titulo: string, lista?: PliegueExp[]) => {
     if (!lista || lista.length === 0) return;
@@ -101,7 +101,7 @@ export const exportRemateProPdf = async (
       headStyles: { fillColor: [2, 132, 199] },
       margin: { left: 14, right: 14 },
     });
-    y = (doc as any).lastAutoTable.finalY + 6;
+    y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
   };
 
   if (d.tipo === "recto_simetrico") {
@@ -129,21 +129,21 @@ export const exportRemateProPdf = async (
     headStyles: { fillColor: [2, 132, 199] },
     margin: { left: 14, right: 14 },
   });
-  y = (doc as any).lastAutoTable.finalY + 8;
+  y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
   if (d.foto) {
     try {
       if (y > pageH - 70) { doc.addPage(); y = 14; }
       doc.setFontSize(11);
       doc.text("Foto del plano:", 14, y);
-      const props = (doc as any).getImageProperties(d.foto);
+      const props = doc.getImageProperties(d.foto);
       const maxW = pageW - 28;
       const maxH = pageH - y - 20;
       const ratio = Math.min(maxW / props.width, maxH / props.height);
       const w = props.width * ratio;
       const h = props.height * ratio;
       doc.addImage(d.foto, "JPEG", 14, y + 4, w, h);
-    } catch {}
+    } catch { /* The logo/photo is optional in the exported document. */ }
   }
 
   const fechaSafe = fecha.replace(/[^\w]/g, "-");

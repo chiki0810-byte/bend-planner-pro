@@ -36,6 +36,8 @@ interface ResultadoState {
   radioInterior?: number;
 }
 
+const EMPTY_PLIEGUES: NonNullable<ResultadoState["pliegues"]> = [];
+
 const ResultadoPiezaPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,7 +50,7 @@ const ResultadoPiezaPage = () => {
   const [firmaSello, setFirmaSello] = useState("");
   const [caraVista, setCaraVista] = useState<CaraVista>("up");
 
-  const pliegues = state.pliegues || [];
+  const pliegues = state.pliegues ?? EMPTY_PLIEGUES;
   const desA = state.desarrolloPuntaA ?? 0;
   const desB = state.desarrolloPuntaB ?? 0;
   const desTotal = state.desarrolloTotal ?? desA + desB;

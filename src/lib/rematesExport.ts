@@ -58,7 +58,7 @@ export const exportRematePdf = async (d: RemateExportData, logoUrl?: string) => 
     try {
       const dataUrl = await urlToDataUrl(logoUrl);
       doc.addImage(dataUrl, "PNG", 14, y, 28, 28);
-    } catch {}
+    } catch { /* The logo/photo is optional in the exported document. */ }
   }
 
   doc.setFontSize(18);
@@ -86,8 +86,7 @@ export const exportRematePdf = async (d: RemateExportData, logoUrl?: string) => 
     headStyles: { fillColor: [14, 116, 144] },
   });
 
-  // @ts-ignore
-  y = (doc as any).lastAutoTable.finalY + 6;
+  y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
 
   autoTable(doc, {
     startY: y,
@@ -103,21 +102,20 @@ export const exportRematePdf = async (d: RemateExportData, logoUrl?: string) => 
     headStyles: { fillColor: [2, 132, 199] },
   });
 
-  // @ts-ignore
-  y = (doc as any).lastAutoTable.finalY + 8;
+  y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
 
   if (d.foto) {
     try {
       doc.setFontSize(11);
       doc.text("Foto del plano:", 14, y);
-      const props = (doc as any).getImageProperties(d.foto);
+      const props = doc.getImageProperties(d.foto);
       const maxW = pageW - 28;
       const maxH = 110;
       const ratio = Math.min(maxW / props.width, maxH / props.height);
       const w = props.width * ratio;
       const h = props.height * ratio;
       doc.addImage(d.foto, "JPEG", 14, y + 4, w, h);
-    } catch {}
+    } catch { /* The logo/photo is optional in the exported document. */ }
   }
 
   const fechaSafe = (d.fecha ?? new Date().toLocaleString()).replace(/[^\w]/g, "-");

@@ -43,7 +43,7 @@ export const RematesProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     try {
       localStorage.setItem(KEY, JSON.stringify(historial));
-    } catch {}
+    } catch { /* Preserve in-memory history when local storage is unavailable. */ }
   }, [historial]);
 
   const add: Ctx["add"] = (item) => {
