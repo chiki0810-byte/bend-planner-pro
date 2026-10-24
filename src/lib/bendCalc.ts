@@ -221,14 +221,13 @@ export function computeBend(
  *
  *       desarrolloTeorico = pieceLength + Σ BA
  *
- * CAPAS PREVISTAS (estructura ya preparada, sin cambiar resultados):
+ * CAPAS ACTUALES (se mantienen separadas):
  *   1) cotas introducidas .......... inputLength
  *   2) desarrollo teórico .......... theoreticalDevelopedLength
- *   3) corrección de taller ........ workshopCorrection (HOY SIEMPRE 0 mm)
+ *   3) corrección de taller ........ workshopCorrection (aportada por taller)
  *   4) corte final ................. finalCutLength = 2 + 3
  *
- * La corrección de taller (−1, −4, −7 mm, etc.) se implementará más adelante
- * como capa independiente; NO se mezcla con K, BA ni BD.
+ * La corrección de taller se aplica como capa independiente; NO se mezcla con K, BA ni BD.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export interface DevelopmentBreakdown {
@@ -242,7 +241,7 @@ export interface DevelopmentBreakdown {
   totalOutsideSetback: number;
   /** Desarrollo teórico = inputLength + Σ BA. */
   theoreticalDevelopedLength: number;
-  /** Corrección real de taller. Capa independiente; hoy siempre 0. */
+  /** Corrección real de taller, independiente de K, BA y BD. */
   workshopCorrection: number;
   /** Corte final = desarrollo teórico + corrección de taller. */
   finalCutLength: number;

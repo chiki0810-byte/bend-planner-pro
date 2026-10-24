@@ -39,7 +39,7 @@ const Home = () => {
             <span className="px-3 py-1 rounded-full border border-sky-400/30 bg-sky-500/5">Stefa 8 m</span>
             <span className="px-3 py-1 rounded-full border border-sky-400/30 bg-sky-500/5">Jordi 180 t</span>
             <span className="px-3 py-1 rounded-full border border-sky-400/30 bg-sky-500/5">Prensa 6 m</span>
-            <span className="px-3 py-1 rounded-full border border-sky-400/30 bg-sky-500/5">100% Offline</span>
+            <span className="px-3 py-1 rounded-full border border-sky-400/30 bg-sky-500/5">Cálculos locales</span>
           </div>
         </div>
 

@@ -43,7 +43,7 @@ const ConfiguracionPage = () => {
           <CardTitle className="text-base flex items-center gap-2">
             <Database className="w-4 h-4" /> Datos locales
           </CardTitle>
-          <CardDescription>La app guarda todo en tu dispositivo. No se envía nada a Internet.</CardDescription>
+          <CardDescription>Los cálculos y datos se guardan en tu dispositivo. Las consultas opcionales de IA envían los campos del formulario a Supabase.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => {

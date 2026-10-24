@@ -85,7 +85,7 @@ const AppLayout = () => {
           ))}
         </nav>
         <div className="p-3 text-[10px] text-sky-400/50 uppercase tracking-widest text-center">
-          Offline · v1.0
+          Cálculos locales · IA online
         </div>
       </aside>
 
@@ -136,7 +136,7 @@ const AppLayout = () => {
                 </SheetClose>
               ))}
               <div className="pt-3 text-[10px] text-sky-400/50 uppercase tracking-widest text-center">
-                Offline · v1.0
+                Cálculos locales · IA online
               </div>
             </nav>
           </SheetContent>
