@@ -305,7 +305,7 @@ export function calcularRemateDesigual(
     else alaBFinal = +(alaB - reduccionCejo).toFixed(3);
     avisos.push({
       nivel: "warn",
-      mensaje: `Corte cejo: reducción de ${reduccionCejo} mm en el lado más corto.`,
+      mensaje: `Corte cejo: ajuste empírico heredado del 5 %, reduce ${reduccionCejo} mm en el lado más corto. Validar con el plano o una pieza de prueba.`,
     });
   }
 

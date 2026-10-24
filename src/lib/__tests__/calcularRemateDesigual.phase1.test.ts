@@ -127,4 +127,15 @@ describe("calcularRemateDesigual con valores aprobados", () => {
       mensaje: expect.stringMatching(/ángulo 150° crítico/),
     }));
   });
+
+  it("identifica como empírico el ajuste de cejo y pide validarlo en taller", () => {
+    const resultado = calcularRemateDesigual({ ...inputBase, tipo: "cejo" });
+
+    expect(resultado.valido).toBe(true);
+    expect(resultado.reduccionCejo).toBe(1.5);
+    expect(resultado.avisos).toContainEqual(expect.objectContaining({
+      nivel: "warn",
+      mensaje: expect.stringMatching(/ajuste empírico heredado del 5 %.*plano o una pieza de prueba/),
+    }));
+  });
 });
