@@ -16,15 +16,15 @@ import { getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 type TipoRemate = "recto" | "conico";
 
 const MATERIALS = [
-  { name: "Acero", k: 0.33 },
-  { name: "Inox", k: 0.40 },
-  { name: "Aluminio", k: 0.50 },
-  { name: "Galvanizado", k: 0.33 },
-  { name: "Corten", k: 0.33 },
-  { name: "Duro 500", k: 0.33 },
-  { name: "Duro 600", k: 0.33 },
-  { name: "Latón", k: 0.45 },
-  { name: "Cobre", k: 0.45 },
+  { name: "Acero" },
+  { name: "Inox" },
+  { name: "Aluminio" },
+  { name: "Galvanizado" },
+  { name: "Corten" },
+  { name: "Duro 500" },
+  { name: "Duro 600" },
+  { name: "Latón" },
+  { name: "Cobre" },
 ];
 
 interface Resultados {
