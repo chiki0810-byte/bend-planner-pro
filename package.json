@@ -13,7 +13,7 @@
     "cap:sync": "vite build && cap sync",
     "android:open": "vite build && cap sync android && cap open android",
     "electron:dev": "vite build && electron electron/main.cjs",
-    "electron:build": "vite build && electron-packager . CalculadoraPlegado --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore=\"^/src\" --ignore=\"^/public\" --ignore=\"^/electron-release\" --ignore=\"^/android\" --ignore=\"^/ios\""
+    "electron:build": "vite build && npx @electron/packager . CalculadoraPlegado --platform=win32 --arch=x64 --out=electron-release --overwrite --ignore=\"^/src\" --ignore=\"^/public\" --ignore=\"^/node_modules\" --ignore=\"^/electron-release\" --ignore=\"^/android\" --ignore=\"^/ios\" --ignore=\"^/\\.env\" --ignore=\"^/supabase\" --ignore=\"^/\\.lovable\" --ignore=\"^/\\.git\""
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^8.1.0",
@@ -77,6 +77,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@electron/packager": "^20.3.0",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/dom": "^10.4.2",
@@ -86,6 +87,7 @@
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
+    "electron": "^45.0.0",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
