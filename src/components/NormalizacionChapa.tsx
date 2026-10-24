@@ -8,7 +8,14 @@ const tieneCoordenadasValidas = (pliegue: PliegueProcesado) =>
   );
 
 export const NormalizacionChapa: React.FC = () => {
-  const { plieguesProcesados, setPlieguesProcesados } = useSheetStore();
+  const {
+    plieguesProcesados,
+    pliegueSeleccionado,
+    pasoActual,
+    setPlieguesProcesados,
+    setPliegueSeleccionado,
+    setPasoActual,
+  } = useSheetStore();
 
   const [resultado, setResultado] = useState<string>("");
 
@@ -18,6 +25,7 @@ export const NormalizacionChapa: React.FC = () => {
       return;
     }
 
+    const pliegueEnPasoActual = plieguesProcesados.find((p) => p.paso === pasoActual);
     let lista = [...plieguesProcesados];
 
     // Ordenar solo si todas las líneas tienen geometría completa.
@@ -68,6 +76,15 @@ export const NormalizacionChapa: React.FC = () => {
 
     // Guardar resultado
     setPlieguesProcesados(lista);
+    setPliegueSeleccionado(
+      pliegueSeleccionado && lista.some((p) => p.id === pliegueSeleccionado)
+        ? pliegueSeleccionado
+        : null,
+    );
+    const pasoNormalizado = pliegueEnPasoActual
+      ? lista.find((p) => p.id === pliegueEnPasoActual.id)?.paso ?? 0
+      : 0;
+    setPasoActual(pasoNormalizado);
     setResultado("✔ Normalización completada correctamente.");
   };
 

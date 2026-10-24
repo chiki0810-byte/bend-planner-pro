@@ -43,6 +43,8 @@ describe("NormalizacionChapa", () => {
           colision: false, fuerza: 0, x1: 0, y1: 0, x2: 0, y2: 5,
         },
       ],
+      pliegueSeleccionado: "derecha",
+      pasoActual: 1,
     });
 
     render(<NormalizacionChapa />);
@@ -51,5 +53,7 @@ describe("NormalizacionChapa", () => {
     const pliegues = sheetStore.getState().plieguesProcesados;
     expect(pliegues.map(({ id }) => id)).toEqual(["izquierda", "derecha"]);
     expect(pliegues.map(({ longitud }) => longitud)).toEqual([5, 10]);
+    expect(sheetStore.getState().pliegueSeleccionado).toBe("derecha");
+    expect(sheetStore.getState().pasoActual).toBe(2);
   });
 });
