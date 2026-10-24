@@ -128,14 +128,15 @@ describe("calcularRemateDesigual con valores aprobados", () => {
     }));
   });
 
-  it("identifica como empírico el ajuste de cejo y pide validarlo en taller", () => {
+  it("invalida cejo sin una reducción de taller aprobada según espesor y geometría", () => {
     const resultado = calcularRemateDesigual({ ...inputBase, tipo: "cejo" });
 
-    expect(resultado.valido).toBe(true);
-    expect(resultado.reduccionCejo).toBe(1.5);
-    expect(resultado.avisos).toContainEqual(expect.objectContaining({
-      nivel: "warn",
-      mensaje: expect.stringMatching(/ajuste empírico heredado del 5 %.*plano o una pieza de prueba/),
-    }));
+    expect(resultado.valido).toBe(false);
+    expect(resultado.reduccionCejo).toBe(0);
+    expect(resultado.desarrolloTotal).toBe(0);
+    expect(resultado.avisos[0]).toMatchObject({
+      nivel: "error",
+      mensaje: expect.stringMatching(/requiere una reducción de taller definida según espesor y geometría.*No se aplica el 5 % heredado ni se presenta el desarrollo como válido/),
+    });
   });
 });

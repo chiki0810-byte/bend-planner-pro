@@ -411,7 +411,7 @@ const RematesDesigualesPage = () => {
               <Stat label="BD" value={`${resultado.bd} mm`} />
               <Stat label="K aprobado" value={`${resultado.kFactor}`} />
               <Stat label="Corrección longitud" value={`${resultado.correccionLongitud} mm`} />
-              <Stat label="Reducción cejo (5 % empírico)" value={`${resultado.reduccionCejo} mm`} />
+              <Stat label="Reducción cejo aprobada" value={`${resultado.reduccionCejo} mm`} />
               <Stat label="Tramos rectos" value={`${resultado.desglose?.tramosRectos ?? 0} mm`} />
               <Stat label="Ala A final" value={`${resultado.alaAFinal} mm`} />
               <Stat label="Ala B final" value={`${resultado.alaBFinal} mm`} />

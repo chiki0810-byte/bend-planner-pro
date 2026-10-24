@@ -10,7 +10,7 @@
 //   SECCIÓN B — CORRECCIONES EMPÍRICAS EXISTENTES (fabricación)
 //     · corrección por alas desiguales (5 %)
 //     · corrección por longitud (2 %)
-//     · reducción por corte cejo (5 %)
+//     · sin reducción automática de cejo mientras falte una regla de taller aprobada
 //   SECCIÓN C — COMPOSICIÓN DEL RESULTADO (BD, alas finales, desarrollo)
 //
 // NOTA: los porcentajes de la SECCIÓN B NO son fórmulas físicas universales;
@@ -69,7 +69,7 @@ export interface RemateResultado {
   bd: number;              // Bend Deduction (BA + corrección por alas desiguales)
   kFactor: number;
   correccionLongitud: number;
-  reduccionCejo: number;   // mm restados al lado más corto si tipo=cejo
+  reduccionCejo: number;   // mm de reducción validada; 0 cuando no hay regla aprobada
   desarrolloTotal: number;
   alaAFinal: number;
   alaBFinal: number;
@@ -151,8 +151,6 @@ const CORRECCIONES_EMPIRICAS = {
   FACTOR_LONGITUD: 0.02,
   /** Umbral (mm) a partir del cual se aplica la corrección por longitud. */
   UMBRAL_LONGITUD: 0.5,
-  /** 5 % del ala más corta — reducción aplicada en corte cejo. */
-  FACTOR_CEJO: 0.05,
 } as const;
 
 /** EMPÍRICA: corrección por alas desiguales (5 % del desnivel). */
@@ -164,11 +162,6 @@ function correccionAlasEmpirica(diff: number): number {
 function correccionLongitudEmpirica(diff: number): number {
   if (diff <= CORRECCIONES_EMPIRICAS.UMBRAL_LONGITUD) return 0;
   return +(diff * CORRECCIONES_EMPIRICAS.FACTOR_LONGITUD).toFixed(3);
-}
-
-/** EMPÍRICA: reducción por corte cejo (5 % del ala más corta). */
-function reduccionCejoEmpirica(alaA: number, alaB: number): number {
-  return +(Math.min(alaA, alaB) * CORRECCIONES_EMPIRICAS.FACTOR_CEJO).toFixed(3);
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -185,8 +178,8 @@ function reduccionCejoEmpirica(alaA: number, alaB: number): number {
  *   · tipoPuntaA / tipoPuntaB    // tipo de remate independiente por punta
  *   · plieguesPuntaA / plieguesPuntaB: PliegueFisico[]  // varios pliegues/punta
  *
- * Mientras no exista esa información real (no se inventan valores), el cálculo
- * mantiene EXACTAMENTE el comportamiento actual.
+ * Mientras no exista esa información real (no se inventan valores), el motor
+ * invalida el cálculo para tipo cejo en lugar de aplicar el 5 % heredado.
  * ──────────────────────────────────────────────────────────────────────────── */
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -278,6 +271,14 @@ export function calcularRemateDesigual(
     }
   });
 
+  if (tipo === "cejo") {
+    return resultadoInvalido(
+      alaA,
+      alaB,
+      "El corte cejo requiere una reducción de taller definida según espesor y geometría. No se aplica el 5 % heredado ni se presenta el desarrollo como válido.",
+    );
+  }
+
 
   // --- B) CORRECCIONES EMPÍRICAS ------------------------------------------
   const diff = Math.abs(alaA - alaB);
@@ -295,19 +296,10 @@ export function calcularRemateDesigual(
     });
   }
 
-  // EMPÍRICA (5 %): corte cejo — reducción en el lado más corto
-  let reduccionCejo = 0;
-  let alaAFinal = alaA;
-  let alaBFinal = alaB;
-  if (tipo === "cejo") {
-    reduccionCejo = reduccionCejoEmpirica(alaA, alaB);
-    if (alaA <= alaB) alaAFinal = +(alaA - reduccionCejo).toFixed(3);
-    else alaBFinal = +(alaB - reduccionCejo).toFixed(3);
-    avisos.push({
-      nivel: "warn",
-      mensaje: `Corte cejo: ajuste empírico heredado del 5 %, reduce ${reduccionCejo} mm en el lado más corto. Validar con el plano o una pieza de prueba.`,
-    });
-  }
+  // No se inventa una reducción por cejo sin la regla de taller aprobada.
+  const reduccionCejo = 0;
+  const alaAFinal = alaA;
+  const alaBFinal = alaB;
 
   // Avisos industriales adicionales
   if (Math.min(alaA, alaB) < 10) {
