@@ -77,14 +77,22 @@ const ResultsPanel = ({
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="bg-gradient-to-br from-primary/10 to-technical/10 p-4 rounded-lg border-2 border-primary/20">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Longitud de Pieza</p>
               <p className="text-xl font-bold">{result.pieceLength} mm</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Desarrollado Total</p>
-              <p className="text-2xl font-bold text-primary">{result.totalDevelopedLength} mm</p>
+              <p className="text-xs text-muted-foreground mb-1">Desarrollo teórico</p>
+              <p className="text-xl font-bold">{(result.development?.theoreticalDevelopedLength ?? result.totalDevelopedLength).toFixed(2)} mm</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Corrección de taller</p>
+              <p className="text-xl font-bold">{(result.development?.workshopCorrection ?? 0).toFixed(2)} mm</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Corte final</p>
+              <p className="text-2xl font-bold text-primary">{(result.development?.finalCutLength ?? result.totalDevelopedLength).toFixed(2)} mm</p>
             </div>
           </div>
           <div className="mt-2 flex gap-2 flex-wrap">

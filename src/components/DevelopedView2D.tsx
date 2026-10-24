@@ -30,7 +30,7 @@ const DevelopedView2D = ({ result, pieceLength }: DevelopedView2DProps) => {
     );
   }
 
-  const total = result.totalDevelopedLength || pieceLength;
+  const total = result.development?.finalCutLength || result.totalDevelopedLength || pieceLength;
   const W = 800;
   const H = 220;
   const margin = 60;
@@ -69,7 +69,7 @@ const DevelopedView2D = ({ result, pieceLength }: DevelopedView2DProps) => {
               stroke="hsl(var(--foreground))" />
             <text x={W / 2} y={stripeY + stripeH + 50} textAnchor="middle"
               fontSize="13" fill="hsl(var(--foreground))" fontWeight="bold">
-              Desarrollo total: {total.toFixed(2)} mm
+              Corte final: {total.toFixed(2)} mm
             </text>
 
             {/* Marcas de pliegues */}

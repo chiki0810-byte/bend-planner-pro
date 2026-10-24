@@ -12,7 +12,7 @@ export function exportBendDxf(opts: {
   width?: number; // ancho de la chapa en mm (perpendicular al desarrollo). Default 100.
 }) {
   const { result, pieceName, width = 100 } = opts;
-  const total = result.totalDevelopedLength || result.pieceLength;
+  const total = result.development?.finalCutLength || result.totalDevelopedLength || result.pieceLength;
   const W = total;
   const H = width;
 

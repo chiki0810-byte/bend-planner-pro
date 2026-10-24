@@ -94,4 +94,16 @@ describe("regresión matemática", () => {
     expect(r.workshopCorrection).toBe(0);
     expect(r.finalCutLength).toBe(105.9);
   });
+  it("computeDevelopment aplica la corrección manual solo al corte final", () => {
+    const d0 = { bendAllowance90: 1.6, kFactor: 0.38, innerRadius: 1.5 };
+    const bends = [computeBend({ angle: 90, distance: 50 }, 1, d0, 1)];
+    const r = computeDevelopment(100, bends, -4);
+    expect(r.theoreticalDevelopedLength).toBe(102.95);
+    expect(r.workshopCorrection).toBe(-4);
+    expect(r.finalCutLength).toBe(98.95);
+  });
+  it("computeDevelopment rechaza correcciones no finitas o un corte no positivo", () => {
+    expect(() => computeDevelopment(100, [], Number.NaN)).toThrow(/corrección/);
+    expect(() => computeDevelopment(1, [], -1)).toThrow(/corte final/i);
+  });
 });

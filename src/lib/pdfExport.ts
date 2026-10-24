@@ -2,6 +2,13 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BendResult } from '@/pages/Index';
 
+function getLastTableFinalY(doc: jsPDF): number | undefined {
+  const table: unknown = Reflect.get(doc, 'lastAutoTable');
+  if (!table || typeof table !== 'object' || !('finalY' in table)) return undefined;
+  const finalY = table.finalY;
+  return typeof finalY === 'number' ? finalY : undefined;
+}
+
 export function exportBendPdf(opts: {
   result: BendResult;
   material: string;
@@ -19,12 +26,14 @@ export function exportBendPdf(opts: {
   doc.text(`Material: ${material}`, 14, 34);
   doc.text(`Espesor: ${thickness} mm`, 14, 40);
   doc.text(`Longitud de pieza: ${result.pieceLength} mm`, 14, 46);
-  doc.text(`Longitud desarrollada total: ${result.totalDevelopedLength} mm`, 14, 52);
-  doc.text(`Distancia total acumulada: ${result.totalDistance} mm`, 14, 58);
-  doc.text(`Fecha: ${new Date().toLocaleString()}`, 14, 64);
+  doc.text(`Desarrollo teórico: ${result.development?.theoreticalDevelopedLength ?? result.totalDevelopedLength} mm`, 14, 52);
+  doc.text(`Corrección de taller: ${result.development?.workshopCorrection ?? 0} mm`, 14, 58);
+  doc.text(`Corte final: ${result.development?.finalCutLength ?? result.totalDevelopedLength} mm`, 14, 64);
+  doc.text(`Distancia total acumulada: ${result.totalDistance} mm`, 14, 70);
+  doc.text(`Fecha: ${new Date().toLocaleString()}`, 14, 76);
 
   autoTable(doc, {
-    startY: 72,
+    startY: 84,
     head: [['#', 'Dist (mm)', 'Áng (°)', 'Sent.', 'R int', 'K', 'Ganancia', 'OSSB', 'Deducc.', 'Tol ±']],
     body: result.bends.map((b) => [
       b.order,
@@ -43,8 +52,7 @@ export function exportBendPdf(opts: {
   });
 
   // Vista 2D simplificada
-  // @ts-ignore
-  const yAfter = (doc as any).lastAutoTable.finalY + 10;
+  const yAfter = (getLastTableFinalY(doc) ?? 84) + 10;
   if (yAfter < 240) {
     doc.setFontSize(11);
     doc.text('Vista 2D del desarrollo', 14, yAfter);

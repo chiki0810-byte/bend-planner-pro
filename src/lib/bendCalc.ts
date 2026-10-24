@@ -255,11 +255,17 @@ export function computeDevelopment(
   bends: BendOutput[],
   workshopCorrection = 0,
 ): DevelopmentBreakdown {
+  if (!Number.isFinite(workshopCorrection)) {
+    throw new Error("La corrección de taller debe ser un número válido.");
+  }
   const totalBendAllowance = round(bends.reduce((s, b) => s + b.bendAllowance, 0));
   const totalBendDeduction = round(bends.reduce((s, b) => s + b.bendDeduction, 0));
   const totalOutsideSetback = round(bends.reduce((s, b) => s + b.outsideSetback, 0));
   const theoreticalDevelopedLength = round(pieceLength + totalBendAllowance);
   const finalCutLength = round(theoreticalDevelopedLength + workshopCorrection);
+  if (finalCutLength <= 0) {
+    throw new Error("El corte final debe ser mayor que cero.");
+  }
 
   return {
     inputLength: pieceLength,

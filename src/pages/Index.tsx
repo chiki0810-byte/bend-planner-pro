@@ -26,6 +26,7 @@ export interface CalculatorState {
   material: string;
   thickness: number;
   pieceLength: number;
+  workshopCorrection?: number;
   bends: BendItemValue[];
   name?: string;
 }
@@ -57,7 +58,9 @@ const Index = () => {
   }) => {
     setInitialState({
       material: data.material, thickness: data.thickness,
-      pieceLength: data.pieceLength, bends: data.bends, name: data.name,
+      pieceLength: data.pieceLength,
+      workshopCorrection: data.result.development?.workshopCorrection ?? 0,
+      bends: data.bends, name: data.name,
     });
     setCurrentName(data.name);
     setCurrentMaterial(data.material);
@@ -74,7 +77,9 @@ const Index = () => {
 
   const currentState: CalculatorState | null = result ? {
     material: currentMaterial, thickness: currentThickness,
-    pieceLength: currentLength, bends: currentBends, name: currentName,
+    pieceLength: currentLength,
+    workshopCorrection: result.development?.workshopCorrection ?? 0,
+    bends: currentBends, name: currentName,
   } : null;
 
   return (

@@ -43,6 +43,7 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
   const [thickness, setThickness] = useState<string>("");
   const [material, setMaterial] = useState<string>("");
   const [pieceLength, setPieceLength] = useState<string>("");
+  const [workshopCorrection, setWorkshopCorrection] = useState<string>("0");
   const [materials, setMaterials] = useState<string[]>([]);
   const [defaults, setDefaults] = useState({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
   const [isCalibrated, setIsCalibrated] = useState(true);
@@ -130,6 +131,7 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
     setThickness(String(initialState.thickness));
     setMaterial(initialState.material);
     setPieceLength(String(initialState.pieceLength));
+    setWorkshopCorrection(String(initialState.workshopCorrection ?? 0));
     setBends(initialState.bends.map(b => ({
       id: crypto.randomUUID(), ...b, manualR: true, manualK: true,
     })));
@@ -159,8 +161,10 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
   const calculate = async () => {
     const t = parseFloat(thickness);
     const L = parseFloat(pieceLength);
-    if (!Number.isFinite(t) || t <= 0 || !Number.isFinite(L) || L <= 0 || !material) {
-      toast.error("Introduce un material, un espesor y una longitud de pieza válidos.");
+    const correction = Number(workshopCorrection);
+    if (!Number.isFinite(t) || t <= 0 || !Number.isFinite(L) || L <= 0 || !material ||
+      !Number.isFinite(correction)) {
+      toast.error("Introduce un material, un espesor, una longitud de pieza y una corrección de taller válidos.");
       return;
     }
     if (bends.some(b =>
@@ -230,7 +234,13 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
     );
 
     // Motor único (bendCalc.ts): capas separadas cotas / teórico / taller / corte
-    const development = computeDevelopment(L, bendResults, 0);
+    let development: ReturnType<typeof computeDevelopment>;
+    try {
+      development = computeDevelopment(L, bendResults, correction);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "La corrección de taller no es válida.");
+      return;
+    }
     const totalDist = bendResults.reduce((s, r) => s + r.distanceFromPrevious, 0);
 
     const result: BendResult = {
@@ -298,6 +308,18 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
               invalidateResults();
               setPieceLength(e.target.value);
             }} min="0" step="0.1" />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Corrección de taller (mm)</Label>
+          <Input type="number" value={workshopCorrection} placeholder="0"
+            onChange={(e) => {
+              invalidateResults();
+              setWorkshopCorrection(e.target.value);
+            }} step="0.1" />
+          <p className="text-xs text-muted-foreground">
+            Ajuste manual con signo; por defecto es 0 mm y se suma al desarrollo teórico.
+          </p>
         </div>
 
         {material && thickness && (

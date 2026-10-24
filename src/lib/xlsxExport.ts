@@ -16,7 +16,9 @@ export function exportBendXlsx(opts: {
     ['Material', material],
     ['Espesor (mm)', thickness],
     ['Longitud de pieza (mm)', result.pieceLength],
-    ['Longitud desarrollada (mm)', result.totalDevelopedLength],
+    ['Desarrollo teórico (mm)', result.development?.theoreticalDevelopedLength ?? result.totalDevelopedLength],
+    ['Corrección de taller (mm)', result.development?.workshopCorrection ?? 0],
+    ['Corte final (mm)', result.development?.finalCutLength ?? result.totalDevelopedLength],
     ['Distancia acumulada (mm)', result.totalDistance],
     ['Fecha', new Date().toLocaleString()],
   ];
