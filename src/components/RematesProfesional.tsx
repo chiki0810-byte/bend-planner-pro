@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { exportRemateProPdf, PliegueExp } from "@/lib/rematesProExport";
 import { calculateBendMath, type DefaultsByThickness } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
+import { ANGULO_CRITICO_PLEGADO, ANGULO_MAXIMO_PLEGABLE, esAnguloCritico, esAnguloPlegable } from "@/lib/limitesAnguloPlegado";
 import logoEmpresa from "@/assets/logo_empresa.png";
 
 type TipoPro = "recto_simetrico" | "recto_asimetrico" | "conico_enchufable";
@@ -182,11 +183,11 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
       const angulo = Number(p.angulo_deg);
       const radio = Number(p.radio_mm);
       return Number.isFinite(longitud) && longitud > 0 &&
-        Number.isFinite(angulo) && angulo > 0 && angulo < 180 &&
+        esAnguloPlegable(angulo) &&
         Number.isFinite(radio) && radio > 0;
     });
     if (!geometriaValida) {
-      toast.error("Completa una longitud, un ángulo entre 0° y 180° y un radio interior positivo en cada pliegue.");
+      toast.error(`Completa una longitud, un ángulo entre 0° y ${ANGULO_MAXIMO_PLEGABLE}° y un radio interior positivo en cada pliegue.`);
       return;
     }
 
@@ -214,7 +215,12 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
 
     const total = dA + dB + S;
     setRes({ a: dA, b: dB, total, solapeUsado: S });
-    toast.success(`Desarrollo total: ${total.toFixed(2)} mm (solape ${S} mm)`);
+    const mensajeResultado = `Desarrollo total: ${total.toFixed(2)} mm (solape ${S} mm)`;
+    if (plieguesActivos.some((pliegue) => esAnguloCritico(Number(pliegue.angulo_deg)))) {
+      toast.warning(`${mensajeResultado}. Ángulo crítico (> ${ANGULO_CRITICO_PLEGADO}°): puede requerir dos pasadas.`);
+    } else {
+      toast.success(mensajeResultado);
+    }
   };
 
   return (
@@ -408,7 +414,7 @@ const PliegueList = ({
             </div>
             <div>
               <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Áng.</Label>
-              <Input type="number" inputMode="decimal" value={p.angulo_deg}
+              <Input type="number" inputMode="decimal" max={ANGULO_MAXIMO_PLEGABLE} value={p.angulo_deg}
                 onChange={(e) => onChange(p.id, "angulo_deg", e.target.value)} placeholder="°" />
             </div>
             <div>

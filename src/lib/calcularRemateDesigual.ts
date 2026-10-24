@@ -18,6 +18,7 @@
 // antes para no alterar los ajustes de fabricación.
 
 import type { ValidacionResultado } from "./validarPieza";
+import { ANGULO_MAXIMO_PLEGABLE, esAnguloCritico } from "./limitesAnguloPlegado";
 import {
   calculateBendMath,
   getMaterialDefaultsByThickness,
@@ -248,7 +249,7 @@ export function calcularRemateDesigual(
         "El ángulo o el espesor del pliegue no son válidos. No se calcula un desarrollo válido.",
       );
     }
-    if (pliegue.angulo > 160) {
+    if (pliegue.angulo > ANGULO_MAXIMO_PLEGABLE) {
       return resultadoInvalido(
         alaA,
         alaB,
@@ -269,7 +270,7 @@ export function calcularRemateDesigual(
   const k = listaPliegues[0].k!;
 
   listaPliegues.forEach((pliegue, index) => {
-    if (pliegue.angulo > 130) {
+    if (esAnguloCritico(pliegue.angulo)) {
       avisos.push({
         nivel: "warn",
         mensaje: `Pliegue ${index + 1}: ángulo ${pliegue.angulo}° crítico, puede requerir dos pasadas.`,

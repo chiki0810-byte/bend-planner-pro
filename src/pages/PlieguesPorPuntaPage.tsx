@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { DefaultsByThickness } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
 import { calcularDesarrolloPunta } from "@/lib/plieguesPorPunta";
+import { ANGULO_CRITICO_PLEGADO, ANGULO_MAXIMO_PLEGABLE, esAnguloCritico, esAnguloPlegable } from "@/lib/limitesAnguloPlegado";
 import {
   Select,
   SelectContent,
@@ -36,7 +37,7 @@ interface PliegueCalc {
 
 const pliegueValido = (p: Pliegue): boolean =>
   Number.isFinite(p.longitud) && p.longitud > 0 &&
-  Number.isFinite(p.angulo) && p.angulo > 0 && p.angulo < 180;
+  esAnguloPlegable(p.angulo);
 
 const materiales = [
   "Acero",
@@ -171,7 +172,7 @@ const PlieguesPorPuntaPage = () => {
             type="number"
             step="1"
             min="0"
-            max="180"
+            max={ANGULO_MAXIMO_PLEGABLE}
             value={p.angulo}
             onChange={(e) => update(i, "angulo", parseFloat(e.target.value) || 0)}
           />
@@ -341,14 +342,22 @@ const PlieguesPorPuntaPage = () => {
           ) : (
             <Alert className="col-span-full border-destructive/50 text-destructive">
               <AlertDescription>
-                {calibracionCargada
-                  ? `No hay K y radio aprobados para ${material || "el material seleccionado"} con espesor ${espesor} mm. No se muestra un desarrollo válido.`
-                  : "Cargando K y radio aprobados para material y espesor…"}
+                {!calibracionCargada
+                  ? "Cargando K y radio aprobados para material y espesor…"
+                  : !defaultsAprobados
+                    ? `No hay K y radio aprobados para ${material || "el material seleccionado"} con espesor ${espesor} mm. No se muestra un desarrollo válido.`
+                    : `Completa longitudes válidas y ángulos entre 0° y ${ANGULO_MAXIMO_PLEGABLE}° para todas las puntas.`}
               </AlertDescription>
             </Alert>
           )}
         </CardContent>
       </Card>
+
+      {[...plieguesA, ...plieguesB].some((pliegue) => esAnguloCritico(pliegue.angulo) && esAnguloPlegable(pliegue.angulo)) && (
+        <p role="status" className="text-sm text-amber-600">
+          Hay ángulos críticos mayores de {ANGULO_CRITICO_PLEGADO}°; pueden requerir dos pasadas.
+        </p>
+      )}
 
       <Button
         className="w-full"

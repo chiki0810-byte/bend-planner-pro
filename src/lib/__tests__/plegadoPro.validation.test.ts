@@ -73,4 +73,18 @@ describe("validación del plegado Pro por espesor", () => {
       pliegues: [{ longitud_mm: 0, angulo_deg: 0, radio_mm: 0 }],
     })).toThrow(/datos válidos para cada pliegue/);
   });
+
+  it("canal rechaza ángulos por encima del límite plegable de 160°", () => {
+    expect(() => calcularCanal({
+      ...canal(0.8),
+      pliegues: [{ longitud_mm: 50, angulo_deg: 161, radio_mm: 1.2 }],
+    })).toThrow(/datos válidos para cada pliegue/);
+  });
+
+  it("cónico rechaza un ángulo de prensa por encima del límite plegable de 160°", () => {
+    expect(() => calcularConico({
+      ...conico(0.8),
+      angulo_pliegue_deg: 161,
+    })).toThrow(/no superar 160°/);
+  });
 });

@@ -14,6 +14,7 @@ import {
   calculateBendMath,
   getMaterialDefaultsByThickness,
 } from "@/lib/bendCalc";
+import { ANGULO_CRITICO_PLEGADO, ANGULO_MAXIMO_PLEGABLE, esAnguloCritico, esAnguloPlegable } from "@/lib/limitesAnguloPlegado";
 
 // ─── Tipos / estados ──────────────────────────────────────────────────────
 type Sentido = "interior" | "exterior";
@@ -133,6 +134,16 @@ const FichaPiezaRapidaPage = () => {
 
   // 🟦 Calcular desarrollo
   const calcularDesarrollo = () => {
+    if (pliegues.some((pliegue) => !esAnguloPlegable(pliegue.angulo))) {
+      invalidarCalculos();
+      toast({
+        title: "Ángulo de pliegue fuera de rango",
+        description: `Cada ángulo debe ser mayor de 0° y no superar ${ANGULO_MAXIMO_PLEGABLE}°.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const defaults = obtenerDefaultsMaterial(material, espesor);
 
     if (!defaults) {
@@ -157,7 +168,11 @@ const FichaPiezaRapidaPage = () => {
       return acc + (p.longitud || 0) + comp;
     }, 0);
     setDesarrolloMm(Number(total.toFixed(2)));
-    toast({ title: "Desarrollo calculado", description: `${total.toFixed(2)} mm (K=${K})` });
+    const anguloCritico = pliegues.some((pliegue) => esAnguloCritico(pliegue.angulo));
+    toast({
+      title: anguloCritico ? "Desarrollo calculado con ángulo crítico" : "Desarrollo calculado",
+      description: `${total.toFixed(2)} mm (K=${K})${anguloCritico ? `. Ángulo >${ANGULO_CRITICO_PLEGADO}°: puede requerir dos pasadas.` : ""}`,
+    });
   };
 
   // 🟩 Validar por máquina
@@ -449,7 +464,7 @@ const FichaPiezaRapidaPage = () => {
                     <div className="space-y-1">
                       <Label className="text-[10px] uppercase tracking-wider text-sky-300/70">Ángulo (°)</Label>
                       <Input
-                        type="number" step="1" min="0" max="180" value={p.angulo}
+                        type="number" step="1" min="0" max={ANGULO_MAXIMO_PLEGABLE} value={p.angulo}
                         onChange={(e) => updatePliegue(p.id, { angulo: parseFloat(e.target.value) || 0 })}
                         className={inputCls}
                       />

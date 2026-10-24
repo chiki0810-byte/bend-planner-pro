@@ -5,6 +5,7 @@ import {
   isValidMaterialDefaults,
   type DefaultsByThickness,
 } from "@/lib/bendCalc";
+import { esAnguloPlegable } from "@/lib/limitesAnguloPlegado";
 
 export type PlegadoDefaultsLookup = (
   material: string,
@@ -66,9 +67,11 @@ export const calcularConico = (
       !Number.isFinite(i.diametro_mm) || i.diametro_mm <= 0 ||
       !Number.isFinite(i.altura_mm) || i.altura_mm <= 0 ||
       (i.boca_mayor_mm !== undefined && (!Number.isFinite(i.boca_mayor_mm) || i.boca_mayor_mm <= 0)) ||
-      (i.boca_menor_mm !== undefined && (!Number.isFinite(i.boca_menor_mm) || i.boca_menor_mm <= 0)) ||
-      (i.plegado_en_prensa && (!Number.isFinite(i.angulo_pliegue_deg) || i.angulo_pliegue_deg! <= 0 || i.angulo_pliegue_deg! >= 180))) {
+      (i.boca_menor_mm !== undefined && (!Number.isFinite(i.boca_menor_mm) || i.boca_menor_mm <= 0))) {
     throw new Error('Introduce diámetros, altura y ángulo de prensa válidos.');
+  }
+  if (i.plegado_en_prensa && !esAnguloPlegable(i.angulo_pliegue_deg ?? Number.NaN)) {
+    throw new Error('El ángulo de prensa debe ser mayor de 0° y no superar 160°.');
   }
   const t = i.espesor_mm || 0;
   const D = i.diametro_mm || 0;
@@ -171,7 +174,7 @@ export const calcularCanal = (
       i.pliegues.length === 0 ||
       i.pliegues.some((p) =>
         !Number.isFinite(p.longitud_mm) || p.longitud_mm <= 0 ||
-        !Number.isFinite(p.angulo_deg) || p.angulo_deg <= 0 || p.angulo_deg >= 180 ||
+        !esAnguloPlegable(p.angulo_deg) ||
         !Number.isFinite(p.radio_mm) || p.radio_mm <= 0
       )) {
     throw new Error('Introduce puntas, solape y datos válidos para cada pliegue.');

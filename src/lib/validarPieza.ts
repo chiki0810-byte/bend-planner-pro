@@ -1,6 +1,7 @@
 // Validación industrial de pieza (BLOQUE 4).
 // No sustituye a un software profesional tipo Estefa VH.
 // Detecta problemas evidentes antes de programar la pieza.
+import { ANGULO_MAXIMO_PLEGABLE, esAnguloCritico } from "./limitesAnguloPlegado";
 
 export type Orientacion = "up" | "down";
 
@@ -74,7 +75,7 @@ export function validarPieza(input: ValidacionInput): ValidacionResultado {
     }
 
     // B) Ángulo máximo
-    if (p.angulo > 130) {
+    if (esAnguloCritico(p.angulo)) {
       avisos.push({
         nivel: "warn",
         codigo: "ANGULO_CRITICO",
@@ -82,7 +83,7 @@ export function validarPieza(input: ValidacionInput): ValidacionResultado {
         mensaje: `Pliegue ${idx}: ángulo ${p.angulo}° crítico, puede requerir dos pasadas.`,
       });
     }
-    if (p.angulo > 160) {
+    if (p.angulo > ANGULO_MAXIMO_PLEGABLE) {
       avisos.push({
         nivel: "error",
         codigo: "ANGULO_IMPOSIBLE",
