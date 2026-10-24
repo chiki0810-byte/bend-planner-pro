@@ -9,6 +9,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { DefaultsByThickness } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
+import { calcularDesarrolloPunta } from "@/lib/plieguesPorPunta";
 import {
   Select,
   SelectContent,
@@ -126,17 +127,19 @@ const PlieguesPorPuntaPage = () => {
   );
 
   const desarrolloPuntaA = useMemo(() => {
-    if (!defaultsAprobados || !plieguesA.every(pliegueValido)) return undefined;
-    const sumL = plieguesA.reduce((s, p) => s + (p.longitud || 0), 0);
-    const sumBA = calcsA.reduce((s, c) => s + (c?.ba ?? 0), 0);
-    return sumL - sumBA;
+    if (!defaultsAprobados || plieguesA.length === 0 || !plieguesA.every(pliegueValido)) return undefined;
+    return calcularDesarrolloPunta(
+      plieguesA.map((pliegue) => pliegue.longitud),
+      calcsA.map((calculo) => calculo?.ba ?? Number.NaN),
+    );
   }, [plieguesA, calcsA, defaultsAprobados]);
 
   const desarrolloPuntaB = useMemo(() => {
-    if (!defaultsAprobados || !plieguesB.every(pliegueValido)) return undefined;
-    const sumL = plieguesB.reduce((s, p) => s + (p.longitud || 0), 0);
-    const sumBA = calcsB.reduce((s, c) => s + (c?.ba ?? 0), 0);
-    return sumL - sumBA;
+    if (!defaultsAprobados || plieguesB.length === 0 || !plieguesB.every(pliegueValido)) return undefined;
+    return calcularDesarrolloPunta(
+      plieguesB.map((pliegue) => pliegue.longitud),
+      calcsB.map((calculo) => calculo?.ba ?? Number.NaN),
+    );
   }, [plieguesB, calcsB, defaultsAprobados]);
 
   const desarrolloTotal = desarrolloPuntaA === undefined || desarrolloPuntaB === undefined
