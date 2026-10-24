@@ -11,6 +11,7 @@ import { useRemates } from "@/state/RematesContext";
 import { exportRemateExcel, exportRematePdf, RemateExportData } from "@/lib/rematesExport";
 import logoEmpresa from "@/assets/logo_empresa.png";
 import RematesProfesional from "@/components/RematesProfesional";
+import { getMaterialDefaultsByThickness } from "@/lib/bendCalc";
 
 type TipoRemate = "recto" | "conico";
 
@@ -25,19 +26,6 @@ const MATERIALS = [
   { name: "Latón", k: 0.45 },
   { name: "Cobre", k: 0.45 },
 ];
-
-const getK = (material: string): number => {
-  if (material.includes("Acero")) return 0.33;
-  if (material.includes("Inox")) return 0.40;
-  if (material.includes("Aluminio")) return 0.50;
-  if (material.includes("Galvanizado")) return 0.33;
-  if (material.includes("Corten")) return 0.33;
-  if (material.includes("Duro 500")) return 0.33;
-  if (material.includes("Duro 600")) return 0.33;
-  if (material.includes("Latón")) return 0.45;
-  if (material.includes("Cobre")) return 0.45;
-  return 0.33;
-};
 
 interface Resultados {
   derecha: number;
@@ -108,16 +96,23 @@ const RematesPage = () => {
   };
 
   const calcular = () => {
-    const K = getK(material);
+    const t = Number(espesor);
+    const defaults = getMaterialDefaultsByThickness(material, t);
 
+    if (!Number.isFinite(t) || t <= 0 || !defaults) {
+      toast.error("Material y espesor sin valores aprobados.");
+      return;
+    }
+
+    const K = defaults.kFactor;
     const DR = modoRapido ? 0 : (Number(medidaDerecha) || 0);
     const IZ = modoRapido ? 0 : (Number(medidaIzquierda) || 0);
     const A = Number(puntaGrande) || 0;
     const B = Number(puntaPequena) || 0;
-    const t = Number(espesor) || 0;
     const S = modoRapido ? 0 : (Number(solape) || 0);
 
     const corr = 2 * Math.PI * K * t;
+
 
     let desarrolloDerecha = 0;
     let desarrolloIzquierda = 0;
@@ -268,7 +263,7 @@ const RematesPage = () => {
                   <SelectContent>
                     {MATERIALS.map((m) => (
                       <SelectItem key={m.name} value={m.name}>
-                        {m.name} (K={m.k.toFixed(2)})
+                        {m.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

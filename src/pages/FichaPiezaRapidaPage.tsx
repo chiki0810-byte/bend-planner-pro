@@ -10,7 +10,10 @@ import {
   ImageIcon, Ruler, Layers, FileText, ChevronUp, ChevronDown,
 } from "lucide-react";
 import { savePiece } from "@/lib/storage";
-import { calculateBendMath } from "@/lib/bendCalc";
+import {
+  calculateBendMath,
+  getMaterialDefaultsByThickness,
+} from "@/lib/bendCalc";
 
 // ─── Tipos / estados ──────────────────────────────────────────────────────
 type Sentido = "interior" | "exterior";
@@ -25,19 +28,18 @@ type MaterialKey =
   | "laton"
   | "cobre";
 
-const MATERIALS: { key: MaterialKey; label: string; k: number }[] = [
-  { key: "acero", label: "Acero", k: 0.33 },
-  { key: "inox", label: "Inox", k: 0.40 },
-  { key: "aluminio", label: "Aluminio", k: 0.50 },
-  { key: "galvanizado", label: "Galvanizado", k: 0.33 },
-  { key: "corten", label: "Corten", k: 0.33 },
-  { key: "duro500", label: "Duro 500", k: 0.33 },
-  { key: "duro600", label: "Duro 600", k: 0.33 },
-  { key: "laton", label: "Latón", k: 0.45 },
-  { key: "cobre", label: "Cobre", k: 0.45 },
+const MATERIALS: { key: MaterialKey; label: string }[] = [
+  { key: "acero", label: "Acero" },
+  { key: "inox", label: "Inox" },
+  { key: "aluminio", label: "Aluminio" },
+  { key: "galvanizado", label: "Galvanizado" },
+  { key: "corten", label: "Corten" },
+  { key: "duro500", label: "Duro 500" },
+  { key: "duro600", label: "Duro 600" },
+  { key: "laton", label: "Latón" },
+  { key: "cobre", label: "Cobre" },
 ];
 
-const getK = (m: MaterialKey) => MATERIALS.find(x => x.key === m)?.k ?? 0.33;
 
 interface Pliegue {
   id: string;
@@ -112,7 +114,20 @@ const FichaPiezaRapidaPage = () => {
 
   // 🟦 Calcular desarrollo
   const calcularDesarrollo = () => {
-    const K = getK(material);
+            const defaults = getMaterialDefaultsByThickness(
+      MATERIALS.find((m) => m.key === material)?.label ?? "",
+      espesor
+    );
+
+    if (!defaults) {
+      toast({
+        title: "Material y espesor sin valores aprobados",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const K = defaults.kFactor;
     const total = pliegues.reduce((acc, p) => {
       const comp = p.angulo
         ? calculateBendMath({
