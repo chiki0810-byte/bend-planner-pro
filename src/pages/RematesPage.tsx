@@ -83,9 +83,9 @@ const RematesPage = () => {
     foto: modoRapido ? null : fotoPlano,
   });
 
-  const exportarExcel = () => {
+  const exportarExcel = async () => {
     if (!res) { toast.error("Calcula primero"); return; }
-    exportRemateExcel(buildExportData(res));
+    await exportRemateExcel(buildExportData(res));
     toast.success("Excel exportado");
   };
 

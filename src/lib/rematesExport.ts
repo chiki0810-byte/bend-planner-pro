@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { RemateHistorialItem } from "@/state/RematesContext";
@@ -22,7 +21,8 @@ export interface RemateExportData {
   fecha?: string;
 }
 
-export const exportRemateExcel = (d: RemateExportData) => {
+export const exportRemateExcel = async (d: RemateExportData) => {
+  const XLSX = await import("xlsx");
   const fila = {
     "Fecha": d.fecha ?? new Date().toLocaleString(),
     "Tipo de remate": d.tipo,

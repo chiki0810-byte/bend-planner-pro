@@ -102,7 +102,7 @@ const DetalleRematePage = () => {
           <Button
             variant="outline"
             className="border-sky-500/40 text-sky-200 hover:bg-sky-500/10"
-            onClick={() => { exportRemateExcel(data); toast.success("Excel exportado"); }}
+            onClick={async () => { await exportRemateExcel(data); toast.success("Excel exportado"); }}
           >
             <FileSpreadsheet className="w-4 h-4 mr-2" /> Exportar a Excel
           </Button>

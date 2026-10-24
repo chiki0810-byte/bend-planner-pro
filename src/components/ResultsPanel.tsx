@@ -8,7 +8,6 @@ import { BendResult } from "@/pages/Index";
 import { Separator } from "@/components/ui/separator";
 import { exportBendPdf } from "@/lib/pdfExport";
 import { exportBendDxf } from "@/lib/dxfExport";
-import { exportBendXlsx } from "@/lib/xlsxExport";
 import { savePiece } from "@/lib/storage";
 import { toast } from "sonner";
 import { BendItemValue } from "./BendItem";
@@ -52,8 +51,12 @@ const ResultsPanel = ({
     try { exportBendDxf({ result, pieceName }); toast.success("DXF generado"); }
     catch (e) { console.error(e); toast.error("Error al generar DXF"); }
   };
-  const handleXLSX = () => {
-    try { exportBendXlsx({ result, material, thickness, pieceName }); toast.success("Excel generado"); }
+  const handleXLSX = async () => {
+    try {
+      const { exportBendXlsx } = await import("@/lib/xlsxExport");
+      exportBendXlsx({ result, material, thickness, pieceName });
+      toast.success("Excel generado");
+    }
     catch (e) { console.error(e); toast.error("Error al generar Excel"); }
   };
 
