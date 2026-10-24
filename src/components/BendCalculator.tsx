@@ -70,6 +70,9 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
     listMaterials().then(rows => {
       const uniq = Array.from(new Set(rows.map(r => r.material)));
       setMaterials(uniq);
+    }).catch(() => {
+      setMaterials([]);
+      toast.error("No se pudieron cargar los materiales guardados.");
     });
   }, []);
 
@@ -78,21 +81,28 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
     const t = parseFloat(thickness);
     if (!material || !t) return;
     let cancelled = false;
+    setIsCalibrated(false);
+    setDefaults({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
+    setBends(prev => prev.map(b => ({
+      ...b,
+      innerRadius: b.manualR ? b.innerRadius : 0,
+      kFactor: b.manualK ? b.kFactor : 0,
+    })));
     getMaterialDefaultsWithCalibration(material, t).then(({ defaults: def, calibrated }) => {
       if (cancelled) return;
       setIsCalibrated(calibrated && def !== undefined);
 
-if (!def) {
-  setDefaults({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
-  setBends(prev => prev.map(b => ({
-    ...b,
-    innerRadius: b.manualR ? b.innerRadius : 0,
-    kFactor: b.manualK ? b.kFactor : 0,
-  })));
-  return;
-}
+      if (!def) {
+        setDefaults({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
+        setBends(prev => prev.map(b => ({
+          ...b,
+          innerRadius: b.manualR ? b.innerRadius : 0,
+          kFactor: b.manualK ? b.kFactor : 0,
+        })));
+        return;
+      }
 
-setDefaults(def);
+      setDefaults(def);
       if (calibrated) {
         setBends(prev => prev.map(b => ({
           ...b,
@@ -100,6 +110,16 @@ setDefaults(def);
           kFactor: b.manualK ? b.kFactor : def.kFactor,
         })));
       }
+    }).catch(() => {
+      if (cancelled) return;
+      setIsCalibrated(false);
+      setDefaults({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
+      setBends(prev => prev.map(b => ({
+        ...b,
+        innerRadius: b.manualR ? b.innerRadius : 0,
+        kFactor: b.manualK ? b.kFactor : 0,
+      })));
+      toast.error("No se pudieron cargar los valores K/R. Revisa el almacenamiento y vuelve a intentarlo.");
     });
     return () => { cancelled = true; };
   }, [material, thickness]);
@@ -152,7 +172,22 @@ setDefaults(def);
       return;
     }
     const requestedRevision = inputRevision.current;
-    const { defaults: def, calibrated } = await getMaterialDefaultsWithCalibration(material, t);
+    let def: Awaited<ReturnType<typeof getMaterialDefaultsWithCalibration>>["defaults"];
+    let calibrated: boolean;
+    try {
+      ({ defaults: def, calibrated } = await getMaterialDefaultsWithCalibration(material, t));
+    } catch {
+      if (requestedRevision !== inputRevision.current) return;
+      setIsCalibrated(false);
+      setDefaults({ kFactor: 0, innerRadius: 0, bendAllowance90: 0 });
+      setBends(prev => prev.map(b => ({
+        ...b,
+        innerRadius: b.manualR ? b.innerRadius : 0,
+        kFactor: b.manualK ? b.kFactor : 0,
+      })));
+      toast.error("No se pudo comprobar la calibración. No he generado un resultado.");
+      return;
+    }
     if (requestedRevision !== inputRevision.current) return;
 
     const hasApprovedDefaults = calibrated && def !== undefined;
