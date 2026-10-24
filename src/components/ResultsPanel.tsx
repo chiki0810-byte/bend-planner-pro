@@ -155,7 +155,7 @@ const ResultsPanel = ({
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground text-center">
-            Todo se guarda y exporta localmente · 100% offline
+            Las piezas se guardan y exportan localmente; las funciones de IA requieren internet.
           </p>
         </div>
       </CardContent>

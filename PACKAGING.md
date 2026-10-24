@@ -1,7 +1,10 @@
 # Empaquetar como app nativa
 
-La app web ya funciona offline (los datos se guardan en IndexedDB en navegador
-y en SQLite cuando se ejecuta como app nativa).
+Los cálculos estándar, las exportaciones y el almacenamiento local no necesitan
+conexión mientras la aplicación está cargada. En la versión web no hay una caché
+de aplicación instalada que garantice abrirla de nuevo tras perder la conexión.
+Las consultas de IA son opcionales, requieren internet y envían los datos de la
+consulta a las funciones de Supabase.
 
 ## Requisitos previos
 
@@ -57,10 +60,18 @@ npm run electron:dev
 
 ---
 
-## Datos locales
+## Datos locales y conexión
 
 - **Web / preview:** IndexedDB (`plegado-db`) vía Dexie.
 - **Android / Electron:** SQLite local (`plegado.db`) vía
   `@capacitor-community/sqlite`.
+- Los cálculos y las exportaciones se ejecutan en el dispositivo.
+- Las consultas de IA a `ai-plegado-asistente`, `remate-desigual-ai`,
+  `sugerir-vueltas-ai` y `validar-pieza-ai` necesitan conexión y envían los
+  datos incluidos en cada formulario a Supabase para generar una respuesta.
+- En Electron y Android los recursos web se empaquetan dentro de la aplicación;
+  la operación local puede continuar sin red, pero las consultas de IA no.
 
-Los datos persisten entre sesiones y nunca salen del dispositivo.
+Los registros de piezas y materiales se guardan localmente. No se sincronizan
+con Supabase; la excepción son los campos enviados al invocar explícitamente
+una función de IA.

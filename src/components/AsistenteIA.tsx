@@ -139,8 +139,8 @@ ${resultado.notas_tecnicas}`;
         <div className="flex gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>
-            Función opcional <strong>solo online</strong>. El resto de la app funciona 100% offline.
-            En .apk/.exe sin conexión, esta pestaña queda deshabilitada.
+            Función opcional <strong>solo online</strong>. Envía los datos del formulario a la IA.
+            Los cálculos y datos locales siguen disponibles sin conexión.
           </span>
         </div>
       </Card>

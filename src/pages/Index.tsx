@@ -91,7 +91,7 @@ const Index = () => {
             <h1 className="text-3xl font-bold text-foreground">Calculadora de Plegado</h1>
           </div>
           <p className="text-steel text-sm">
-            Cálculo profesional de plegado de chapa — Funciona 100% offline
+            Cálculos y datos locales · las funciones de IA requieren internet
           </p>
         </header>
 
