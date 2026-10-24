@@ -210,16 +210,22 @@ export function calcularRemateDesigual(
     (input.sumaTramos === undefined ||
       Math.abs(input.tramos.reduce((suma, longitud) => suma + longitud, 0) - input.sumaTramos) < 0.001)
   );
+  const plieguesEsperados = Math.max((input.tramos?.length ?? 2) - 1, 1);
+  const cantidadPlieguesSolicitados = input.pliegues?.length || 1;
+  const plieguesCoherentes = input.tramos === undefined || cantidadPlieguesSolicitados === plieguesEsperados;
   if (!Number.isFinite(input.longitudTotal) || input.longitudTotal <= 0 ||
       !Number.isFinite(alaA) || alaA <= 0 ||
       !Number.isFinite(alaB) || alaB <= 0 ||
       (input.sumaTramos !== undefined && (!Number.isFinite(input.sumaTramos) || input.sumaTramos <= 0)) ||
       !sumaCoherente ||
-      !tramosCoherentes) {
+      !tramosCoherentes ||
+      !plieguesCoherentes) {
     return resultadoInvalido(
       alaA,
       alaB,
-      "Las longitudes de los tramos y las alas deben ser positivas y coherentes. No se calcula un desarrollo válido.",
+      !plieguesCoherentes
+        ? "Debe haber un pliegue entre cada par de tramos. No se calcula un desarrollo válido."
+        : "Las longitudes de los tramos y las alas deben ser positivas y coherentes. No se calcula un desarrollo válido.",
     );
   }
 

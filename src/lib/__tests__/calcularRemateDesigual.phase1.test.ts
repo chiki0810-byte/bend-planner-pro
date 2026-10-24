@@ -95,4 +95,18 @@ describe("calcularRemateDesigual con valores aprobados", () => {
     expect(resultado.valido).toBe(false);
     expect(resultado.avisos[0].mensaje).toMatch(/longitudes de los tramos/);
   });
+
+  it("rechaza una cantidad de pliegues distinta de los intervalos entre tramos", () => {
+    const resultado = calcularRemateDesigual({
+      ...inputBase,
+      longitudTotal: 90,
+      sumaTramos: 90,
+      tramos: [30, 10, 50],
+      pliegues: [{ angulo: 90, espesor: 1, radio: 1, k: 0.38 }],
+    });
+
+    expect(resultado.valido).toBe(false);
+    expect(resultado.desarrolloTotal).toBe(0);
+    expect(resultado.avisos[0].mensaje).toMatch(/un pliegue entre cada par de tramos/);
+  });
 });
