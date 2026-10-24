@@ -6,7 +6,18 @@ import { parseDxfLines } from "../lib/dxfImport";
 import { parseJsonPliegues } from "../lib/jsonPlieguesImport";
 
 export const ImportarChapa: React.FC = () => {
-  const { setPlieguesProcesados, setUltimoSVG } = useSheetStore();
+  const {
+    setPlieguesProcesados,
+    setPliegueSeleccionado,
+    setPasoActual,
+    setUltimoSVG,
+  } = useSheetStore();
+
+  const aplicarPlieguesImportados = (pliegues: PliegueProcesado[]) => {
+    setPlieguesProcesados(pliegues);
+    setPliegueSeleccionado(null);
+    setPasoActual(0);
+  };
 
   const manejarArchivo = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0];
@@ -33,7 +44,7 @@ export const ImportarChapa: React.FC = () => {
     try {
       const data = JSON.parse(texto);
       const pliegues = parseJsonPliegues(data);
-      setPlieguesProcesados(pliegues);
+      aplicarPlieguesImportados(pliegues);
     } catch (err) {
       console.error(err);
       alert("Error al leer JSON.");
@@ -67,7 +78,7 @@ export const ImportarChapa: React.FC = () => {
         alert("No se detectaron entidades LINE en el DXF.");
         return;
       }
-      setPlieguesProcesados(pliegues);
+      aplicarPlieguesImportados(pliegues);
     } catch (err) {
       console.error(err);
       alert("Error al leer DXF.");
