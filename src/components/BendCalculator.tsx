@@ -156,6 +156,15 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
       manualK: b.manualK || v.kFactor !== b.kFactor,
     } : b));
   };
+  const resetManualCalibrationOverrides = () => {
+    setBends(prev => prev.map(b => ({
+      ...b,
+      innerRadius: 0,
+      kFactor: 0,
+      manualR: false,
+      manualK: false,
+    })));
+  };
 
 
   const calculate = async () => {
@@ -277,6 +286,7 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
             <Label>Espesor (mm)</Label>
             <Select value={thickness} onValueChange={(value) => {
               invalidateResults();
+              resetManualCalibrationOverrides();
               setThickness(value);
             }}>
               <SelectTrigger><SelectValue placeholder="Espesor" /></SelectTrigger>
@@ -291,6 +301,7 @@ const BendCalculator = ({ onCalculate, onInputsChange, initialState }: BendCalcu
             <Label>Material</Label>
             <Select value={material} onValueChange={(value) => {
               invalidateResults();
+              resetManualCalibrationOverrides();
               setMaterial(value);
             }}>
               <SelectTrigger><SelectValue placeholder="Material" /></SelectTrigger>
