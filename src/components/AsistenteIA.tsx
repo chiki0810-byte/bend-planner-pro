@@ -202,6 +202,10 @@ ${resultado.notas_tecnicas}`;
 
       {resultado && (
         <div className="space-y-3">
+
+    <p className="rounded-md border border-amber-500/40 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+      Aviso: las recomendaciones de la IA son orientativas, no cálculos industriales validados. Verifica el ángulo, el tonelaje y las herramientas antes de plegar.
+    </p>
           <div className="flex justify-end">
             <Button variant="outline" size="sm" onClick={copiar}>
               <Copy className="w-4 h-4 mr-2" /> Copiar resultado
