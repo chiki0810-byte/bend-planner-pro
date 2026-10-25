@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Calculator, Layers, ImagePlus, X, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { exportRemateProPdf, PliegueExp } from "@/lib/rematesProExport";
-import { calculateBendMath, type DefaultsByThickness } from "@/lib/bendCalc";
+import { calculateBendMath, isValidMaterialDefaults, type DefaultsByThickness } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration } from "@/lib/storage";
 import { ANGULO_CRITICO_PLEGADO, ANGULO_MAXIMO_PLEGABLE, esAnguloCritico, esAnguloPlegable } from "@/lib/limitesAnguloPlegado";
 import logoEmpresa from "@/assets/logo_empresa.png";
@@ -18,7 +18,6 @@ interface Pliegue {
   id: string;
   longitud_mm: string;
   angulo_deg: string;
-  radio_mm: string;
 }
 
 const MATERIALS = [
@@ -38,18 +37,16 @@ const newPliegue = (): Pliegue => ({
   id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
   longitud_mm: "",
   angulo_deg: "",
-  radio_mm: "",
 });
 
-const calcularPunta = (lista: Pliegue[], K: number, t: number): number =>
+const calcularPunta = (lista: Pliegue[], K: number, radioAprobado: number, t: number): number =>
   lista.reduce((acc, p) => {
     const L = Number(p.longitud_mm) || 0;
     const A = Number(p.angulo_deg) || 0;
-    const R = Number(p.radio_mm) || 0;
     const compensacion = calculateBendMath({
       angle: A,
       thickness: t,
-      innerRadius: R,
+      innerRadius: radioAprobado,
       kFactor: K,
     }).bendAllowance;
     return acc + L + compensacion;
@@ -90,24 +87,29 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
     reader.readAsDataURL(file);
   };
 
-  const toExp = (lista: Pliegue[]): PliegueExp[] =>
+  const toExp = (lista: Pliegue[], radioAprobado: number): PliegueExp[] =>
     lista.map((p) => ({
       longitud_mm: Number(p.longitud_mm) || 0,
       angulo_deg: Number(p.angulo_deg) || 0,
-      radio_mm: Number(p.radio_mm) || 0,
+      radio_mm: radioAprobado,
     }));
 
   const exportarPdf = async () => {
     if (!res) { toast.error("Calcula primero"); return; }
+    if (!isValidMaterialDefaults(defaultsAprobados)) {
+      toast.error("No se puede exportar sin valores K/R aprobados para el material y espesor actuales.");
+      return;
+    }
+    const radioAprobado = defaultsAprobados.innerRadius;
     await exportRemateProPdf(
       {
         tipo: tipoEfectivo,
         material,
         espesor: Number(espesor) || 0,
         solape: res.solapeUsado,
-        pliegues_base: tipoEfectivo === "recto_simetrico" ? toExp(pliegues_base) : undefined,
-        pliegues_puntaA: tipoEfectivo !== "recto_simetrico" ? toExp(pliegues_puntaA) : undefined,
-        pliegues_puntaB: tipoEfectivo !== "recto_simetrico" ? toExp(pliegues_puntaB) : undefined,
+        pliegues_base: tipoEfectivo === "recto_simetrico" ? toExp(pliegues_base, radioAprobado) : undefined,
+        pliegues_puntaA: tipoEfectivo !== "recto_simetrico" ? toExp(pliegues_puntaA, radioAprobado) : undefined,
+        pliegues_puntaB: tipoEfectivo !== "recto_simetrico" ? toExp(pliegues_puntaB, radioAprobado) : undefined,
         desarrollo_puntaA: res.a,
         desarrollo_puntaB: res.b,
         desarrollo_total: res.total,
@@ -166,14 +168,13 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
   const calcular = () => {
     setRes(null);
     const t = Number(espesor);
-    const K = defaultsAprobados?.kFactor;
-
-    if (K === undefined) {
+    if (!isValidMaterialDefaults(defaultsAprobados)) {
       toast.error(calibracionCargada
-        ? "Material y espesor sin K aprobado válido."
-        : "Cargando K aprobado para material y espesor.");
+        ? "Material y espesor sin valores K/R aprobados válidos."
+        : "Cargando K y radio aprobados para material y espesor.");
       return;
     }
+    const { kFactor: K, innerRadius: radioAprobado } = defaultsAprobados;
 
     const plieguesActivos = tipoEfectivo === "recto_simetrico"
       ? pliegues_base
@@ -181,13 +182,12 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
     const geometriaValida = plieguesActivos.every((p) => {
       const longitud = Number(p.longitud_mm);
       const angulo = Number(p.angulo_deg);
-      const radio = Number(p.radio_mm);
       return Number.isFinite(longitud) && longitud > 0 &&
         esAnguloPlegable(angulo) &&
-        Number.isFinite(radio) && radio > 0;
+        radioAprobado > 0;
     });
     if (!geometriaValida) {
-      toast.error(`Completa una longitud, un ángulo entre 0° y ${ANGULO_MAXIMO_PLEGABLE}° y un radio interior positivo en cada pliegue.`);
+      toast.error(`Completa una longitud y un ángulo entre 0° y ${ANGULO_MAXIMO_PLEGABLE}° en cada pliegue. Se usará el radio aprobado de ${radioAprobado} mm.`);
       return;
     }
 
@@ -201,14 +201,14 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
     let dB = 0;
 
     if (tipoEfectivo === "recto_simetrico") {
-      const base = calcularPunta(pliegues_base, K, t);
+      const base = calcularPunta(pliegues_base, K, radioAprobado, t);
       dA = base;
       dB = base;
     } else if (tipoEfectivo === "recto_asimetrico" || tipoEfectivo === "conico_enchufable") {
-      dA = calcularPunta(pliegues_puntaA, K, t);
-      dB = calcularPunta(pliegues_puntaB, K, t);
+      dA = calcularPunta(pliegues_puntaA, K, radioAprobado, t);
+      dB = calcularPunta(pliegues_puntaB, K, radioAprobado, t);
     } else {
-      const base = calcularPunta(pliegues_base.length ? pliegues_base : pliegues_puntaA, K, t);
+      const base = calcularPunta(pliegues_base.length ? pliegues_base : pliegues_puntaA, K, radioAprobado, t);
       dA = base;
       dB = base;
     }
@@ -308,6 +308,7 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
             titulo="Pliegues base (se aplica a ambas puntas)"
             color="amber"
             lista={pliegues_base}
+            radioAprobado={defaultsAprobados?.innerRadius}
             onChange={(id, f, v) => updatePliegue(setBase, id, f, v)}
             onAdd={() => addPliegue(setBase)}
             onRemove={(id) => removePliegue(setBase, id)}
@@ -318,6 +319,7 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
               titulo={tipoEfectivo === "conico_enchufable" ? "Punta A (grande)" : "Punta A"}
               color="sky"
               lista={pliegues_puntaA}
+              radioAprobado={defaultsAprobados?.innerRadius}
               onChange={(id, f, v) => updatePliegue(setA, id, f, v)}
               onAdd={() => addPliegue(setA)}
               onRemove={(id) => removePliegue(setA, id)}
@@ -326,6 +328,7 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
               titulo={tipoEfectivo === "conico_enchufable" ? "Punta B (pequeña)" : "Punta B"}
               color="emerald"
               lista={pliegues_puntaB}
+              radioAprobado={defaultsAprobados?.innerRadius}
               onChange={(id, f, v) => updatePliegue(setB, id, f, v)}
               onAdd={() => addPliegue(setB)}
               onRemove={(id) => removePliegue(setB, id)}
@@ -336,12 +339,12 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
         {!defaultsAprobados && (
           <p role="status" className="text-sm text-destructive">
             {calibracionCargada
-              ? `No hay K aprobado válido para ${material} con espesor ${espesor || "sin definir"} mm.`
-              : "Cargando K aprobado para material y espesor…"}
+              ? `No hay K y radio aprobados válidos para ${material} con espesor ${espesor || "sin definir"} mm.`
+              : "Cargando K y radio aprobados para material y espesor…"}
           </p>
         )}
         {defaultsAprobados && (
-          <p className="text-xs text-muted-foreground">K aprobado: {defaultsAprobados.kFactor}</p>
+          <p className="text-xs text-muted-foreground">K aprobado: {defaultsAprobados.kFactor} · Radio interior aprobado: {defaultsAprobados.innerRadius} mm</p>
         )}
         <Button onClick={calcular} disabled={!defaultsAprobados} size="lg" className="w-full">
           <Calculator className="w-4 h-4 mr-2" />
@@ -379,11 +382,12 @@ const RematesProfesional = ({ puntaGrandeRef, puntaPequenaRef }: Props) => {
 };
 
 const PliegueList = ({
-  titulo, color, lista, onChange, onAdd, onRemove,
+  titulo, color, lista, radioAprobado, onChange, onAdd, onRemove,
 }: {
   titulo: string;
   color: "sky" | "amber" | "emerald";
   lista: Pliegue[];
+  radioAprobado?: number;
   onChange: (id: string, field: keyof Omit<Pliegue, "id">, value: string) => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
@@ -418,9 +422,8 @@ const PliegueList = ({
                 onChange={(e) => onChange(p.id, "angulo_deg", e.target.value)} placeholder="°" />
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Radio</Label>
-              <Input type="number" inputMode="decimal" value={p.radio_mm}
-                onChange={(e) => onChange(p.id, "radio_mm", e.target.value)} placeholder="mm" />
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Radio interior aprobado</Label>
+              <Input type="number" inputMode="decimal" value={radioAprobado ?? ""} readOnly placeholder="mm" />
             </div>
             <Button size="icon" variant="ghost" onClick={() => onRemove(p.id)} disabled={lista.length <= 1}>
               <Trash2 className="w-4 h-4" />
