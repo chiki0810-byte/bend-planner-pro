@@ -202,7 +202,7 @@ export function calculateProfileDevelopment(
   const anyMissing = segmentResults.some((s) => s.flatLength === null);
 
   return {
-    valid: true,
+    valid: !anyMissing,
     bends: bendResults,
     segments: segmentResults,
     totalFlatLength: anyMissing
