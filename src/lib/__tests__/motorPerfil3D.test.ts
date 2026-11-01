@@ -16,7 +16,7 @@ const pieza = (cotas: number[], pl: P[], t = 1, R = 1.5, K = 0.38, ref: PiezaAbi
 
 const ok = (p: PiezaAbierta): SeccionPerfil => {
   const r = generarSeccionPerfil(p);
-  if (!r.ok) throw new Error(JSON.stringify(r.errores));
+  if ("errores" in r) throw new Error(JSON.stringify(r.errores));
   return r.seccion;
 };
 const dist = (a: Punto2D, b: Punto2D) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -107,7 +107,7 @@ describe("motorPerfil3D — rechazos sin inventar valores", () => {
   it.each(["inside", "outside"] as const)("referencia %s no soportada (sin OSSB automático)", (ref) => {
     const r = generarSeccionPerfil(pieza([50, 30], [{ a: 90, o: "up" }], 1, 1.5, 0.38, ref));
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errores[0].codigo).toBe("REFERENCIA_NO_SOPORTADA");
+    if ("errores" in r) expect(r.errores[0].codigo).toBe("REFERENCIA_NO_SOPORTADA");
   });
 
   it("sin parámetros de material no calcula", () => {
@@ -115,7 +115,7 @@ describe("motorPerfil3D — rechazos sin inventar valores", () => {
     delete p.parametrosMaterial;
     const r = generarSeccionPerfil(p);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errores[0].codigo).toBe("SIN_PARAMETROS_MATERIAL");
+    if ("errores" in r) expect(r.errores[0].codigo).toBe("SIN_PARAMETROS_MATERIAL");
   });
 
   it("estructura inválida (N segmentos ≠ N-1 pliegues)", () => {
@@ -123,7 +123,7 @@ describe("motorPerfil3D — rechazos sin inventar valores", () => {
     p.pliegues = [];
     const r = generarSeccionPerfil(p);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errores[0].codigo).toBe("ESTRUCTURA_INVALIDA");
+    if ("errores" in r) expect(r.errores[0].codigo).toBe("ESTRUCTURA_INVALIDA");
   });
 
   it.each([
@@ -136,13 +136,13 @@ describe("motorPerfil3D — rechazos sin inventar valores", () => {
   ])("%s → error", (_n, p, codigo) => {
     const r = generarSeccionPerfil(p as PiezaAbierta);
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errores.map((e) => e.codigo)).toContain(codigo);
+    if ("errores" in r) expect(r.errores.map((e) => e.codigo)).toContain(codigo);
   });
 
   it("alas que colisionan se detectan como autointersección", () => {
     // ala de retorno larga tras dos pliegues agudos: cruza el primer tramo
     const r = generarSeccionPerfil(pieza([50, 10, 80], [{ a: 170, o: "up" }, { a: 120, o: "up" }]));
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errores[0].codigo).toBe("AUTOINTERSECCION");
+    if ("errores" in r) expect(r.errores[0].codigo).toBe("AUTOINTERSECCION");
   });
 });
