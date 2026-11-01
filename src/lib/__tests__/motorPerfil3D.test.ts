@@ -63,7 +63,9 @@ describe("motorPerfil3D — sección 2D continua (referencia tangent)", () => {
       const s = ok(pieza(c.cotas, c.pl, c.t, c.R, c.K));
       comprobarInvariantes(s);
       expect(s.caraA).toHaveLength(c.cotas.length + c.pl.length);
-      expect(dirFinal(s.caraB) * 180 / Math.PI).toBeCloseTo(c.dirDeg > 180 ? c.dirDeg - 360 : c.dirDeg === 180 ? (dirFinal(s.caraB) > 0 ? 180 : -180) : c.dirDeg, 6);
+      const df = dirFinal(s.caraB), dr = (c.dirDeg * Math.PI) / 180;
+      expect(Math.cos(df)).toBeCloseTo(Math.cos(dr), 6);
+      expect(Math.sin(df)).toBeCloseTo(Math.sin(dr), 6);
       expect(s.desarrolloTeorico).toBeCloseTo(devEsperado(c.cotas, c.pl, c.t, c.R, c.K), 9);
     });
   }
