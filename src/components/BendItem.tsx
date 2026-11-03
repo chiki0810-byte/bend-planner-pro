@@ -24,16 +24,16 @@ export interface BendItemValue {
 interface BendItemProps {
   index: number;
   value: BendItemValue;
-  onChange: (v: BendItemValue) => void;
+  onChange: (v: BendItemValue, field: keyof BendItemValue) => void;
   onRemove: () => void;
   canRemove: boolean;
-  defaultRadius: number;
-  defaultK: number;
+  defaultRadius?: number;
+  defaultK?: number;
 }
 
 const BendItem = ({ index, value, onChange, onRemove, canRemove, defaultRadius, defaultK }: BendItemProps) => {
   const set = <K extends keyof BendItemValue>(k: K, v: BendItemValue[K]) =>
-    onChange({ ...value, [k]: v });
+    onChange({ ...value, [k]: v }, k);
 
   return (
     <div className="bg-muted/30 p-4 rounded-lg border space-y-3">
@@ -87,16 +87,16 @@ const BendItem = ({ index, value, onChange, onRemove, canRemove, defaultRadius, 
       <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/50">
         <div className="space-y-1">
           <Label className="text-[10px] text-muted-foreground">Radio int. (mm)</Label>
-          <Input type="number" step="0.1" min="0" value={value.innerRadius}
-            placeholder={String(defaultRadius)}
-            onChange={(e) => set('innerRadius', parseFloat(e.target.value) || 0)}
+          <Input aria-label={`Radio interior plegado ${index + 1}`} type="number" step="0.1" min="0" value={Number.isFinite(value.innerRadius) ? value.innerRadius : ""}
+            placeholder={defaultRadius === undefined ? undefined : String(defaultRadius)}
+            onChange={(e) => set('innerRadius', e.target.value === "" ? Number.NaN : Number(e.target.value))}
             className="h-8 text-xs" />
         </div>
         <div className="space-y-1">
           <Label className="text-[10px] text-muted-foreground">Factor K</Label>
-          <Input type="number" step="0.01" min="0" max="0.5" value={value.kFactor}
-            placeholder={String(defaultK)}
-            onChange={(e) => set('kFactor', parseFloat(e.target.value) || 0)}
+          <Input aria-label={`Factor K plegado ${index + 1}`} type="number" step="0.01" min="0" max="0.5" value={Number.isFinite(value.kFactor) ? value.kFactor : ""}
+            placeholder={defaultK === undefined ? undefined : String(defaultK)}
+            onChange={(e) => set('kFactor', e.target.value === "" ? Number.NaN : Number(e.target.value))}
             className="h-8 text-xs" />
         </div>
         <div className="space-y-1">

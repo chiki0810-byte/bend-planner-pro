@@ -9,6 +9,7 @@ import { BendResult, CalculatorState } from "@/pages/Index";
 import BendItem, { BendItemValue } from "./BendItem";
 import { computeBend, computeDevelopment, DefaultsByThickness } from "@/lib/bendCalc";
 import { getMaterialDefaultsWithCalibration, listMaterials } from "@/lib/storage";
+import { toast } from "sonner";
 
 interface BendCalculatorProps {
   onCalculate: (
@@ -43,7 +44,14 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
   const [materials, setMaterials] = useState<string[]>([]);
   const [defaults, setDefaults] = useState<DefaultsByThickness | undefined>(undefined);
   const [isCalibrated, setIsCalibrated] = useState(false);
-  const [bends, setBends] = useState<BendRow[]>([newBend(1.5, 0.38)]);
+  const [bends, setBends] = useState<BendRow[]>([newBend(Number.NaN, Number.NaN)]);
+  const [resolvedKey, setResolvedKey] = useState("");
+  const combinationKey = `${material}|${thickness}`;
+  const ready = !!material && !!thickness && resolvedKey === combinationKey;
+  const validBend = (b: BendRow) => Number.isFinite(b.innerRadius) && b.innerRadius >= 0 &&
+    Number.isFinite(b.kFactor) && b.kFactor >= 0 && b.kFactor <= 0.5;
+  const canCalculate = ready && Number.isFinite(Number(pieceLength)) && Number(pieceLength) > 0 &&
+    bends.length > 0 && bends.every(b => validBend(b) && (isCalibrated || (b.manualR && b.manualK)));
 
   const availableThicknesses = useMemo(
     () => (material === "Galvanizado" ? [...BASE_THICKNESSES, 2.0] : BASE_THICKNESSES),
@@ -63,18 +71,26 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     listMaterials().then(rows => {
       const uniq = Array.from(new Set(rows.map(r => r.material)));
       setMaterials(uniq);
-    });
+    }).catch(() => toast.error("No se pudieron cargar los materiales."));
   }, []);
 
   // Recargar defaults al cambiar material/espesor y sincronizar plegados no editados
   useEffect(() => {
     const t = parseFloat(thickness);
+    setDefaults(undefined);
+    setIsCalibrated(false);
+    setResolvedKey("");
+    // La procedencia manual solo pertenece a la combinación actual, nunca a otra.
+    setBends(prev => prev.map(b => ({
+      ...b, innerRadius: Number.NaN, kFactor: Number.NaN, manualR: false, manualK: false,
+    })));
     if (!material || !t) return;
     let cancelled = false;
     getMaterialDefaultsWithCalibration(material, t).then(({ defaults: def, calibrated }) => {
       if (cancelled) return;
       setIsCalibrated(calibrated);
       setDefaults(def);
+      setResolvedKey(`${material}|${thickness}`);
       if (calibrated && def) {
         setBends(prev => prev.map(b => ({
           ...b,
@@ -82,9 +98,11 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
           kFactor: b.manualK ? b.kFactor : def.kFactor,
         })));
       }
+    }).catch(() => {
+      if (!cancelled) toast.error("No se pudo comprobar la calibración del material. Inténtalo de nuevo.");
     });
     return () => { cancelled = true; };
-  }, [material, thickness]);
+  }, [material, thickness, initialState]);
 
   useEffect(() => {
     if (!initialState) return;
@@ -92,38 +110,37 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
     setMaterial(initialState.material);
     setPieceLength(String(initialState.pieceLength));
     setBends(initialState.bends.map(b => ({
-      id: crypto.randomUUID(), ...b, manualR: true, manualK: true,
+      id: crypto.randomUUID(), ...b, innerRadius: Number.NaN, kFactor: Number.NaN,
+      manualR: false, manualK: false,
     })));
   }, [initialState]);
 
   const addBend = () => {
-    const last = bends[bends.length - 1];
-    const defRadius = isCalibrated && defaults ? defaults.innerRadius : (last?.innerRadius ?? 0);
-    const defK = isCalibrated && defaults ? defaults.kFactor : (last?.kFactor ?? 0);
+    const defRadius = ready && isCalibrated && defaults ? defaults.innerRadius : Number.NaN;
+    const defK = ready && isCalibrated && defaults ? defaults.kFactor : Number.NaN;
     setBends([...bends, newBend(defRadius, defK)]);
   };
   const removeBend = (id: string) => setBends(bends.filter(b => b.id !== id));
-  const updateBend = (id: string, v: BendItemValue) =>
+  const updateBend = (id: string, v: BendItemValue, field: keyof BendItemValue) =>
     setBends(bends.map(b => b.id === id ? {
       ...b, ...v,
-      manualR: b.manualR || v.innerRadius !== b.innerRadius,
-      manualK: b.manualK || v.kFactor !== b.kFactor,
+      manualR: b.manualR || field === "innerRadius",
+      manualK: b.manualK || field === "kFactor",
     } : b));
 
 
-  const calculate = async () => {
+  const calculate = () => {
     const t = parseFloat(thickness);
     const L = parseFloat(pieceLength);
-    if (!t || !L || !material || !isCalibrated) return;
-    const { defaults: def } = await getMaterialDefaultsWithCalibration(material, t);
-    if (!def) return;
+    if (!canCalculate) return;
+    try {
 
     const bendResults = bends.map((b, i) =>
       computeBend(
         {
           angle: b.angle, distance: b.distance,
-          innerRadius: b.innerRadius || undefined,
-          kFactor: b.kFactor || undefined,
+          innerRadius: b.innerRadius,
+          kFactor: b.kFactor,
           direction: b.direction, tolerance: b.tolerance,
           associatedDimension: b.associatedDimension,
           criticalDimension: b.criticalDimension,
@@ -131,7 +148,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
           compensationAmount: b.compensationAmount,
           dimensionReference: b.dimensionReference,
         },
-        t, def, i + 1,
+        t, isCalibrated ? defaults : undefined, i + 1,
       ),
     );
 
@@ -152,6 +169,9 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
       bends: bends.map(({ id, manualR, manualK, ...rest }) => rest),
 
     });
+    } catch {
+      toast.error("No se pudo calcular. Revisa el radio interior y el factor K de cada pliegue.");
+    }
   };
 
   return (
@@ -168,7 +188,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
           <div className="space-y-2">
             <Label>Espesor (mm)</Label>
             <Select value={thickness} onValueChange={setThickness}>
-              <SelectTrigger><SelectValue placeholder="Espesor" /></SelectTrigger>
+            <SelectTrigger aria-label="Espesor"><SelectValue placeholder="Espesor" /></SelectTrigger>
               <SelectContent>
                 {availableThicknesses.map(t => (
                   <SelectItem key={t} value={String(t)}>{t} mm</SelectItem>
@@ -179,7 +199,7 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
           <div className="space-y-2">
             <Label>Material</Label>
             <Select value={material} onValueChange={setMaterial}>
-              <SelectTrigger><SelectValue placeholder="Material" /></SelectTrigger>
+              <SelectTrigger aria-label="Material"><SelectValue placeholder="Material" /></SelectTrigger>
               <SelectContent>
                 {materials.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
               </SelectContent>
@@ -195,14 +215,14 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
 
         {material && thickness && (
           <div className={`text-xs p-2 rounded border ${isCalibrated ? "text-muted-foreground bg-muted/40" : "text-amber-700 bg-amber-50 border-amber-200 dark:text-amber-300 dark:bg-amber-950/30 dark:border-amber-900"}`}>
-            {isCalibrated ? (
+            {!ready ? "Comprobando calibración…" : isCalibrated && defaults ? (
               <>
                 Defaults para {material} {thickness}mm — R int: <b>{defaults.innerRadius}</b> ·
                 K: <b>{defaults.kFactor}</b>
               </>
             ) : (
               <>
-                Espesor {thickness} mm de {material}: <b>no disponible</b>. Esta combinación requiere calibración en Materiales.
+                Espesor {thickness} mm de {material}: <b>sin calibración aprobada</b>. Introduce R interior y K válidos en cada pliegue o calibra en Materiales.
               </>
             )}
           </div>
@@ -221,18 +241,18 @@ const BendCalculator = ({ onCalculate, initialState }: BendCalculatorProps) => {
                 key={b.id}
                 index={i}
                 value={b}
-                onChange={(v) => updateBend(b.id, v)}
+                onChange={(v, field) => updateBend(b.id, v, field)}
                 onRemove={() => removeBend(b.id)}
                 canRemove={bends.length > 1}
-                defaultRadius={defaults.innerRadius}
-                defaultK={defaults.kFactor}
+                defaultRadius={ready ? defaults?.innerRadius : undefined}
+                defaultK={ready ? defaults?.kFactor : undefined}
               />
             ))}
           </div>
         </div>
 
         <Button onClick={calculate} className="w-full" size="lg"
-          disabled={!thickness || !material || !pieceLength || !isCalibrated}>
+          disabled={!canCalculate}>
           <Calculator className="w-4 h-4 mr-2" />
           Calcular Plegado
         </Button>
