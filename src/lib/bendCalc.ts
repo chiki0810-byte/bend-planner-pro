@@ -32,7 +32,7 @@ export const directionLabel = (d: 1 | -1): BendDirectionLabel => (d === -1 ? 'do
 export interface BendInput extends Partial<BendMetadata> {
   angle: number;         // grados de plegado (ángulo de la operación)
   distance: number;      // distancia desde plegado anterior o borde (mm)
-  innerRadius?: number;  // radio interior (mm), si vacío => 1.5 * t
+  innerRadius?: number;  // radio interior (mm), si vacío => defaults aprobados
   kFactor?: number;      // factor K, si vacío => valor por defecto del material
   direction?: 1 | -1;    // +1 hacia arriba, -1 hacia abajo
   tolerance?: number;    // tolerancia +/- (mm)
@@ -130,12 +130,16 @@ export function getMaterialDefaultsByThickness(
 export function computeBend(
   input: BendInput,
   thickness: number,
-  defaults: DefaultsByThickness,
+  defaults: DefaultsByThickness | undefined,
   order: number,
 ): BendOutput {
   const t = thickness;
-  const R = input.innerRadius ?? defaults.innerRadius;
-  const K = input.kFactor ?? defaults.kFactor;
+  const R = input.innerRadius ?? defaults?.innerRadius;
+  const K = input.kFactor ?? defaults?.kFactor;
+  if (R === undefined || K === undefined || !Number.isFinite(R) || R < 0 ||
+      !Number.isFinite(K) || K < 0 || K > 0.5) {
+    throw new Error('Cada pliegue requiere R interior ≥ 0 y K entre 0 y 0.5, ambos finitos.');
+  }
   const { bendAllowance, outsideSetback, bendDeduction } = calculateBendMath({
     angle: input.angle,
     thickness: t,

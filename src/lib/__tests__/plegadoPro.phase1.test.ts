@@ -47,3 +47,21 @@ describe("plegadoPro — K central (Fase 1)", () => {
     expect(spy).not.toHaveBeenCalled();
   });
 });
+
+describe("plegadoPro — Acero 0.7 no aprobado", () => {
+  it("getMaterialDefaultsByThickness(Acero, 0.7) es undefined", () => {
+    expect(bendCalc.getMaterialDefaultsByThickness("Acero", 0.7)).toBeUndefined();
+  });
+  it("Cónico y Canal devuelven null sin llamar a calculateBendMath", () => {
+    const spy = vi.spyOn(bendCalc, "calculateBendMath");
+    expect(calcularConico(conico(0.7))).toBeNull();
+    expect(calcularCanal(canal(0.7))).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+  });
+  it("espesor aprobado 0.8 sigue calculando en ambos (K=0.35)", () => {
+    expect(calcularConico(conico(0.8))).not.toBeNull();
+    const r = calcularCanal(canal(0.8))!;
+    const ba = (Math.PI / 2) * (1.8 + 0.35 * 0.8);
+    expect(r.ba_total_mm).toBeCloseTo(ba, 6);
+  });
+});

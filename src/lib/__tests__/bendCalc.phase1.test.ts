@@ -41,6 +41,35 @@ describe("getMaterialDefaultsByThickness", () => {
 });
 
 describe("regresión matemática", () => {
+  it("sin defaults calcula exclusivamente con R/K explícitos", () => {
+    const b = computeBend({ angle: 90, distance: 50, innerRadius: 1, kFactor: 0.4 }, 2, undefined, 1);
+    expect(b.innerRadius).toBe(1);
+    expect(b.kFactor).toBe(0.4);
+    expect(b.bendAllowance).toBe(2.83);
+    expect(b.outsideSetback).toBe(3);
+    expect(b.bendDeduction).toBe(3.17);
+    expect(computeDevelopment(100, [b]).finalCutLength).toBe(102.83);
+  });
+  it("R/K cero explícitos no se sustituyen por defaults", () => {
+    const b = computeBend({ angle: 90, distance: 50, innerRadius: 0, kFactor: 0 }, 1,
+      { innerRadius: 1.5, kFactor: 0.38, bendAllowance90: 2.95 }, 1);
+    expect(b.innerRadius).toBe(0);
+    expect(b.kFactor).toBe(0);
+    expect(b.bendAllowance).toBe(0);
+  });
+  it.each([
+    { innerRadius: undefined, kFactor: 0.4 },
+    { innerRadius: 1, kFactor: undefined },
+    { innerRadius: -1, kFactor: 0.4 },
+    { innerRadius: NaN, kFactor: 0.4 },
+    { innerRadius: Infinity, kFactor: 0.4 },
+    { innerRadius: 1, kFactor: NaN },
+    { innerRadius: 1, kFactor: Infinity },
+    { innerRadius: 1, kFactor: -0.1 },
+    { innerRadius: 1, kFactor: 0.51 },
+  ])("rechaza R/K ausentes o inválidos sin sustitución: %j", values => {
+    expect(() => computeBend({ angle: 90, distance: 50, ...values }, 2, undefined, 1)).toThrow(/Cada pliegue/);
+  });
   it("calculateBendMath 90° t=1 R=1.5 K=0.38", () => {
     const r = calculateBendMath({ angle: 90, thickness: 1, innerRadius: 1.5, kFactor: 0.38 });
     expect(r.bendAllowance).toBeCloseTo(2.953097, 5);
